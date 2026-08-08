@@ -730,6 +730,12 @@
       byAgent[c.agent].push(c.hour);
     }
     const agentNames = agents.filter(a => byAgent[a] && byAgent[a].length);
+    agentNames.sort((a, b) => {
+      const ta = TEAM_ORDER.indexOf(agentTeam[a]);
+      const tb = TEAM_ORDER.indexOf(agentTeam[b]);
+      if (ta !== tb) return ta - tb;
+      return Math.min(...byAgent[a]) - Math.min(...byAgent[b]);
+    });
 
     if (!agentNames.length) {
       dayContent.innerHTML = `<div class="state-msg">Sin agentes programados este día.</div>`;
