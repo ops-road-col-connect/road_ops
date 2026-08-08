@@ -503,16 +503,16 @@
 
   /* ---- Week view ---- */
   .week-scroll { overflow-x: auto; }
-  .week-wrap { min-width: 1120px; }
+  .week-wrap { min-width: 1260px; }
   .week-header, .week-row {
     display: grid;
-    grid-template-columns: 210px repeat(7, 1fr) 60px 150px;
+    grid-template-columns: 200px repeat(7, 1fr) 55px repeat(4, 62px);
   }
   .week-header {
     position: sticky; top: 0; background: var(--panel); z-index: 3; padding-bottom: 10px;
   }
   .week-header .corner { font-size: 9.5px; color: var(--text-dim); letter-spacing: 1.5px; text-transform: uppercase; align-self: end; }
-  .week-header .corner.hours-col, .week-header .corner.extra-col { text-align: center; }
+  .week-header .corner.hours-col, .week-header .corner.extra-type-col { text-align: center; cursor: default; }
   .week-header .day-label {
     font-size: 10.5px; color: var(--text-mid); text-align: center; text-transform: uppercase; letter-spacing: 1px;
   }
@@ -526,17 +526,21 @@
     text-align: center; font-size: 11px; font-weight: 700; color: var(--yellow);
     font-family: 'JetBrains Mono', monospace; cursor: default;
   }
-  .week-extra-cell {
-    text-align: center; font-size: 9.5px; color: var(--text-dim);
-    font-family: 'JetBrains Mono', monospace; cursor: default; padding: 0 4px;
-    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  .week-extra-type-cell {
+    text-align: center; font-size: 10px; color: var(--text-dim);
+    font-family: 'JetBrains Mono', monospace; cursor: default; margin: 0 3px;
   }
-  .week-extra-cell.has-extra {
-    color: var(--orange); font-weight: 600;
-    background: rgba(241,91,43,0.08); border-radius: 5px;
+  .week-extra-type-cell.has-extra {
+    font-weight: 700; border-radius: 5px;
+  }
+  .week-extra-type-cell.ordinaria.has-extra {
+    color: var(--orange); background: rgba(241,91,43,0.1);
+  }
+  .week-extra-type-cell.festiva.has-extra {
+    color: #ff5d73; background: rgba(255,93,115,0.1);
   }
   .week-team-section-row {
-    display: grid; grid-template-columns: 210px repeat(7, 1fr) 60px 150px;
+    display: grid; grid-template-columns: 200px repeat(7, 1fr) 55px repeat(4, 62px);
     align-items: center; height: 30px; background: rgba(255,255,255,0.02);
   }
   .week-team-section-row .team-section-label {
@@ -996,7 +1000,10 @@
         <div class="corner">agente</div>
         ${weekDates.map((dt,i) => `<div class="day-label">${DAY_NAMES_SHORT[dt.getDay()]}<span class="date-sub">${dt.getDate()} ${MONTH_NAMES[dt.getMonth()].slice(0,3)}</span></div>`).join('')}
         <div class="corner hours-col">horas</div>
-        <div class="corner extra-col">extra</div>
+        <div class="corner extra-type-col" title="${EXTRA_LABELS.HED}">hed</div>
+        <div class="corner extra-type-col" title="${EXTRA_LABELS.HEN}">hen</div>
+        <div class="corner extra-type-col" title="${EXTRA_LABELS.HEDD}">hedd</div>
+        <div class="corner extra-type-col" title="${EXTRA_LABELS.HEND}">hend</div>
       </div>`;
     let lastTeamShown = null;
     for (const agent of agentsWithData) {
@@ -1018,16 +1025,19 @@
       const cierreTxt = calc.cierre
         ? `Jornada ordinaria (42h) se completa el ${DAY_NAMES[new Date(calc.cierre.date+'T00:00:00').getDay()]} ${calc.cierre.date} a las ${String(calc.cierre.hour).padStart(2,'0')}:00`
         : `No alcanza las 42 horas ordinarias esta semana`;
-      const extraTitle = `${cierreTxt}\n${EXTRA_LABELS.HED}: ${calc.extra.HED}h\n${EXTRA_LABELS.HEN}: ${calc.extra.HEN}h\n${EXTRA_LABELS.HEDD}: ${calc.extra.HEDD}h\n${EXTRA_LABELS.HEND}: ${calc.extra.HEND}h`;
-      const extraBreakdown = calc.totalExtra > 0
-        ? Object.entries(calc.extra).filter(([,v]) => v > 0).map(([k,v]) => `${k} ${v}h`).join(' &middot; ')
-        : '&mdash;';
+      const extraTypeCell = (key, tipo) => {
+        const v = calc.extra[key];
+        return `<div class="week-extra-type-cell ${tipo}${v > 0 ? ' has-extra' : ''}" title="${EXTRA_LABELS[key]}: ${v}h">${v > 0 ? v + 'h' : '&mdash;'}</div>`;
+      };
 
       html += `<div class="week-row">
         <div class="agent-name" title="${agent}">${agent}</div>
         ${cellsHtml}
         <div class="week-hours-cell" title="${cierreTxt}">${calc.total}h</div>
-        <div class="week-extra-cell${calc.totalExtra > 0 ? ' has-extra' : ''}" title="${extraTitle}">${extraBreakdown}</div>
+        ${extraTypeCell('HED','ordinaria')}
+        ${extraTypeCell('HEN','ordinaria')}
+        ${extraTypeCell('HEDD','festiva')}
+        ${extraTypeCell('HEND','festiva')}
       </div>`;
     }
     html += `</div>`;
