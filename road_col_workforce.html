@@ -329,6 +329,40 @@
     text-align: right;
   }
 
+  /* Coverage table */
+  .coverage-scroll { overflow-x: auto; }
+  table.coverage-table {
+    width: 100%;
+    border-collapse: collapse;
+    min-width: 900px;
+  }
+  table.coverage-table th, table.coverage-table td {
+    padding: 8px 6px;
+    text-align: center;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    border-bottom: 1px solid var(--grid-line);
+    white-space: nowrap;
+  }
+  table.coverage-table th.row-label, table.coverage-table td.row-label {
+    text-align: left;
+    color: var(--text-mid);
+    font-weight: 600;
+    text-transform: uppercase;
+    font-size: 9.5px;
+    letter-spacing: 1px;
+  }
+  table.coverage-table thead th {
+    color: var(--text-dim);
+    font-weight: 600;
+    padding-bottom: 10px;
+    border-bottom: 1px solid var(--border-soft);
+  }
+  td.diff-positive { color: var(--text-dim); }
+  td.diff-negative { color: var(--orange); font-weight: 700; }
+  td.status-ok::after { content: '✓'; color: var(--turquoise); }
+  td.status-bad::after { content: '!'; color: var(--orange); font-weight: 700; }
+
   .view { display: none; }
   .view.active { display: block; animation: fadeIn .25s ease; }
   @keyframes fadeIn { from { opacity:0; transform: translateY(6px);} to {opacity:1; transform:none;} }
@@ -481,6 +515,11 @@
       <div class="card-desc" id="day-desc"></div>
       <div class="gantt-scroll"><div id="day-content"><div class="state-msg">Cargando datos&hellip;</div></div></div>
     </div>
+    <div class="card">
+      <div class="card-title"><span class="dot"></span>Cobertura por hora</div>
+      <div class="card-desc">Requeridos vs. programados, equipo seleccionado</div>
+      <div class="coverage-scroll"><div id="coverage-content"><div class="state-msg">Cargando datos&hellip;</div></div></div>
+    </div>
   </div>
 
   <div class="view" id="view-week">
@@ -550,6 +589,7 @@
   const heatmapContent = document.getElementById('heatmap-content');
   const accountsContent = document.getElementById('accounts-content');
   const tipoServicioSelect = document.getElementById('tipo-servicio-select');
+  const coverageContent = document.getElementById('coverage-content');
 
   function todayStr() {
     const d = new Date();
@@ -646,7 +686,7 @@
 
   function renderCurrentView() {
     if (!rawData) return;
-    if (currentView === 'day') renderDay();
+    if (currentView === 'day') { renderDay(); renderCoverage(); }
     else if (currentView === 'week') renderWeek();
     else { renderForecast(); renderHeatmap(); }
   }
@@ -832,6 +872,65 @@
           <td style="text-align:left;">Total semana</td>
           <td>${Math.round(grandTotal)}</td>
         </tr></tfoot>
+      </table>`;
+  }
+
+  function renderCoverage() {
+    if (!rawData) return;
+    if (currentTeam === '__all__') {
+      coverageContent.innerHTML = '<div class="empty-note">Selecciona un equipo específico (Torre de Control o Back) para ver la cobertura.</div>';
+      return;
+    }
+    if (currentTeam !== 'TC' && currentTeam !== 'Back') {
+      coverageContent.innerHTML = `<div class="empty-note">La cobertura todavía no está disponible para ${TEAM_LABELS[currentTeam] || currentTeam} — hoy solo se estima personal requerido para Back y Torre de Control.</div>`;
+      return;
+    }
+    if (!rawData.expectedLoad) {
+      coverageContent.innerHTML = '<div class="empty-note">Datos de cobertura no disponibles aún.</div>';
+      return;
+    }
+    const dateVal = dateInput.value;
+    const dayOfWeek = new Date(dateVal + 'T00:00:00').getDay();
+
+    const loadArr = rawData.expectedLoad[currentTeam] || [];
+    const requiredByHour = {};
+    for (const item of loadArr) {
+      if (item.day === dayOfWeek) requiredByHour[item.hour] = item.requiredAgents;
+    }
+
+    const cellsForDay = (rawData.workforceCells || []).filter(c => {
+      if (!c.scheduled || c.team !== currentTeam) return false;
+      return c.date ? c.date === dateVal : c.day === dayOfWeek;
+    });
+    const programadosByHour = {};
+    for (let h = 0; h < 24; h++) {
+      const agentsAtHour = new Set(cellsForDay.filter(c => c.hour === h).map(c => c.agent));
+      programadosByHour[h] = agentsAtHour.size;
+    }
+
+    let requeridosRow = '', programadosRow = '', diffRow = '', statusRow = '';
+    for (let h = 0; h < 24; h++) {
+      const req = requiredByHour[h] ?? 0;
+      const prog = programadosByHour[h] ?? 0;
+      const diff = prog - req;
+      requeridosRow += `<td>${req}</td>`;
+      programadosRow += `<td>${prog}</td>`;
+      diffRow += `<td class="${diff < 0 ? 'diff-negative' : 'diff-positive'}">${diff > 0 ? '+' : ''}${diff}</td>`;
+      statusRow += `<td class="${diff < 0 ? 'status-bad' : 'status-ok'}"></td>`;
+    }
+
+    coverageContent.innerHTML = `
+      <table class="coverage-table">
+        <thead><tr>
+          <th class="row-label">Hora</th>
+          ${Array.from({length:24},(_,h)=>`<th>${String(h).padStart(2,'0')}:00</th>`).join('')}
+        </tr></thead>
+        <tbody>
+          <tr><td class="row-label">Requeridos</td>${requeridosRow}</tr>
+          <tr><td class="row-label">Programados</td>${programadosRow}</tr>
+          <tr><td class="row-label">Diferencia</td>${diffRow}</tr>
+          <tr><td class="row-label">Estado</td>${statusRow}</tr>
+        </tbody>
       </table>`;
   }
 
