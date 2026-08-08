@@ -445,6 +445,27 @@
     box-shadow: 0 0 0 1px rgba(0,0,0,0.35), 0 2px 6px var(--turquoise-glow);
     margin: 0 1px;
   }
+  .bar-account {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+  }
+  .bar-account .bar-label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 9.5px;
+    font-weight: 600;
+    color: rgba(0,0,0,0.75);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    padding: 0 4px;
+    pointer-events: none;
+  }
+  .bar-unknown {
+    background: linear-gradient(180deg, rgba(39,155,176,0.35) 0%, rgba(39,155,176,0.2) 100%);
+    box-shadow: 0 0 0 1px rgba(255,255,255,0.06), inset 0 0 0 1px rgba(39,155,176,0.25);
+  }
   .now-line {
     position: absolute;
     top: 0; bottom: 0;
@@ -706,6 +727,73 @@
     return ranges;
   }
 
+  function normalizeName(s) {
+    return (s || '')
+      .toString()
+      .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+      .trim().toLowerCase().replace(/\s+/g, ' ');
+  }
+
+  function addDaysToDateStr(dateStr, delta) {
+    const [y, m, d] = dateStr.split('-').map(Number);
+    const dt = new Date(y, m - 1, d);
+    dt.setDate(dt.getDate() + delta);
+    return `${dt.getFullYear()}-${String(dt.getMonth() + 1).padStart(2, '0')}-${String(dt.getDate()).padStart(2, '0')}`;
+  }
+
+  function getCuentasTCSegments(dateVal) {
+    const prevDate = addDaysToDateStr(dateVal, -1);
+    const map = {};
+    const pushSeg = (agent, segStart, segEnd, label) => {
+      const key = normalizeName(agent);
+      if (!map[key]) map[key] = [];
+      map[key].push({ segStart, segEnd, label });
+    };
+    for (const c of (rawData.cuentasTC || [])) {
+      // hora_fin en turnos_tc es inclusiva (ej. "hasta las 12" = trabaja hasta las 13:00)
+      const endHourExclusive = c.endHour + 1;
+      const isOvernight = endHourExclusive <= c.startHour;
+      const label = (c.funciones && c.funciones.length ? c.funciones.join(' + ') : (c.label || ''));
+      if (c.date === dateVal) {
+        if (isOvernight) pushSeg(c.agent, c.startHour, 24, label);
+        else pushSeg(c.agent, c.startHour, endHourExclusive, label);
+      } else if (c.date === prevDate && isOvernight) {
+        pushSeg(c.agent, 0, endHourExclusive, label);
+      }
+    }
+    return map;
+  }
+
+  function buildAccountBars(agent, hours, segMap) {
+    const sortedHours = [...hours].sort((a, b) => a - b);
+    if (!sortedHours.length) return '';
+    const segs = segMap[normalizeName(agent)] || [];
+    const hourLabel = {};
+    for (const h of sortedHours) {
+      const match = segs.find(s => h >= s.segStart && h < s.segEnd);
+      hourLabel[h] = match ? match.label : null;
+    }
+    const groups = [];
+    let curStart = sortedHours[0], curLabel = hourLabel[sortedHours[0]], prev = sortedHours[0];
+    for (let i = 1; i < sortedHours.length; i++) {
+      const h = sortedHours[i];
+      if (h === prev + 1 && hourLabel[h] === curLabel) {
+        prev = h;
+      } else {
+        groups.push([curStart, prev, curLabel]);
+        curStart = h; curLabel = hourLabel[h]; prev = h;
+      }
+    }
+    groups.push([curStart, prev, curLabel]);
+    return groups.map(([s, e, label]) => {
+      const known = !!label;
+      const cls = known ? 'bar bar-account' : 'bar bar-account bar-unknown';
+      const labelHtml = known ? `<span class="bar-label">${label}</span>` : '';
+      const titleAttr = known ? label : 'Cuenta no asignada';
+      return `<div class="${cls}" style="grid-column: ${s+1} / ${e+2};" title="${titleAttr}">${labelHtml}</div>`;
+    }).join('');
+  }
+
   function renderCurrentView() {
     if (!rawData) return;
     if (currentView === 'day') { renderDay(); renderCoverage(); }
@@ -743,6 +831,7 @@
     }
 
     const isAllView = currentTeam === '__all__';
+    const cuentasTCSegMap = getCuentasTCSegments(dateVal);
     let html = `
       <div class="gantt-wrap">
         <div class="gantt-header">
@@ -756,8 +845,9 @@
         lastTeamShown = agentTeam[agent];
         html += `<div class="team-section-row"><div class="team-section-label">${TEAM_LABELS[lastTeamShown] || lastTeamShown}</div></div>`;
       }
-      const ranges = buildRanges(byAgent[agent]);
-      const barsHtml = ranges.map(([s,e]) => `<div class="bar" style="grid-column: ${s+1} / ${e+2};"></div>`).join('');
+      const barsHtml = agentTeam[agent] === 'TC'
+        ? buildAccountBars(agent, byAgent[agent], cuentasTCSegMap)
+        : buildRanges(byAgent[agent]).map(([s,e]) => `<div class="bar" style="grid-column: ${s+1} / ${e+2};"></div>`).join('');
       html += `<div class="agent-row">
         <div class="agent-name" title="${agent}">${agent}</div>
         <div class="track">
