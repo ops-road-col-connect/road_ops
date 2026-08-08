@@ -503,15 +503,16 @@
 
   /* ---- Week view ---- */
   .week-scroll { overflow-x: auto; }
-  .week-wrap { min-width: 900px; }
+  .week-wrap { min-width: 1120px; }
   .week-header, .week-row {
     display: grid;
-    grid-template-columns: 210px repeat(7, 1fr);
+    grid-template-columns: 210px repeat(7, 1fr) 60px 150px;
   }
   .week-header {
     position: sticky; top: 0; background: var(--panel); z-index: 3; padding-bottom: 10px;
   }
   .week-header .corner { font-size: 9.5px; color: var(--text-dim); letter-spacing: 1.5px; text-transform: uppercase; align-self: end; }
+  .week-header .corner.hours-col, .week-header .corner.extra-col { text-align: center; }
   .week-header .day-label {
     font-size: 10.5px; color: var(--text-mid); text-align: center; text-transform: uppercase; letter-spacing: 1px;
   }
@@ -521,8 +522,21 @@
   .week-row .agent-name { font-size: 12px; color: var(--text-mid); white-space: nowrap; overflow:hidden; text-overflow: ellipsis; padding-right: 8px; }
   .week-cell { text-align: center; font-size: 10px; color: var(--text-dim); padding: 4px 3px; }
   .week-cell.shift { color: var(--turquoise); font-weight: 600; background: rgba(39,155,176,0.08); border-radius: 5px; }
+  .week-hours-cell {
+    text-align: center; font-size: 11px; font-weight: 700; color: var(--yellow);
+    font-family: 'JetBrains Mono', monospace; cursor: default;
+  }
+  .week-extra-cell {
+    text-align: center; font-size: 9.5px; color: var(--text-dim);
+    font-family: 'JetBrains Mono', monospace; cursor: default; padding: 0 4px;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .week-extra-cell.has-extra {
+    color: var(--orange); font-weight: 600;
+    background: rgba(241,91,43,0.08); border-radius: 5px;
+  }
   .week-team-section-row {
-    display: grid; grid-template-columns: 210px repeat(7, 1fr);
+    display: grid; grid-template-columns: 210px repeat(7, 1fr) 60px 150px;
     align-items: center; height: 30px; background: rgba(255,255,255,0.02);
   }
   .week-team-section-row .team-section-label {
@@ -626,6 +640,63 @@
   const DAY_NAMES_SHORT = ['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'];
   const MONTH_NAMES = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
   const WEEK_ORDER = [1,2,3,4,5,6,0]; // lunes..domingo
+
+  // ---- Legislación laboral colombiana: cálculo de horas extra ----
+  // Jornada ordinaria semanal máxima: 42 horas.
+  // Horario diurno: 06:00–19:00 · Horario nocturno: 19:00–06:00 del día siguiente.
+  // Domingos y festivos se computan 00:00–24:00 del día calendario.
+  // Las horas se cuentan en orden cronológico desde el inicio de la semana (lunes).
+  // Al completar la hora 42 se cierra la jornada ordinaria; toda hora trabajada
+  // después se clasifica, según el reloj y el calendario, en una de 4 categorías:
+  //   HED  = Hora Extra Diurna Ordinaria
+  //   HEN  = Hora Extra Nocturna Ordinaria
+  //   HEDD = Hora Extra Diurna Dominical/Festiva
+  //   HEND = Hora Extra Nocturna Dominical/Festiva
+  const JORNADA_ORDINARIA_SEMANAL = 42;
+  // Festivos oficiales de Colombia (Ley Emiliani incluida). Actualizar cada año.
+  const FESTIVOS_COLOMBIA = {
+    2026: ['2026-01-01','2026-01-12','2026-03-23','2026-04-02','2026-04-03','2026-05-01',
+           '2026-05-18','2026-06-08','2026-06-15','2026-06-29','2026-07-13','2026-07-20',
+           '2026-08-07','2026-08-17','2026-10-12','2026-11-02','2026-11-16','2026-12-08','2026-12-25'],
+    2027: ['2027-01-01','2027-01-11','2027-03-22','2027-03-25','2027-03-26','2027-05-01',
+           '2027-05-10','2027-05-31','2027-06-07','2027-07-05','2027-07-12','2027-07-20',
+           '2027-08-07','2027-08-16','2027-10-18','2027-11-01','2027-11-15','2027-12-08','2027-12-25']
+  };
+  const FESTIVOS_SET = new Set(Object.values(FESTIVOS_COLOMBIA).flat());
+  const EXTRA_LABELS = { HED: 'H. Extra Diurna', HEN: 'H. Extra Nocturna', HEDD: 'H. Extra Diurna Dom/Fest', HEND: 'H. Extra Nocturna Dom/Fest' };
+
+  function esHoraDiurna(hour) { return hour >= 6 && hour < 19; }
+
+  function esDomingoOFestivo(dateStr) {
+    const d = new Date(dateStr + 'T00:00:00');
+    return d.getDay() === 0 || FESTIVOS_SET.has(dateStr);
+  }
+
+  // cellsAgente: [{date:'YYYY-MM-DD', hour:0-23}, ...] de UN agente dentro de una semana
+  function calcularHorasSemana(cellsAgente) {
+    const sorted = [...cellsAgente].sort((a, b) =>
+      (a.date + String(a.hour).padStart(2, '0')).localeCompare(b.date + String(b.hour).padStart(2, '0'))
+    );
+    const extra = { HED: 0, HEN: 0, HEDD: 0, HEND: 0 };
+    let ordinarias = 0;
+    let cierre = null;
+    sorted.forEach((c, i) => {
+      const n = i + 1; // número de hora trabajada en la semana, en orden cronológico
+      if (n <= JORNADA_ORDINARIA_SEMANAL) {
+        ordinarias = n;
+        if (n === JORNADA_ORDINARIA_SEMANAL) cierre = { date: c.date, hour: c.hour };
+        return;
+      }
+      const diurno = esHoraDiurna(c.hour);
+      const festivo = esDomingoOFestivo(c.date);
+      if (diurno && !festivo) extra.HED++;
+      else if (!diurno && !festivo) extra.HEN++;
+      else if (diurno && festivo) extra.HEDD++;
+      else extra.HEND++;
+    });
+    const totalExtra = extra.HED + extra.HEN + extra.HEDD + extra.HEND;
+    return { total: sorted.length, ordinarias, extra, totalExtra, cierre };
+  }
 
   let rawData = null;
   let currentTeam = '__all__';
@@ -924,6 +995,8 @@
       <div class="week-header">
         <div class="corner">agente</div>
         ${weekDates.map((dt,i) => `<div class="day-label">${DAY_NAMES_SHORT[dt.getDay()]}<span class="date-sub">${dt.getDate()} ${MONTH_NAMES[dt.getMonth()].slice(0,3)}</span></div>`).join('')}
+        <div class="corner hours-col">horas</div>
+        <div class="corner extra-col">extra</div>
       </div>`;
     let lastTeamShown = null;
     for (const agent of agentsWithData) {
@@ -938,9 +1011,23 @@
         const label = ranges.map(([s,e]) => `${String(s).padStart(2,'0')}:00-${String(e+1).padStart(2,'0')}:00`).join(', ');
         return `<div class="week-cell shift">${label}</div>`;
       }).join('');
+
+      // Cálculo de horas totales y horas extra (legislación laboral colombiana, jornada de 42h)
+      const cellsAgente = weekDateStrs.flatMap(ds => (byAgentDate[agent+'|'+ds] || []).map(h => ({ date: ds, hour: h })));
+      const calc = calcularHorasSemana(cellsAgente);
+      const cierreTxt = calc.cierre
+        ? `Jornada ordinaria (42h) se completa el ${DAY_NAMES[new Date(calc.cierre.date+'T00:00:00').getDay()]} ${calc.cierre.date} a las ${String(calc.cierre.hour).padStart(2,'0')}:00`
+        : `No alcanza las 42 horas ordinarias esta semana`;
+      const extraTitle = `${cierreTxt}\n${EXTRA_LABELS.HED}: ${calc.extra.HED}h\n${EXTRA_LABELS.HEN}: ${calc.extra.HEN}h\n${EXTRA_LABELS.HEDD}: ${calc.extra.HEDD}h\n${EXTRA_LABELS.HEND}: ${calc.extra.HEND}h`;
+      const extraBreakdown = calc.totalExtra > 0
+        ? Object.entries(calc.extra).filter(([,v]) => v > 0).map(([k,v]) => `${k} ${v}h`).join(' &middot; ')
+        : '&mdash;';
+
       html += `<div class="week-row">
         <div class="agent-name" title="${agent}">${agent}</div>
         ${cellsHtml}
+        <div class="week-hours-cell" title="${cierreTxt}">${calc.total}h</div>
+        <div class="week-extra-cell${calc.totalExtra > 0 ? ' has-extra' : ''}" title="${extraTitle}">${extraBreakdown}</div>
       </div>`;
     }
     html += `</div>`;
