@@ -363,6 +363,25 @@
   td.status-ok::after { content: '✓'; color: var(--turquoise); }
   td.status-bad::after { content: '!'; color: var(--orange); font-weight: 700; }
 
+  .card-title-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 4px;
+  }
+  .card-note {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10.5px;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+    color: var(--text-dim);
+    white-space: nowrap;
+  }
+  .card-note .card-note-value { color: var(--yellow); }
+  tr.load-row td { color: var(--text-mid); }
+  tr.load-row td.row-label { color: var(--text-mid); }
+
   .view { display: none; }
   .view.active { display: block; animation: fadeIn .25s ease; }
   @keyframes fadeIn { from { opacity:0; transform: translateY(6px);} to {opacity:1; transform:none;} }
@@ -516,7 +535,10 @@
       <div class="gantt-scroll"><div id="day-content"><div class="state-msg">Cargando datos&hellip;</div></div></div>
     </div>
     <div class="card">
-      <div class="card-title"><span class="dot"></span>Cobertura por hora</div>
+      <div class="card-title-row">
+        <div class="card-title"><span class="dot"></span>Cobertura por hora</div>
+        <span class="card-note" id="coverage-minutos-note"></span>
+      </div>
       <div class="card-desc">Requeridos vs. programados, equipo seleccionado</div>
       <div class="coverage-scroll"><div id="coverage-content"><div class="state-msg">Cargando datos&hellip;</div></div></div>
     </div>
@@ -877,25 +899,41 @@
 
   function renderCoverage() {
     if (!rawData) return;
+    const minutosNote = document.getElementById('coverage-minutos-note');
     if (currentTeam === '__all__') {
       coverageContent.innerHTML = '<div class="empty-note">Selecciona un equipo específico (Torre de Control o Back) para ver la cobertura.</div>';
+      if (minutosNote) minutosNote.innerHTML = '';
       return;
     }
     if (currentTeam !== 'TC' && currentTeam !== 'Back') {
       coverageContent.innerHTML = `<div class="empty-note">La cobertura todavía no está disponible para ${TEAM_LABELS[currentTeam] || currentTeam} — hoy solo se estima personal requerido para Back y Torre de Control.</div>`;
+      if (minutosNote) minutosNote.innerHTML = '';
       return;
     }
     if (!rawData.expectedLoad) {
       coverageContent.innerHTML = '<div class="empty-note">Datos de cobertura no disponibles aún.</div>';
+      if (minutosNote) minutosNote.innerHTML = '';
       return;
+    }
+    if (minutosNote) {
+      const minutos = rawData.capacidad && rawData.capacidad.minutosPorServicio
+        ? rawData.capacidad.minutosPorServicio[currentTeam]
+        : null;
+      minutosNote.innerHTML = minutos != null
+        ? `${TEAM_LABELS[currentTeam] || currentTeam}: <span class="card-note-value">${minutos} min</span> por servicio`
+        : '';
     }
     const dateVal = dateInput.value;
     const dayOfWeek = new Date(dateVal + 'T00:00:00').getDay();
 
     const loadArr = rawData.expectedLoad[currentTeam] || [];
     const requiredByHour = {};
+    const loadByHour = {};
     for (const item of loadArr) {
-      if (item.day === dayOfWeek) requiredByHour[item.hour] = item.requiredAgents;
+      if (item.day === dayOfWeek) {
+        requiredByHour[item.hour] = item.requiredAgents;
+        loadByHour[item.hour] = item.load;
+      }
     }
 
     const cellsForDay = (rawData.workforceCells || []).filter(c => {
@@ -908,11 +946,13 @@
       programadosByHour[h] = agentsAtHour.size;
     }
 
-    let requeridosRow = '', programadosRow = '', diffRow = '', statusRow = '';
+    let loadRow = '', requeridosRow = '', programadosRow = '', diffRow = '', statusRow = '';
     for (let h = 0; h < 24; h++) {
+      const load = loadByHour[h] ?? 0;
       const req = requiredByHour[h] ?? 0;
       const prog = programadosByHour[h] ?? 0;
       const diff = prog - req;
+      loadRow += `<td>${Math.round(load * 10) / 10}</td>`;
       requeridosRow += `<td>${req}</td>`;
       programadosRow += `<td>${prog}</td>`;
       diffRow += `<td class="${diff < 0 ? 'diff-negative' : 'diff-positive'}">${diff > 0 ? '+' : ''}${diff}</td>`;
@@ -926,6 +966,7 @@
           ${Array.from({length:24},(_,h)=>`<th>${String(h).padStart(2,'0')}:00</th>`).join('')}
         </tr></thead>
         <tbody>
+          <tr class="load-row"><td class="row-label">Servicios esperados</td>${loadRow}</tr>
           <tr><td class="row-label">Requeridos</td>${requeridosRow}</tr>
           <tr><td class="row-label">Programados</td>${programadosRow}</tr>
           <tr><td class="row-label">Diferencia</td>${diffRow}</tr>
