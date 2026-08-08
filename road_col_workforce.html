@@ -1,0 +1,592 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Road Col Workforce</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Prompt:wght@700;900&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --orange: #f15b2b;
+    --orange-glow: rgba(241,91,43,0.35);
+    --navy: #001d3d;
+    --turquoise: #279bb0;
+    --turquoise-dim: #1a6b7a;
+    --turquoise-glow: rgba(39,155,176,0.35);
+    --yellow: #ffb000;
+    --green: #9fd1a4;
+    --bg: #080c12;
+    --panel: #0e1420;
+    --border: rgba(255,255,255,0.08);
+    --border-soft: rgba(255,255,255,0.05);
+    --grid-line: rgba(255,255,255,0.04);
+    --text: #f5f7fa;
+    --text-mid: rgba(245,247,250,0.62);
+    --text-dim: rgba(245,247,250,0.4);
+  }
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0; padding: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'JetBrains Mono', monospace;
+    -webkit-font-smoothing: antialiased;
+  }
+  body::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    background-image: repeating-linear-gradient(
+      0deg, rgba(255,255,255,0.01) 0px, rgba(255,255,255,0.01) 1px,
+      transparent 1px, transparent 3px
+    );
+    z-index: 1;
+  }
+  .page {
+    max-width: 1680px;
+    margin: 0 auto;
+    padding: 40px 32px 64px;
+    position: relative;
+    z-index: 2;
+  }
+  header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    flex-wrap: wrap;
+    gap: 16px;
+    border-bottom: 1px solid var(--orange);
+    padding-bottom: 20px;
+    margin-bottom: 24px;
+  }
+  h1 {
+    font-family: 'Prompt', sans-serif;
+    font-weight: 900;
+    font-size: 30px;
+    letter-spacing: -0.5px;
+    text-transform: uppercase;
+    margin: 0;
+    color: #fff;
+  }
+  .subtitle {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    color: var(--text-dim);
+    margin-top: 4px;
+  }
+  .controls { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+  .updated-label {
+    font-size: 10.5px;
+    color: var(--text-dim);
+    width: 100%;
+    text-align: right;
+    margin-bottom: 4px;
+  }
+  input[type="date"], button {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12.5px;
+    background: var(--panel);
+    color: var(--text);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 9px 14px;
+  }
+  button {
+    cursor: pointer;
+    font-weight: 600;
+    transition: all .15s ease;
+  }
+  button:hover { border-color: var(--orange); color: var(--orange); }
+
+  nav.views, nav.team-tabs {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-bottom: 14px;
+  }
+  .view-tab, .team-tab {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 1.2px;
+    text-transform: uppercase;
+    padding: 9px 16px;
+    color: var(--text-dim);
+    background: transparent;
+    border: 1px solid var(--border-soft);
+    border-radius: 7px;
+    cursor: pointer;
+    transition: all .15s ease;
+  }
+  .view-tab:hover, .team-tab:hover { color: var(--text); }
+  .view-tab.active {
+    color: var(--orange);
+    border-color: rgba(241,91,43,0.35);
+    background: rgba(241,91,43,0.08);
+  }
+  .team-tab.active {
+    color: var(--turquoise);
+    border-color: rgba(39,155,176,0.35);
+    background: rgba(39,155,176,0.08);
+  }
+
+  .card {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 24px;
+  }
+  .card + .card { margin-top: 20px; }
+  .card-title {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 2.5px;
+    text-transform: uppercase;
+    color: var(--orange);
+    margin-bottom: 4px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .card-title .dot {
+    width: 6px; height: 6px; border-radius: 50%;
+    background: var(--orange);
+    box-shadow: 0 0 8px var(--orange-glow);
+    animation: pulse 2s ease-in-out infinite;
+    flex-shrink: 0;
+  }
+  @keyframes pulse { 0%,100%{opacity:1;} 50%{opacity:0.35;} }
+  .card-desc {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11.5px;
+    color: var(--text-dim);
+    margin-bottom: 18px;
+    text-transform: capitalize;
+  }
+
+  .state-msg { font-size: 13px; color: var(--text-dim); padding: 40px 0; }
+  .state-msg.error { color: var(--orange); line-height: 1.7; }
+
+  .view { display: none; }
+  .view.active { display: block; animation: fadeIn .25s ease; }
+  @keyframes fadeIn { from { opacity:0; transform: translateY(6px);} to {opacity:1; transform:none;} }
+
+  /* ---- Gantt ---- */
+  .gantt-scroll { overflow-x: auto; }
+  .gantt-wrap { min-width: 900px; position: relative; }
+  .gantt-header {
+    display: grid;
+    grid-template-columns: 210px repeat(24, 1fr);
+    position: sticky;
+    top: 0;
+    background: var(--panel);
+    z-index: 3;
+    padding-bottom: 8px;
+  }
+  .gantt-header .corner {
+    font-size: 9.5px;
+    color: var(--text-dim);
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    align-self: end;
+  }
+  .gantt-header .hour-label {
+    font-size: 10px;
+    color: var(--text-dim);
+    text-align: center;
+  }
+  .gantt-body { position: relative; }
+  .agent-row {
+    display: grid;
+    grid-template-columns: 210px repeat(24, 1fr);
+    align-items: center;
+    height: 32px;
+    border-bottom: 1px solid var(--border-soft);
+  }
+  .agent-row:hover { background: rgba(255,255,255,0.015); }
+  .agent-name {
+    font-size: 12px;
+    color: var(--text-mid);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    padding-right: 8px;
+  }
+  .track {
+    position: relative;
+    display: grid;
+    grid-template-columns: repeat(24, 1fr);
+    height: 100%;
+  }
+  .track .cell { border-left: 1px solid var(--grid-line); height: 100%; }
+  .track .cell.weekend { background: rgba(241,91,43,0.04); }
+  .bar {
+    grid-row: 1;
+    height: 18px;
+    align-self: center;
+    background: linear-gradient(180deg, var(--turquoise) 0%, var(--turquoise-dim) 100%);
+    border-radius: 4px;
+    box-shadow: 0 0 0 1px rgba(0,0,0,0.35), 0 2px 6px var(--turquoise-glow);
+    margin: 0 1px;
+  }
+  .now-line {
+    position: absolute;
+    top: 0; bottom: 0;
+    width: 1.5px;
+    background: var(--orange);
+    box-shadow: 0 0 8px var(--orange-glow);
+    z-index: 2;
+    pointer-events: none;
+  }
+  .team-section-row {
+    display: grid;
+    grid-template-columns: 210px repeat(24, 1fr);
+    align-items: center;
+    height: 30px;
+    background: rgba(255,255,255,0.02);
+  }
+  .team-section-row .team-section-label {
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: var(--orange);
+    grid-column: 1 / -1;
+    padding-left: 2px;
+  }
+
+  /* ---- Week view ---- */
+  .week-scroll { overflow-x: auto; }
+  .week-wrap { min-width: 900px; }
+  .week-header, .week-row {
+    display: grid;
+    grid-template-columns: 210px repeat(7, 1fr);
+  }
+  .week-header {
+    position: sticky; top: 0; background: var(--panel); z-index: 3; padding-bottom: 10px;
+  }
+  .week-header .corner { font-size: 9.5px; color: var(--text-dim); letter-spacing: 1.5px; text-transform: uppercase; align-self: end; }
+  .week-header .day-label {
+    font-size: 10.5px; color: var(--text-mid); text-align: center; text-transform: uppercase; letter-spacing: 1px;
+  }
+  .week-header .day-label .date-sub { display:block; color: var(--text-dim); font-size: 9px; margin-top:2px; text-transform: none; letter-spacing: 0;}
+  .week-row { align-items: center; min-height: 34px; border-bottom: 1px solid var(--border-soft); }
+  .week-row:hover { background: rgba(255,255,255,0.015); }
+  .week-row .agent-name { font-size: 12px; color: var(--text-mid); white-space: nowrap; overflow:hidden; text-overflow: ellipsis; padding-right: 8px; }
+  .week-cell { text-align: center; font-size: 10px; color: var(--text-dim); padding: 4px 3px; }
+  .week-cell.shift { color: var(--turquoise); font-weight: 600; background: rgba(39,155,176,0.08); border-radius: 5px; }
+  .week-team-section-row {
+    display: grid; grid-template-columns: 210px repeat(7, 1fr);
+    align-items: center; height: 30px; background: rgba(255,255,255,0.02);
+  }
+  .week-team-section-row .team-section-label {
+    font-size: 10px; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase;
+    color: var(--orange); grid-column: 1 / -1; padding-left: 2px;
+  }
+
+  @media (max-width: 640px) {
+    .gantt-wrap, .week-wrap { min-width: 700px; }
+    h1 { font-size: 22px; }
+  }
+</style>
+</head>
+<body>
+<div class="page">
+  <header>
+    <div>
+      <h1>Road Col Workforce</h1>
+      <div class="subtitle">Vista completa de todos los equipos &middot; Connect Colombia</div>
+    </div>
+    <div class="controls">
+      <div class="updated-label" id="updated-label"></div>
+      <input type="date" id="date-input">
+      <button id="refresh">&#8635; actualizar</button>
+    </div>
+  </header>
+
+  <nav class="views">
+    <button class="view-tab active" data-view="day">Vista diaria</button>
+    <button class="view-tab" data-view="week">Vista semanal</button>
+  </nav>
+
+  <nav class="team-tabs" id="team-tabs"></nav>
+
+  <div class="view active" id="view-day">
+    <div class="card">
+      <div class="card-title"><span class="dot"></span>Parrilla horaria</div>
+      <div class="card-desc" id="day-desc"></div>
+      <div class="gantt-scroll"><div id="day-content"><div class="state-msg">Cargando datos&hellip;</div></div></div>
+    </div>
+  </div>
+
+  <div class="view" id="view-week">
+    <div class="card">
+      <div class="card-title"><span class="dot"></span>Programación semanal</div>
+      <div class="card-desc">Rango de turno por agente, lunes a domingo</div>
+      <div class="week-scroll"><div id="week-content"><div class="state-msg">Cargando datos&hellip;</div></div></div>
+    </div>
+  </div>
+</div>
+
+<script>
+  const WEBHOOK_URL = "https://iagb.app.n8n.cloud/webhook/b81f597c-d181-4545-9a2a-a08cb3188e61";
+
+  const TEAM_LABELS = {
+    Supervisor: 'Supervisores',
+    Front: 'Front',
+    Back: 'Back',
+    TC: 'Torre de Control',
+    AC: 'Analistas (AC)',
+    Leg: 'Legal',
+    MundialVial: 'Mundial Vial',
+    Proveedores: 'Proveedores'
+  };
+  const TEAM_ORDER = ['Supervisor', 'Front', 'Back', 'TC', 'AC', 'Leg', 'MundialVial', 'Proveedores'];
+  const DAY_NAMES = ['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
+  const DAY_NAMES_SHORT = ['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'];
+  const MONTH_NAMES = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
+
+  let rawData = null;
+  let currentTeam = '__all__';
+  let currentView = 'day';
+
+  const dateInput = document.getElementById('date-input');
+  const refreshBtn = document.getElementById('refresh');
+  const updatedLabel = document.getElementById('updated-label');
+  const dayContent = document.getElementById('day-content');
+  const weekContent = document.getElementById('week-content');
+  const dayDesc = document.getElementById('day-desc');
+  const teamTabsEl = document.getElementById('team-tabs');
+
+  function todayStr() {
+    const d = new Date();
+    return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+  }
+  dateInput.value = todayStr();
+
+  function normalizeName(s) {
+    return (s || '').toString().normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim().toLowerCase().replace(/\s+/g, ' ');
+  }
+
+  function buildTeamTabs() {
+    const teams = ['__all__', ...TEAM_ORDER];
+    teamTabsEl.innerHTML = teams.map(t => {
+      const label = t === '__all__' ? 'Todos' : (TEAM_LABELS[t] || t);
+      return `<button class="team-tab${t===currentTeam?' active':''}" data-team="${t}">${label}</button>`;
+    }).join('');
+    teamTabsEl.querySelectorAll('.team-tab').forEach(btn => {
+      btn.addEventListener('click', () => {
+        currentTeam = btn.dataset.team;
+        teamTabsEl.querySelectorAll('.team-tab').forEach(b => b.classList.toggle('active', b === btn));
+        renderCurrentView();
+      });
+    });
+  }
+  buildTeamTabs();
+
+  document.querySelectorAll('.view-tab').forEach(btn => {
+    btn.addEventListener('click', () => {
+      currentView = btn.dataset.view;
+      document.querySelectorAll('.view-tab').forEach(b => b.classList.toggle('active', b === btn));
+      document.getElementById('view-day').classList.toggle('active', currentView === 'day');
+      document.getElementById('view-week').classList.toggle('active', currentView === 'week');
+      renderCurrentView();
+    });
+  });
+
+  dateInput.addEventListener('change', renderCurrentView);
+
+  async function loadData(forceRefresh = false) {
+    try {
+      const url = forceRefresh ? `${WEBHOOK_URL}?refresh=true` : WEBHOOK_URL;
+      const res = await fetch(url, { cache: 'no-store' });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      rawData = await res.json();
+      updatedLabel.textContent = rawData.updatedAt
+        ? `actualizado: ${new Date(rawData.updatedAt).toLocaleString('es-CO')}`
+        : '';
+      renderCurrentView();
+    } catch (err) {
+      const isCors = err instanceof TypeError;
+      const msg = `
+        <div class="state-msg error">
+          No se pudo cargar el horario.<br>
+          ${isCors
+            ? 'Esto suele pasar por CORS: el webhook de n8n no está devolviendo el header Access-Control-Allow-Origin. Revisa la configuración del nodo Webhook.'
+            : 'Error: ' + err.message}
+        </div>`;
+      dayContent.innerHTML = msg;
+      weekContent.innerHTML = msg;
+    }
+  }
+
+  function getAgentsAndTeam() {
+    const agentTeam = (rawData && rawData.workforceAgentTeam) || {};
+    let agents = (rawData && rawData.workforceAgents) || [];
+    if (currentTeam !== '__all__') {
+      agents = agents.filter(a => agentTeam[a] === currentTeam);
+    }
+    // Orden: por equipo (según TEAM_ORDER) y luego alfabético dentro del equipo
+    agents = [...agents].sort((a, b) => {
+      const ta = TEAM_ORDER.indexOf(agentTeam[a]);
+      const tb = TEAM_ORDER.indexOf(agentTeam[b]);
+      if (ta !== tb) return ta - tb;
+      return a.localeCompare(b);
+    });
+    return { agents, agentTeam };
+  }
+
+  function buildRanges(hours) {
+    const sorted = [...hours].sort((a,b) => a-b);
+    const ranges = [];
+    let start = sorted[0], prev = sorted[0];
+    for (let i=1; i<sorted.length; i++) {
+      if (sorted[i] === prev+1) { prev = sorted[i]; }
+      else { ranges.push([start, prev]); start = sorted[i]; prev = sorted[i]; }
+    }
+    ranges.push([start, prev]);
+    return ranges;
+  }
+
+  function renderCurrentView() {
+    if (!rawData) return;
+    if (currentView === 'day') renderDay();
+    else renderWeek();
+  }
+
+  function renderDay() {
+    const dateVal = dateInput.value;
+    if (!dateVal) return;
+    const [y,m,d] = dateVal.split('-').map(Number);
+    const dateObj = new Date(y, m-1, d);
+    const dayOfWeek = dateObj.getDay();
+    const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
+    dayDesc.textContent = `${DAY_NAMES[dayOfWeek]} · ${d} de ${MONTH_NAMES[m-1]} de ${y}`;
+
+    const { agents, agentTeam } = getAgentsAndTeam();
+    const allCells = (rawData.workforceCells || []).filter(c => c.date === dateVal);
+    const byAgent = {};
+    for (const c of allCells) {
+      if (!byAgent[c.agent]) byAgent[c.agent] = [];
+      byAgent[c.agent].push(c.hour);
+    }
+    const agentNames = agents.filter(a => byAgent[a] && byAgent[a].length);
+
+    if (!agentNames.length) {
+      dayContent.innerHTML = `<div class="state-msg">Sin agentes programados este día.</div>`;
+      return;
+    }
+
+    const isAllView = currentTeam === '__all__';
+    let html = `
+      <div class="gantt-wrap">
+        <div class="gantt-header">
+          <div class="corner">agente</div>
+          ${Array.from({length:24},(_,h)=>`<div class="hour-label">${String(h).padStart(2,'0')}</div>`).join('')}
+        </div>
+        <div class="gantt-body" id="gantt-body">`;
+    let lastTeamShown = null;
+    for (const agent of agentNames) {
+      if (isAllView && agentTeam[agent] !== lastTeamShown) {
+        lastTeamShown = agentTeam[agent];
+        html += `<div class="team-section-row"><div class="team-section-label">${TEAM_LABELS[lastTeamShown] || lastTeamShown}</div></div>`;
+      }
+      const ranges = buildRanges(byAgent[agent]);
+      const barsHtml = ranges.map(([s,e]) => `<div class="bar" style="grid-column: ${s+1} / ${e+2};"></div>`).join('');
+      html += `<div class="agent-row">
+        <div class="agent-name" title="${agent}">${agent}</div>
+        <div class="track">
+          ${Array.from({length:24},(_,h)=>`<div class="cell${isWeekend?' weekend':''}"></div>`).join('')}
+          ${barsHtml}
+        </div>
+      </div>`;
+    }
+    html += `</div></div>`;
+    dayContent.innerHTML = html;
+
+    const now = new Date();
+    const isToday = now.toISOString().slice(0,10) === dateVal;
+    if (isToday) {
+      const body = document.getElementById('gantt-body');
+      const pctHour = now.getHours() + now.getMinutes()/60;
+      const line = document.createElement('div');
+      line.className = 'now-line';
+      line.style.left = `calc(210px + ${(pctHour/24)*100}% * (100% - 210px) / 100%)`;
+      line.style.left = `calc(210px + (100% - 210px) * ${pctHour/24})`;
+      body.appendChild(line);
+    }
+  }
+
+  function getMondayOfWeek(dateVal) {
+    const [y,m,d] = dateVal.split('-').map(Number);
+    const dateObj = new Date(y, m-1, d);
+    const dow = dateObj.getDay();
+    const diff = dow === 0 ? -6 : 1 - dow;
+    dateObj.setDate(dateObj.getDate() + diff);
+    return dateObj;
+  }
+  function fmtDateISO(dt) {
+    return `${dt.getFullYear()}-${String(dt.getMonth()+1).padStart(2,'0')}-${String(dt.getDate()).padStart(2,'0')}`;
+  }
+
+  function renderWeek() {
+    const dateVal = dateInput.value;
+    if (!dateVal) return;
+    const monday = getMondayOfWeek(dateVal);
+    const weekDates = Array.from({length:7}, (_,i) => {
+      const dt = new Date(monday);
+      dt.setDate(dt.getDate()+i);
+      return dt;
+    });
+    const weekDateStrs = weekDates.map(fmtDateISO);
+
+    const { agents, agentTeam } = getAgentsAndTeam();
+    const cellsInWeek = (rawData.workforceCells || []).filter(c => weekDateStrs.includes(c.date));
+    const byAgentDate = {};
+    for (const c of cellsInWeek) {
+      const key = c.agent + '|' + c.date;
+      if (!byAgentDate[key]) byAgentDate[key] = [];
+      byAgentDate[key].push(c.hour);
+    }
+    const agentsWithData = agents.filter(a => weekDateStrs.some(ds => byAgentDate[a+'|'+ds] && byAgentDate[a+'|'+ds].length));
+
+    if (!agentsWithData.length) {
+      weekContent.innerHTML = `<div class="state-msg">Sin agentes programados esta semana.</div>`;
+      return;
+    }
+
+    const isAllView = currentTeam === '__all__';
+    let html = `<div class="week-wrap">
+      <div class="week-header">
+        <div class="corner">agente</div>
+        ${weekDates.map((dt,i) => `<div class="day-label">${DAY_NAMES_SHORT[dt.getDay()]}<span class="date-sub">${dt.getDate()} ${MONTH_NAMES[dt.getMonth()].slice(0,3)}</span></div>`).join('')}
+      </div>`;
+    let lastTeamShown = null;
+    for (const agent of agentsWithData) {
+      if (isAllView && agentTeam[agent] !== lastTeamShown) {
+        lastTeamShown = agentTeam[agent];
+        html += `<div class="week-team-section-row"><div class="team-section-label">${TEAM_LABELS[lastTeamShown] || lastTeamShown}</div></div>`;
+      }
+      const cellsHtml = weekDateStrs.map(ds => {
+        const hours = byAgentDate[agent+'|'+ds];
+        if (!hours || !hours.length) return `<div class="week-cell">&mdash;</div>`;
+        const ranges = buildRanges(hours);
+        const label = ranges.map(([s,e]) => `${String(s).padStart(2,'0')}:00-${String(e+1).padStart(2,'0')}:00`).join(', ');
+        return `<div class="week-cell shift">${label}</div>`;
+      }).join('');
+      html += `<div class="week-row">
+        <div class="agent-name" title="${agent}">${agent}</div>
+        ${cellsHtml}
+      </div>`;
+    }
+    html += `</div>`;
+    weekContent.innerHTML = html;
+  }
+
+  refreshBtn.addEventListener('click', () => loadData(true));
+  loadData(false);
+</script>
+</body>
+</html>
