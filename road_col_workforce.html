@@ -168,6 +168,66 @@
 
   .state-msg { font-size: 13px; color: var(--text-dim); padding: 40px 0; }
   .state-msg.error { color: var(--orange); line-height: 1.7; }
+  .empty-note {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    color: var(--text-dim);
+    padding: 20px 0;
+  }
+  .forecast-note {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    line-height: 1.6;
+    color: var(--text-mid);
+    background: rgba(241,91,43,0.05);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 12px 14px;
+    margin: -6px 0 18px;
+  }
+  .forecast-scroll { overflow-x: auto; }
+  table.forecast-table {
+    width: 100%;
+    border-collapse: collapse;
+    min-width: 640px;
+  }
+  table.forecast-table th, table.forecast-table td {
+    padding: 12px 10px;
+    text-align: center;
+    font-size: 12px;
+    border-bottom: 1px solid var(--grid-line);
+  }
+  table.forecast-table thead th {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 9.5px;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: var(--text-dim);
+    font-weight: 600;
+    padding-bottom: 12px;
+    border-bottom: 1px solid var(--border-soft);
+  }
+  table.forecast-table td.day-cell {
+    text-align: left;
+    color: var(--text-mid);
+    font-weight: 600;
+    text-transform: capitalize;
+  }
+  table.forecast-table td.load-cell {
+    font-family: 'JetBrains Mono', monospace;
+    color: var(--turquoise);
+    font-weight: 600;
+    font-size: 14px;
+  }
+  table.forecast-table tfoot td {
+    font-family: 'JetBrains Mono', monospace;
+    color: var(--yellow);
+    font-weight: 700;
+    border-bottom: none;
+    border-top: 1px solid var(--border-soft);
+    padding-top: 14px;
+  }
+  table.forecast-table tbody tr:hover { background: rgba(255,255,255,0.015); }
 
   .view { display: none; }
   .view.active { display: block; animation: fadeIn .25s ease; }
@@ -310,6 +370,7 @@
   <nav class="views">
     <button class="view-tab active" data-view="day">Vista diaria</button>
     <button class="view-tab" data-view="week">Vista semanal</button>
+    <button class="view-tab" data-view="forecast">Forecast</button>
   </nav>
 
   <nav class="team-tabs" id="team-tabs"></nav>
@@ -327,6 +388,17 @@
       <div class="card-title"><span class="dot"></span>Programación semanal</div>
       <div class="card-desc">Rango de turno por agente, lunes a domingo</div>
       <div class="week-scroll"><div id="week-content"><div class="state-msg">Cargando datos&hellip;</div></div></div>
+    </div>
+  </div>
+
+  <div class="view" id="view-forecast">
+    <div class="card">
+      <div class="card-title"><span class="dot"></span>Forecast</div>
+      <div class="card-desc">Servicios esperados por día, equipo seleccionado</div>
+      <div class="forecast-note">
+        Se calcula con base en el histórico, usando el percentil 80 (P80) de la cantidad de servicios, y asumiendo que un agente de Back gestiona cada servicio en <span id="forecast-min-back">12</span> minutos, mientras que un agente de TC lo hace en <span id="forecast-min-tc">10</span> minutos. Solo disponible para Back y Torre de Control por ahora.
+      </div>
+      <div class="forecast-scroll"><div id="forecast-content"><div class="state-msg">Cargando datos&hellip;</div></div></div>
     </div>
   </div>
 </div>
@@ -348,6 +420,7 @@
   const DAY_NAMES = ['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
   const DAY_NAMES_SHORT = ['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'];
   const MONTH_NAMES = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
+  const WEEK_ORDER = [1,2,3,4,5,6,0]; // lunes..domingo
 
   let rawData = null;
   let currentTeam = '__all__';
@@ -393,6 +466,7 @@
       document.querySelectorAll('.view-tab').forEach(b => b.classList.toggle('active', b === btn));
       document.getElementById('view-day').classList.toggle('active', currentView === 'day');
       document.getElementById('view-week').classList.toggle('active', currentView === 'week');
+      document.getElementById('view-forecast').classList.toggle('active', currentView === 'forecast');
       renderCurrentView();
     });
   });
@@ -454,7 +528,8 @@
   function renderCurrentView() {
     if (!rawData) return;
     if (currentView === 'day') renderDay();
-    else renderWeek();
+    else if (currentView === 'week') renderWeek();
+    else renderForecast();
   }
 
   function renderDay() {
@@ -584,6 +659,61 @@
     }
     html += `</div>`;
     weekContent.innerHTML = html;
+  }
+
+  function renderForecast() {
+    if (!rawData) return;
+    const forecastContent = document.getElementById('forecast-content');
+    if (currentTeam === '__all__') {
+      forecastContent.innerHTML = '<div class="empty-note">Selecciona un equipo específico (Torre de Control o Back) para ver el forecast.</div>';
+      return;
+    }
+    if (currentTeam !== 'TC' && currentTeam !== 'Back') {
+      forecastContent.innerHTML = `<div class="empty-note">El forecast todavía no está disponible para ${TEAM_LABELS[currentTeam] || currentTeam} — hoy solo se calcula a partir del histórico de servicios de Back y Torre de Control.</div>`;
+      return;
+    }
+    if (!rawData.expectedLoad) {
+      forecastContent.innerHTML = '<div class="empty-note">Datos de forecast no disponibles aún.</div>';
+      return;
+    }
+    if (rawData.capacidad && rawData.capacidad.minutosPorServicio) {
+      const minBackEl = document.getElementById('forecast-min-back');
+      const minTcEl = document.getElementById('forecast-min-tc');
+      if (minBackEl) minBackEl.textContent = rawData.capacidad.minutosPorServicio.Back;
+      if (minTcEl) minTcEl.textContent = rawData.capacidad.minutosPorServicio.TC;
+    }
+
+    const todayDow = new Date().getDay();
+    const loadArr = rawData.expectedLoad[currentTeam] || [];
+
+    const totalsByDay = {};
+    for (const d of WEEK_ORDER) totalsByDay[d] = 0;
+    for (const item of loadArr) {
+      if (totalsByDay[item.day] !== undefined) totalsByDay[item.day] += item.load;
+    }
+
+    const grandTotal = WEEK_ORDER.reduce((sum, d) => sum + totalsByDay[d], 0);
+
+    let rows = '';
+    for (const d of WEEK_ORDER) {
+      rows += `<tr>
+        <td class="day-cell">${DAY_NAMES[d]}${d === todayDow ? ' · hoy' : ''}</td>
+        <td class="load-cell">${Math.round(totalsByDay[d])}</td>
+      </tr>`;
+    }
+
+    forecastContent.innerHTML = `
+      <table class="forecast-table">
+        <thead><tr>
+          <th style="text-align:left;">Día</th>
+          <th>Servicios esperados</th>
+        </tr></thead>
+        <tbody>${rows}</tbody>
+        <tfoot><tr>
+          <td style="text-align:left;">Total semana</td>
+          <td>${Math.round(grandTotal)}</td>
+        </tr></tfoot>
+      </table>`;
   }
 
   refreshBtn.addEventListener('click', () => loadData(true));
