@@ -758,6 +758,10 @@
   dateInput.addEventListener('change', renderCurrentView);
 
   async function loadData(forceRefresh = false) {
+    dayContent.innerHTML = '<div class="state-msg">Cargando datos…</div>';
+    weekContent.innerHTML = '<div class="state-msg">Cargando datos…</div>';
+    const forecastContentEl = document.getElementById('forecast-content');
+    if (forecastContentEl) forecastContentEl.innerHTML = '<div class="state-msg">Cargando datos…</div>';
     try {
       const url = forceRefresh ? `${WEBHOOK_URL}?refresh=true` : WEBHOOK_URL;
       const res = await fetch(url, { cache: 'no-store' });
