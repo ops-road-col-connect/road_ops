@@ -705,6 +705,7 @@
   let rawData = null;
   let currentTeam = '__all__';
   let currentView = 'day';
+  let nowLineInterval = null;
 
   const dateInput = document.getElementById('date-input');
   const refreshBtn = document.getElementById('refresh');
@@ -947,16 +948,22 @@
     html += `</div></div>`;
     dayContent.innerHTML = html;
 
-    const now = new Date();
-    const isToday = now.toISOString().slice(0,10) === dateVal;
+    if (nowLineInterval) { clearInterval(nowLineInterval); nowLineInterval = null; }
+
+    const isToday = todayStr() === dateVal;
     if (isToday) {
       const body = document.getElementById('gantt-body');
-      const pctHour = now.getHours() + now.getMinutes()/60;
+      body.style.position = 'relative';
       const line = document.createElement('div');
       line.className = 'now-line';
-      line.style.left = `calc(210px + ${(pctHour/24)*100}% * (100% - 210px) / 100%)`;
-      line.style.left = `calc(210px + (100% - 210px) * ${pctHour/24})`;
       body.appendChild(line);
+      const updateNowLine = () => {
+        const n = new Date();
+        const frac = (n.getHours() + n.getMinutes()/60) / 24;
+        line.style.left = `calc(210px + ${frac} * (100% - 210px))`;
+      };
+      updateNowLine();
+      nowLineInterval = setInterval(updateNowLine, 30000);
     }
   }
 
