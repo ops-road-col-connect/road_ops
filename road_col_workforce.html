@@ -565,6 +565,14 @@
     font-weight: 700;
     cursor: help;
   }
+  .week-hours-cell.over-limit {
+    color: #0a0a0a !important;
+    background: #ff9500;
+    border-radius: 5px;
+    font-weight: 800;
+    box-shadow: 0 0 0 1px #ffb84d, 0 0 10px rgba(255,149,0,0.7);
+    cursor: help;
+  }
   .week-team-section-row {
     display: grid; grid-template-columns: 200px repeat(7, 1fr) 55px repeat(4, 62px);
     align-items: center; height: 30px; background: rgba(255,255,255,0.02);
@@ -688,6 +696,10 @@
   //   HEDD = Hora Extra Diurna Dominical/Festiva
   //   HEND = Hora Extra Nocturna Dominical/Festiva
   const JORNADA_ORDINARIA_SEMANAL = 42;
+  // Tope legal absoluto: 42h ordinarias + máximo 12h extra a la semana (CST, sin excepción
+  // por acuerdo entre partes). Superarlo es una alerta real sobre datos válidos, distinta
+  // de la alerta de "conflicto" (que es sobre datos no confiables por duplicidad).
+  const LIMITE_LEGAL_SEMANAL = 54;
   // Festivos oficiales de Colombia (Ley Emiliani incluida). Actualizar cada año.
   const FESTIVOS_COLOMBIA = {
     2026: ['2026-01-01','2026-01-12','2026-03-23','2026-04-02','2026-04-03','2026-05-01',
@@ -1190,7 +1202,11 @@
             const v = calc.extra[key];
             return `<div class="week-extra-type-cell ${tipo}${v > 0 ? ' has-extra' : ''}" title="${EXTRA_LABELS[key]}: ${v}h">${v > 0 ? v + 'h' : '&mdash;'}</div>`;
           };
-          totalsHtml = `<div class="week-hours-cell" title="${cierreTxt}">${calc.total}h</div>`
+          const overLimit = calc.total > LIMITE_LEGAL_SEMANAL;
+          const hoursTitle = overLimit
+            ? `🚨 Supera el tope legal semanal (42h ordinarias + máx. 12h extra = ${LIMITE_LEGAL_SEMANAL}h). Este agente trabajó ${calc.total}h.`
+            : cierreTxt;
+          totalsHtml = `<div class="week-hours-cell${overLimit ? ' over-limit' : ''}" title="${hoursTitle}">${calc.total}h</div>`
             + extraTypeCell('HED','ordinaria') + extraTypeCell('HEN','ordinaria')
             + extraTypeCell('HEDD','festiva') + extraTypeCell('HEND','festiva');
         }
