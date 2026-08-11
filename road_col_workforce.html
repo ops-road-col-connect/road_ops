@@ -475,6 +475,17 @@
     background: linear-gradient(180deg, rgba(39,155,176,0.35) 0%, rgba(39,155,176,0.2) 100%);
     box-shadow: 0 0 0 1px rgba(255,255,255,0.06), inset 0 0 0 1px rgba(39,155,176,0.25);
   }
+  .bar-conflict-overlay {
+    grid-row: 1;
+    height: 24px;
+    align-self: center;
+    border-radius: 5px;
+    margin: 0 1px;
+    background: repeating-linear-gradient(45deg, rgba(255,45,74,0.55) 0 6px, rgba(190,15,45,0.75) 6px 12px);
+    box-shadow: 0 0 0 2px #ff2d4a, 0 2px 10px rgba(255,45,74,0.6);
+    cursor: help;
+    z-index: 1;
+  }
   .now-line {
     position: absolute;
     top: 0; bottom: 0;
@@ -508,6 +519,10 @@
     display: grid;
     grid-template-columns: 200px repeat(7, 1fr) 55px repeat(4, 62px);
   }
+  .week-wrap.no-totals { min-width: 900px; }
+  .week-wrap.no-totals .week-header, .week-wrap.no-totals .week-row {
+    grid-template-columns: 200px repeat(7, 1fr);
+  }
   .week-header {
     position: sticky; top: 0; background: var(--panel); z-index: 3; padding-bottom: 10px;
   }
@@ -522,6 +537,12 @@
   .week-row .agent-name { font-size: 12px; color: var(--text-mid); white-space: nowrap; overflow:hidden; text-overflow: ellipsis; padding-right: 8px; }
   .week-cell { text-align: center; font-size: 10px; color: var(--text-dim); padding: 4px 3px; }
   .week-cell.shift { color: var(--turquoise); font-weight: 600; background: rgba(39,155,176,0.08); border-radius: 5px; }
+  .week-cell.conflict {
+    color: #ff8a99 !important;
+    background: rgba(255,45,74,0.14) !important;
+    border: 1px dashed #ff2d4a;
+    cursor: help;
+  }
   .week-hours-cell {
     text-align: center; font-size: 11px; font-weight: 700; color: var(--yellow);
     font-family: 'JetBrains Mono', monospace; cursor: default;
@@ -539,6 +560,11 @@
   .week-extra-type-cell.festiva.has-extra {
     color: #ff5d73; background: rgba(255,93,115,0.1);
   }
+  .week-hours-cell.conflict, .week-extra-type-cell.conflict {
+    color: #ff2d4a !important;
+    font-weight: 700;
+    cursor: help;
+  }
   .week-team-section-row {
     display: grid; grid-template-columns: 200px repeat(7, 1fr) 55px repeat(4, 62px);
     align-items: center; height: 30px; background: rgba(255,255,255,0.02);
@@ -547,6 +573,7 @@
     font-size: 10px; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase;
     color: var(--orange); grid-column: 1 / -1; padding-left: 2px;
   }
+  .week-team-section-row.mixed .team-section-label { color: var(--yellow); }
 
   @media (max-width: 640px) {
     .gantt-wrap, .week-wrap { min-width: 700px; }
@@ -640,6 +667,10 @@
     Proveedores: 'Proveedores'
   };
   const TEAM_ORDER = ['Supervisor', 'Front', 'Back', 'TC', 'AC', 'Leg', 'MundialVial', 'Proveedores'];
+  // Pseudo-equipo (no es una pestaña filtrable) para agrupar en la vista "Todos" a los
+  // agentes que, dentro del rango mostrado, tienen celdas de más de un equipo real.
+  const MIXED_TEAM_KEY = '__mixto__';
+  const MIXED_TEAM_LABEL = 'Agente Mixto';
   const DAY_NAMES = ['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
   const DAY_NAMES_SHORT = ['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'];
   const MONTH_NAMES = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
@@ -788,22 +819,6 @@
     }
   }
 
-  function getAgentsAndTeam() {
-    const agentTeam = (rawData && rawData.workforceAgentTeam) || {};
-    let agents = (rawData && rawData.workforceAgents) || [];
-    if (currentTeam !== '__all__') {
-      agents = agents.filter(a => agentTeam[a] === currentTeam);
-    }
-    // Orden: por equipo (según TEAM_ORDER) y luego alfabético dentro del equipo
-    agents = [...agents].sort((a, b) => {
-      const ta = TEAM_ORDER.indexOf(agentTeam[a]);
-      const tb = TEAM_ORDER.indexOf(agentTeam[b]);
-      if (ta !== tb) return ta - tb;
-      return a.localeCompare(b);
-    });
-    return { agents, agentTeam };
-  }
-
   function buildRanges(hours) {
     const sorted = [...hours].sort((a,b) => a-b);
     const ranges = [];
@@ -814,6 +829,50 @@
     }
     ranges.push([start, prev]);
     return ranges;
+  }
+
+  // ---- Detección de conflictos: mismo agente, misma hora, equipos distintos ----
+  // Esto ocurre cuando el nombre del agente quedó duplicado en dos secciones de
+  // equipo del Sheet (ej. BACK y MUNDIAL VIAL) con horario que se solapa.
+  function getConflictRanges(cells) {
+    // cells: [{hour, team}, ...] de un agente en un solo día
+    const teamsByHour = {};
+    for (const c of cells) {
+      if (!teamsByHour[c.hour]) teamsByHour[c.hour] = new Set();
+      teamsByHour[c.hour].add(c.team);
+    }
+    const conflictHours = Object.keys(teamsByHour).map(Number)
+      .filter(h => teamsByHour[h].size > 1).sort((a,b) => a-b);
+    if (!conflictHours.length) return [];
+    const ranges = [];
+    let start = conflictHours[0], prev = conflictHours[0];
+    for (let i = 1; i < conflictHours.length; i++) {
+      const h = conflictHours[i];
+      if (h === prev + 1) { prev = h; }
+      else { ranges.push([start, prev]); start = h; prev = h; }
+    }
+    ranges.push([start, prev]);
+    return ranges.map(([s, e]) => {
+      const teams = new Set();
+      for (let h = s; h <= e; h++) teamsByHour[h].forEach(t => teams.add(t));
+      return { start: s, end: e, teams: [...teams] };
+    });
+  }
+
+  function hasTeamConflict(cells) {
+    return getConflictRanges(cells).length > 0;
+  }
+
+  function conflictRangeLabel(r) {
+    const teamLabels = r.teams.map(t => TEAM_LABELS[t] || t).join(' y ');
+    return `${teamLabels} a la vez ${String(r.start).padStart(2,'0')}:00-${String(r.end+1).padStart(2,'0')}:00`;
+  }
+
+  function buildConflictOverlayHtml(cells) {
+    return getConflictRanges(cells).map(r => {
+      const title = `⚠ Conflicto de equipo: ${conflictRangeLabel(r)}. Revisar el Sheet (nombre duplicado en dos equipos).`;
+      return `<div class="bar-conflict-overlay" style="grid-column: ${r.start+1} / ${r.end+2};" title="${title}"></div>`;
+    }).join('');
   }
 
   function normalizeName(s) {
@@ -899,19 +958,41 @@
     const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
     dayDesc.textContent = `${DAY_NAMES[dayOfWeek]} · ${d} de ${MONTH_NAMES[m-1]} de ${y}`;
 
-    const { agents, agentTeam } = getAgentsAndTeam();
     const allCells = (rawData.workforceCells || []).filter(c => c.date === dateVal);
-    const byAgent = {};
+    const byAgentCells = {}; // agente -> [{hour, team}, ...] (todas las celdas de ese día, cualquier equipo)
     for (const c of allCells) {
-      if (!byAgent[c.agent]) byAgent[c.agent] = [];
-      byAgent[c.agent].push(c.hour);
+      if (!byAgentCells[c.agent]) byAgentCells[c.agent] = [];
+      byAgentCells[c.agent].push({ hour: c.hour, team: c.team });
     }
-    const agentNames = agents.filter(a => byAgent[a] && byAgent[a].length);
+
+    const isAllView = currentTeam === '__all__';
+
+    // Equipo "principal" del día por agente (el de su hora más temprana): se usa solo
+    // para agrupar/ordenar en la vista "Todos". Si filtras por un equipo puntual, el
+    // agente aparece en esa pestaña si tuvo AL MENOS una celda de ese equipo ese día,
+    // y solo se muestran las horas de ese equipo (no las de otro equipo el mismo día).
+    const primaryTeamToday = {};
+    for (const agent in byAgentCells) {
+      const sorted = [...byAgentCells[agent]].sort((a,b) => a.hour - b.hour);
+      primaryTeamToday[agent] = sorted[0].team;
+    }
+
+    let agentNames = Object.keys(byAgentCells);
+    if (!isAllView) {
+      agentNames = agentNames.filter(a => byAgentCells[a].some(c => c.team === currentTeam));
+    }
+
+    const hoursForAgent = {}; // agente -> [hour,...] deduplicado, según el filtro de equipo activo
+    for (const agent of agentNames) {
+      const cells = isAllView ? byAgentCells[agent] : byAgentCells[agent].filter(c => c.team === currentTeam);
+      hoursForAgent[agent] = [...new Set(cells.map(c => c.hour))];
+    }
+
     agentNames.sort((a, b) => {
-      const ta = TEAM_ORDER.indexOf(agentTeam[a]);
-      const tb = TEAM_ORDER.indexOf(agentTeam[b]);
+      const ta = TEAM_ORDER.indexOf(primaryTeamToday[a]);
+      const tb = TEAM_ORDER.indexOf(primaryTeamToday[b]);
       if (ta !== tb) return ta - tb;
-      return Math.min(...byAgent[a]) - Math.min(...byAgent[b]);
+      return Math.min(...hoursForAgent[a]) - Math.min(...hoursForAgent[b]);
     });
 
     if (!agentNames.length) {
@@ -919,7 +1000,6 @@
       return;
     }
 
-    const isAllView = currentTeam === '__all__';
     const cuentasTCSegMap = getCuentasTCSegments(dateVal);
     let html = `
       <div class="gantt-wrap">
@@ -930,18 +1010,23 @@
         <div class="gantt-body" id="gantt-body">`;
     let lastTeamShown = null;
     for (const agent of agentNames) {
-      if (isAllView && agentTeam[agent] !== lastTeamShown) {
-        lastTeamShown = agentTeam[agent];
+      if (isAllView && primaryTeamToday[agent] !== lastTeamShown) {
+        lastTeamShown = primaryTeamToday[agent];
         html += `<div class="team-section-row"><div class="team-section-label">${TEAM_LABELS[lastTeamShown] || lastTeamShown}</div></div>`;
       }
-      const barsHtml = agentTeam[agent] === 'TC'
-        ? buildAccountBars(agent, byAgent[agent], cuentasTCSegMap)
-        : buildRanges(byAgent[agent]).map(([s,e]) => `<div class="bar" style="grid-column: ${s+1} / ${e+2};"></div>`).join('');
+      const teamForBars = isAllView ? primaryTeamToday[agent] : currentTeam;
+      const barsHtml = teamForBars === 'TC'
+        ? buildAccountBars(agent, hoursForAgent[agent], cuentasTCSegMap)
+        : buildRanges(hoursForAgent[agent]).map(([s,e]) => `<div class="bar" style="grid-column: ${s+1} / ${e+2};"></div>`).join('');
+      // El conflicto se calcula sobre TODAS las celdas del día (cualquier equipo), para que
+      // la alerta se vea sin importar qué pestaña de equipo esté activa.
+      const conflictHtml = buildConflictOverlayHtml(byAgentCells[agent] || []);
       html += `<div class="agent-row">
         <div class="agent-name" title="${agent}">${agent}</div>
         <div class="track">
           ${Array.from({length:24},(_,h)=>`<div class="cell${isWeekend?' weekend':''}"></div>`).join('')}
           ${barsHtml}
+          ${conflictHtml}
         </div>
       </div>`;
     }
@@ -990,65 +1075,131 @@
     });
     const weekDateStrs = weekDates.map(fmtDateISO);
 
-    const { agents, agentTeam } = getAgentsAndTeam();
     const cellsInWeek = (rawData.workforceCells || []).filter(c => weekDateStrs.includes(c.date));
-    const byAgentDate = {};
+    const byAgentDateCells = {}; // agente|fecha -> [{hour, team}, ...] (conserva el equipo real)
+    const byAgentWeek = {};      // agente -> Set(equipos) que tuvo esta semana, en cualquier celda
     for (const c of cellsInWeek) {
       const key = c.agent + '|' + c.date;
-      if (!byAgentDate[key]) byAgentDate[key] = [];
-      byAgentDate[key].push(c.hour);
+      if (!byAgentDateCells[key]) byAgentDateCells[key] = [];
+      byAgentDateCells[key].push({ hour: c.hour, team: c.team });
+      if (!byAgentWeek[c.agent]) byAgentWeek[c.agent] = new Set();
+      byAgentWeek[c.agent].add(c.team);
     }
-    const agentsWithData = agents.filter(a => weekDateStrs.some(ds => byAgentDate[a+'|'+ds] && byAgentDate[a+'|'+ds].length));
+
+    const isAllView = currentTeam === '__all__';
+
+    let agentsWithData = Object.keys(byAgentWeek);
+    if (!isAllView) {
+      agentsWithData = agentsWithData.filter(a => byAgentWeek[a].has(currentTeam));
+    }
 
     if (!agentsWithData.length) {
       weekContent.innerHTML = `<div class="state-msg">Sin agentes programados esta semana.</div>`;
       return;
     }
 
-    const isAllView = currentTeam === '__all__';
-    let html = `<div class="week-wrap">
+    // En la vista "Todos", un agente con celdas de más de un equipo real esta semana se
+    // agrupa en la sección especial "Agente Mixto" (no es una pestaña filtrable) para
+    // poder totalizar sus horas sin importar en qué equipo trabajó cada día.
+    const primaryGroupFor = (agent) => {
+      const teams = byAgentWeek[agent];
+      return teams.size > 1 ? MIXED_TEAM_KEY : [...teams][0];
+    };
+
+    agentsWithData.sort((a, b) => {
+      if (isAllView) {
+        const pa = primaryGroupFor(a), pb = primaryGroupFor(b);
+        const ta = pa === MIXED_TEAM_KEY ? TEAM_ORDER.length : TEAM_ORDER.indexOf(pa);
+        const tb = pb === MIXED_TEAM_KEY ? TEAM_ORDER.length : TEAM_ORDER.indexOf(pb);
+        if (ta !== tb) return ta - tb;
+      }
+      return a.localeCompare(b);
+    });
+
+    // Las columnas de horas/extra SOLO se muestran (y se calculan) en la vista "Todos".
+    // En una pestaña de equipo puntual, la vista se limita a mostrar los turnos de ESE
+    // equipo día por día (igual que la vista diaria), sin totalizar nada.
+    let html = `<div class="week-wrap${isAllView ? '' : ' no-totals'}">
       <div class="week-header">
         <div class="corner">agente</div>
         ${weekDates.map((dt,i) => `<div class="day-label">${DAY_NAMES_SHORT[dt.getDay()]}<span class="date-sub">${dt.getDate()} ${MONTH_NAMES[dt.getMonth()].slice(0,3)}</span></div>`).join('')}
-        <div class="corner hours-col">horas</div>
+        ${isAllView ? `<div class="corner hours-col">horas</div>
         <div class="corner extra-type-col" title="${EXTRA_LABELS.HED}">hed</div>
         <div class="corner extra-type-col" title="${EXTRA_LABELS.HEN}">hen</div>
         <div class="corner extra-type-col" title="${EXTRA_LABELS.HEDD}">hedd</div>
-        <div class="corner extra-type-col" title="${EXTRA_LABELS.HEND}">hend</div>
+        <div class="corner extra-type-col" title="${EXTRA_LABELS.HEND}">hend</div>` : ''}
       </div>`;
     let lastTeamShown = null;
     for (const agent of agentsWithData) {
-      if (isAllView && agentTeam[agent] !== lastTeamShown) {
-        lastTeamShown = agentTeam[agent];
-        html += `<div class="week-team-section-row"><div class="team-section-label">${TEAM_LABELS[lastTeamShown] || lastTeamShown}</div></div>`;
+      if (isAllView) {
+        const group = primaryGroupFor(agent);
+        if (group !== lastTeamShown) {
+          lastTeamShown = group;
+          const label = group === MIXED_TEAM_KEY ? MIXED_TEAM_LABEL : (TEAM_LABELS[group] || group);
+          const cls = group === MIXED_TEAM_KEY ? ' mixed' : '';
+          html += `<div class="week-team-section-row${cls}"><div class="team-section-label">${label}</div></div>`;
+        }
       }
+
       const cellsHtml = weekDateStrs.map(ds => {
-        const hours = byAgentDate[agent+'|'+ds];
-        if (!hours || !hours.length) return `<div class="week-cell">&mdash;</div>`;
+        const allCellsForDay = byAgentDateCells[agent+'|'+ds] || [];
+        const cellsForDay = isAllView ? allCellsForDay : allCellsForDay.filter(c => c.team === currentTeam);
+        if (!cellsForDay.length) return `<div class="week-cell">&mdash;</div>`;
+        const hours = [...new Set(cellsForDay.map(c => c.hour))];
         const ranges = buildRanges(hours);
         const label = ranges.map(([s,e]) => `${String(s).padStart(2,'0')}:00-${String(e+1).padStart(2,'0')}:00`).join(', ');
+        // El conflicto se evalúa sobre TODAS las celdas del día (cualquier equipo), para que
+        // la alerta se vea sin importar qué pestaña de equipo esté activa.
+        const conflictRanges = getConflictRanges(allCellsForDay);
+        if (conflictRanges.length) {
+          const title = `⚠ Conflicto de equipo:\n${conflictRanges.map(conflictRangeLabel).join('\n')}\nRevisar el Sheet (nombre duplicado en dos equipos).`;
+          return `<div class="week-cell shift conflict" title="${title}">${label} ⚠</div>`;
+        }
         return `<div class="week-cell shift">${label}</div>`;
       }).join('');
 
-      // Cálculo de horas totales y horas extra (legislación laboral colombiana, jornada de 42h)
-      const cellsAgente = weekDateStrs.flatMap(ds => (byAgentDate[agent+'|'+ds] || []).map(h => ({ date: ds, hour: h })));
-      const calc = calcularHorasSemana(cellsAgente);
-      const cierreTxt = calc.cierre
-        ? `Jornada ordinaria (42h) se completa el ${DAY_NAMES[new Date(calc.cierre.date+'T00:00:00').getDay()]} ${calc.cierre.date} a las ${String(calc.cierre.hour).padStart(2,'0')}:00`
-        : `No alcanza las 42 horas ordinarias esta semana`;
-      const extraTypeCell = (key, tipo) => {
-        const v = calc.extra[key];
-        return `<div class="week-extra-type-cell ${tipo}${v > 0 ? ' has-extra' : ''}" title="${EXTRA_LABELS[key]}: ${v}h">${v > 0 ? v + 'h' : '&mdash;'}</div>`;
-      };
+      let totalsHtml = '';
+      if (isAllView) {
+        // Cálculo de horas totales y horas extra (legislación laboral colombiana, jornada de
+        // 42h). Se hace sobre TODAS las horas de la semana sin importar el equipo — lo que
+        // manda para efectos legales es el total de horas trabajadas por la persona. Si hay
+        // un conflicto de equipo (mismo horario en dos equipos) algún día, el dato de origen
+        // no es confiable: se omite el cálculo y se alerta en vez de mostrar un número que
+        // podría estar duplicando horas.
+        const conflictDates = weekDateStrs.filter(ds => hasTeamConflict(byAgentDateCells[agent+'|'+ds] || []));
+        if (conflictDates.length) {
+          const detailLines = conflictDates.map(ds => {
+            const ranges = getConflictRanges(byAgentDateCells[agent+'|'+ds] || []);
+            return `${ds}: ${ranges.map(conflictRangeLabel).join(', ')}`;
+          });
+          const warnTitle = `⚠ No se calculan horas/extra: horario duplicado entre equipos esta semana.\n${detailLines.join('\n')}\nCorregir el Sheet y actualizar.`;
+          totalsHtml = `<div class="week-hours-cell conflict" title="${warnTitle}">⚠</div>`
+            + ['HED','HEN','HEDD','HEND'].map(() =>
+              `<div class="week-extra-type-cell conflict" title="${warnTitle}">⚠</div>`
+            ).join('');
+        } else {
+          const cellsAgente = weekDateStrs.flatMap(ds => {
+            const hours = [...new Set((byAgentDateCells[agent+'|'+ds] || []).map(c => c.hour))];
+            return hours.map(h => ({ date: ds, hour: h }));
+          });
+          const calc = calcularHorasSemana(cellsAgente);
+          const cierreTxt = calc.cierre
+            ? `Jornada ordinaria (42h) se completa el ${DAY_NAMES[new Date(calc.cierre.date+'T00:00:00').getDay()]} ${calc.cierre.date} a las ${String(calc.cierre.hour).padStart(2,'0')}:00`
+            : `No alcanza las 42 horas ordinarias esta semana`;
+          const extraTypeCell = (key, tipo) => {
+            const v = calc.extra[key];
+            return `<div class="week-extra-type-cell ${tipo}${v > 0 ? ' has-extra' : ''}" title="${EXTRA_LABELS[key]}: ${v}h">${v > 0 ? v + 'h' : '&mdash;'}</div>`;
+          };
+          totalsHtml = `<div class="week-hours-cell" title="${cierreTxt}">${calc.total}h</div>`
+            + extraTypeCell('HED','ordinaria') + extraTypeCell('HEN','ordinaria')
+            + extraTypeCell('HEDD','festiva') + extraTypeCell('HEND','festiva');
+        }
+      }
 
       html += `<div class="week-row">
         <div class="agent-name" title="${agent}">${agent}</div>
         ${cellsHtml}
-        <div class="week-hours-cell" title="${cierreTxt}">${calc.total}h</div>
-        ${extraTypeCell('HED','ordinaria')}
-        ${extraTypeCell('HEN','ordinaria')}
-        ${extraTypeCell('HEDD','festiva')}
-        ${extraTypeCell('HEND','festiva')}
+        ${totalsHtml}
       </div>`;
     }
     html += `</div>`;
