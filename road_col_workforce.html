@@ -532,6 +532,12 @@
     font-size: 10.5px; color: var(--text-mid); text-align: center; text-transform: uppercase; letter-spacing: 1px;
   }
   .week-header .day-label .date-sub { display:block; color: var(--text-dim); font-size: 9px; margin-top:2px; text-transform: none; letter-spacing: 0;}
+  .week-header .day-label .day-mark {
+    display: block; margin-top: 2px; font-size: 8px; font-weight: 700;
+    letter-spacing: 0.5px; text-transform: uppercase; cursor: help;
+  }
+  .week-header .day-label .day-mark.festivo { color: var(--orange); }
+  .week-header .day-label .day-mark.sin-datos { color: var(--yellow); }
   .week-row { align-items: center; min-height: 34px; border-bottom: 1px solid var(--border-soft); }
   .week-row:hover { background: rgba(255,255,255,0.015); }
   .week-row .agent-name { font-size: 12px; color: var(--text-mid); white-space: nowrap; overflow:hidden; text-overflow: ellipsis; padding-right: 8px; }
@@ -724,6 +730,17 @@
   function esDomingoOFestivo(dateStr) {
     const d = new Date(dateStr + 'T00:00:00');
     return d.getDay() === 0 || FESTIVOS_SET.has(dateStr);
+  }
+
+  // Estado del día para la marca visual del encabezado semanal (solo vista "Todos"):
+  // 'festivo'  -> es un festivo colombiano cargado (se está tratando como HEDD/HEND)
+  // 'sin-datos'-> el año de esta fecha no está en FESTIVOS_COLOMBIA (no se sabe si es festivo)
+  // null       -> día normal, nada que marcar
+  function estadoFestivoDia(dateStr) {
+    const year = Number(dateStr.slice(0, 4));
+    if (!FESTIVOS_COLOMBIA[year]) return 'sin-datos';
+    if (FESTIVOS_SET.has(dateStr)) return 'festivo';
+    return null;
   }
 
   // cellsAgente: [{date:'YYYY-MM-DD', hour:0-23}, ...] de UN agente dentro de una semana
@@ -1141,7 +1158,19 @@
     let html = `<div class="week-wrap${isAllView ? '' : ' no-totals'}">
       <div class="week-header">
         <div class="corner">agente</div>
-        ${weekDates.map((dt,i) => `<div class="day-label">${DAY_NAMES_SHORT[dt.getDay()]}<span class="date-sub">${dt.getDate()} ${MONTH_NAMES[dt.getMonth()].slice(0,3)}</span></div>`).join('')}
+        ${weekDates.map((dt,i) => {
+          const ds = weekDateStrs[i];
+          let markHtml = '';
+          if (isAllView) {
+            const estado = estadoFestivoDia(ds);
+            if (estado === 'festivo') {
+              markHtml = `<span class="day-mark festivo" title="Festivo colombiano — se calcula como HEDD/HEND">festivo</span>`;
+            } else if (estado === 'sin-datos') {
+              markHtml = `<span class="day-mark sin-datos" title="No hay festivos cargados para ${ds.slice(0,4)} — revisar y actualizar FESTIVOS_COLOMBIA en el código">⚠ sin datos</span>`;
+            }
+          }
+          return `<div class="day-label">${DAY_NAMES_SHORT[dt.getDay()]}<span class="date-sub">${dt.getDate()} ${MONTH_NAMES[dt.getMonth()].slice(0,3)}</span>${markHtml}</div>`;
+        }).join('')}
         ${isAllView ? `<div class="corner hours-col">horas</div>
         <div class="corner extra-type-col" title="${EXTRA_LABELS.HED}">hed</div>
         <div class="corner extra-type-col" title="${EXTRA_LABELS.HEN}">hen</div>
