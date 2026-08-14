@@ -1,0 +1,573 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Editor de Malla de Turnos — Operación 24/7</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Prompt:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --navy:#001d3d;
+    --navy-panel:#062a4d;
+    --navy-panel-2:#0b3a63;
+    --turquoise:#279bb0;
+    --orange:#f15b2b;
+    --yellow:#ffb000;
+    --green:#9fd1a4;
+    --night:#3a4d66;
+    --red:#e0503a;
+    --text:#eaf2fb;
+    --text-dim:#9fb3c9;
+    --border:rgba(255,255,255,0.08);
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    background:var(--navy);
+    color:var(--text);
+    font-family:'Prompt',sans-serif;
+    padding:28px 36px 60px;
+    user-select:none;
+  }
+  h1{ font-size:24px; font-weight:700; margin:0 0 4px; letter-spacing:-0.01em; }
+  .subtitle{ font-family:'JetBrains Mono',monospace; font-size:12px; color:var(--text-dim); }
+  header{ display:flex; justify-content:space-between; align-items:flex-end; flex-wrap:wrap; gap:14px;
+    margin-bottom:20px; border-bottom:1px solid var(--border); padding-bottom:16px; }
+  .status-pill{ font-family:'JetBrains Mono',monospace; font-size:11.5px; padding:7px 14px; border-radius:20px;
+    border:1px solid var(--border); background:var(--navy-panel-2); }
+  .status-pill.ok{ color:var(--green); border-color:rgba(159,209,164,0.35); }
+  .status-pill.bad{ color:var(--red); border-color:rgba(224,80,58,0.45); }
+
+  .save-bar{ display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
+  .save-btn{ font-family:'JetBrains Mono',monospace; font-size:11.5px; padding:7px 14px; border-radius:8px;
+    border:1px solid var(--border); background:var(--navy-panel-2); color:var(--text); cursor:pointer; transition:all .15s; }
+  .save-btn:hover{ border-color:rgba(255,255,255,0.25); background:var(--navy-panel); }
+  .save-btn.danger:hover{ border-color:rgba(224,80,58,0.5); color:var(--red); }
+  .autosave-note{ font-family:'JetBrains Mono',monospace; font-size:10.5px; color:var(--text-dim); }
+  .autosave-note.just-saved{ color:var(--green); }
+
+  .panel{ background:var(--navy-panel); border:1px solid var(--border); border-radius:14px; padding:18px 20px; margin-bottom:22px; }
+  .panel-title{ font-family:'JetBrains Mono',monospace; font-size:10.5px; text-transform:uppercase; letter-spacing:0.1em;
+    color:var(--text-dim); margin-bottom:12px; }
+
+  /* ---- Weekly summary ---- */
+  #summaryGrid{ display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:10px; }
+  .agent-card{ background:var(--navy-panel-2); border:1px solid var(--border); border-radius:10px; padding:10px 12px; }
+  .agent-card.warn{ border-color:rgba(224,80,58,0.5); background:rgba(224,80,58,0.08); }
+  .agent-card .name{ display:flex; align-items:center; gap:7px; font-size:13px; font-weight:600; margin-bottom:6px; }
+  .agent-card .dot{ width:10px; height:10px; border-radius:3px; flex:0 0 auto; }
+  .agent-card .hrs{ font-family:'JetBrains Mono',monospace; font-size:16px; font-weight:600; }
+  .agent-card .hrs.over{ color:var(--red); }
+  .agent-card .meta{ font-family:'JetBrains Mono',monospace; font-size:10.5px; color:var(--text-dim); margin-top:2px; }
+  .agent-card .meta.warn{ color:var(--red); }
+
+  /* ---- Tabs ---- */
+  .tabs{ display:flex; gap:6px; flex-wrap:wrap; margin-bottom:14px; }
+  .tab{ font-family:'JetBrains Mono',monospace; font-size:12.5px; padding:8px 16px; border-radius:8px;
+    border:1px solid var(--border); background:var(--navy-panel); color:var(--text-dim); cursor:pointer; transition:all .15s; }
+  .tab:hover{ color:var(--text); border-color:rgba(255,255,255,0.2); }
+  .tab.active{ background:var(--orange); color:var(--navy); border-color:var(--orange); font-weight:600; }
+
+  /* ---- Gantt ---- */
+  .gantt-inner{ min-width:940px; overflow-x:auto; }
+  .gantt-row{ display:flex; align-items:center; height:42px; position:relative; }
+  .row-label{ width:100px; flex:0 0 100px; font-size:12.5px; font-weight:500; padding-right:8px; display:flex; align-items:center; gap:6px; }
+  .row-label .dot{ width:9px; height:9px; border-radius:2px; flex:0 0 auto; }
+  .row-track{ position:relative; flex:1; height:30px; border-radius:4px; background:rgba(255,255,255,0.02); cursor:copy; }
+  .strong-band{ position:absolute; top:0; bottom:0; background:rgba(255,255,255,0.05);
+    border-left:1px dashed rgba(255,255,255,0.15); border-right:1px dashed rgba(255,255,255,0.15); pointer-events:none; }
+  .libre-hint{ position:absolute; left:8px; top:50%; transform:translateY(-50%); font-family:'JetBrains Mono',monospace;
+    font-size:10.5px; color:var(--text-dim); opacity:0.55; pointer-events:none; }
+
+  .bar{ position:absolute; top:1px; bottom:1px; border-radius:5px; display:flex; align-items:center; justify-content:center;
+    font-family:'JetBrains Mono',monospace; font-size:10.5px; font-weight:700; color:var(--navy); overflow:visible; }
+  .bar.flex{ cursor:grab; box-shadow:0 1px 3px rgba(0,0,0,0.4); }
+  .bar.flex:active{ cursor:grabbing; }
+  .bar.flex.dragging{ z-index:5; box-shadow:0 4px 10px rgba(0,0,0,0.55); }
+  .bar.linked{ cursor:pointer; opacity:0.6;
+    background-image:repeating-linear-gradient(45deg, rgba(255,255,255,0.18) 0 6px, transparent 6px 12px); }
+  .bar.linked:hover{ opacity:0.85; }
+  .bar .handle{ position:absolute; top:0; bottom:0; width:9px; cursor:ew-resize; }
+  .bar .handle.l{ left:0; border-radius:5px 0 0 5px; }
+  .bar .handle.r{ right:0; border-radius:0 5px 5px 0; }
+  .bar .lbl{ pointer-events:none; white-space:nowrap; }
+  .bar .lbl .dur{ margin-left:5px; opacity:0.75; font-weight:800; }
+  .bar .del{ position:absolute; top:-8px; right:-6px; width:16px; height:16px; border-radius:50%; background:var(--red);
+    color:#fff; font-size:10px; line-height:16px; text-align:center; cursor:pointer; opacity:0; transition:opacity .12s; z-index:6; }
+  .bar.flex:hover .del{ opacity:1; }
+  .bar.continues::after{ content:'→'; position:absolute; right:2px; }
+  .bar.fromprev::before{ content:'←'; position:absolute; left:2px; }
+
+  .hour-axis{ display:flex; margin-left:100px; border-top:1px solid var(--border); padding-top:6px; margin-top:8px; }
+  .hour-axis span{ flex:1; font-family:'JetBrains Mono',monospace; font-size:10px; color:var(--text-dim); }
+
+  .coverage-wrap{ margin-left:100px; margin-top:12px; display:flex; align-items:flex-end; height:56px; gap:1px;
+    border-top:1px solid var(--border); padding-top:8px; }
+  .cov-bar{ flex:1; border-radius:2px 2px 0 0; position:relative; min-height:3px; background:var(--turquoise); }
+  .cov-bar.bad{ background:var(--red); }
+  .cov-bar .cov-val{ position:absolute; top:-15px; left:0; right:0; text-align:center; font-family:'JetBrains Mono',monospace;
+    font-size:9px; color:var(--text-dim); }
+  .cov-label{ font-family:'JetBrains Mono',monospace; font-size:10.5px; color:var(--text-dim); margin:8px 0 0 100px; }
+
+  .help{ font-family:'JetBrains Mono',monospace; font-size:11px; color:var(--text-dim); line-height:1.7; margin-top:18px;
+    border-top:1px solid var(--border); padding-top:14px; }
+  .help b{ color:var(--text); }
+</style>
+</head>
+<body>
+
+<header>
+  <div>
+    <h1>Editor de Malla de Turnos</h1>
+    <div class="subtitle">Arrastra para probar distribuciones · máx 42h/semana · mín 1 día libre · sin turno obligatorio en la madrugada</div>
+  </div>
+  <div class="status-pill" id="statusPill">Validando…</div>
+</header>
+
+<div class="panel">
+  <div class="save-bar">
+    <button class="save-btn" id="btnExport">💾 Exportar configuración (.json)</button>
+    <button class="save-btn" id="btnImport">📂 Importar configuración</button>
+    <input type="file" id="fileImport" accept=".json" style="display:none">
+    <button class="save-btn danger" id="btnReset">↺ Restablecer a distribución original</button>
+    <span class="autosave-note" id="autosaveNote">Autoguardado en este navegador activo</span>
+  </div>
+</div>
+
+<div class="panel">
+  <div class="panel-title">Resumen semanal (en vivo)</div>
+  <div id="summaryGrid"></div>
+</div>
+
+<div class="panel">
+  <div class="panel-title">Editor por día</div>
+  <div class="tabs" id="tabs"></div>
+
+  <div class="gantt-inner">
+    <div id="ganttRows"></div>
+    <div class="hour-axis" id="hourAxis"></div>
+    <div class="coverage-wrap" id="coverageStrip"></div>
+    <div class="cov-label" id="covLabel"></div>
+  </div>
+
+  <div class="help">
+    <b>Guardar tu trabajo:</b> los cambios se guardan solos en este navegador (mientras no borres datos de navegación) — cierra y vuelve a abrir el archivo y seguirán ahí.
+    Para conservarlos de forma permanente o compartirlos, usa <b>💾 Exportar configuración</b> (descarga un .json) y luego <b>📂 Importar configuración</b> para volver a cargarlo,
+    en este archivo o en otra copia del mismo. <b>↺ Restablecer</b> vuelve a la distribución original validada.<br>
+    <b>Cómo usar:</b> arrastra el <b>centro</b> de una barra para moverla en el tiempo · arrastra el <b>borde</b> izq/der para cambiar su duración ·
+    clic en un espacio vacío para crear un turno nuevo (7h por defecto) · usa la <b>×</b> para eliminarlo · los turnos se ajustan en pasos de 30 min.<br>
+    <b>Turnos que cruzan medianoche:</b> arrastra una barra hasta que su fin pase de 24:00 (ej. 20:00→04:00) — automáticamente aparece
+    un segmento rayado "←" al inicio del día siguiente mostrando esa continuación. Ese segmento rayado no se arrastra directamente
+    (representa el mismo turno); clic en él te lleva al día de origen para editarlo. Puedes tener <b>varios turnos el mismo día</b> para el mismo agente.<br>
+    <b>Cobertura:</b> la franja sombreada (06:00–18:00) requiere mínimo 2 personas · 18:00–06:00 requiere mínimo 1, salvo la madrugada (00:00–06:00),
+    que ya <b>no tiene mínimo obligatorio</b> — puedes dejarla en 0 sin que se marque como problema.
+  </div>
+</div>
+
+<script>
+const STRONG_START = 6, STRONG_END = 18;
+const days = ['Lun','Mar','Mié','Jue','Vie','Sáb','Dom'];
+const agents = ['Agente 1','Agente 2','Agente 3','Agente 4','Agente 5','Agente 6','Agente 7','Agente 8'];
+
+const AGENT_COLOR = {
+  'Agente 1':'#279bb0', 'Agente 2':'#f15b2b', 'Agente 3':'#ffb000', 'Agente 4':'#9fd1a4',
+  'Agente 5':'#5fc4d6', 'Agente 6':'#ff8f6b', 'Agente 7':'#d8bc5a', 'Agente 8':'#a99bdc'
+};
+
+// schedule[agent] = lista de turnos: {id, day (0-6, día en que ARRANCA), start, end}
+// end puede superar 24 (ej. 30 = 06:00 del día siguiente) para turnos que cruzan medianoche.
+let nextId = 1;
+function newId(){ return nextId++; }
+
+let schedule = {
+  'Agente 1':[], 'Agente 2':[], 'Agente 3':[], 'Agente 4':[],
+  'Agente 5':[], 'Agente 6':[], 'Agente 7':[], 'Agente 8':[]
+};
+
+// ---- Datos iniciales (misma distribución validada previamente, ahora en el modelo nuevo) ----
+function seed(agent, day, start, end){ schedule[agent].push({id:newId(), day, start, end}); }
+// Agente 1: banda A (06-13) Mar-Vie y Dom, tarde-noche Sab, libre Lun
+seed('Agente 1',1,6,13); seed('Agente 1',2,6,13); seed('Agente 1',3,6,13); seed('Agente 1',4,6,13);
+seed('Agente 1',5,18,23); seed('Agente 1',6,6,13);
+// Agente 2: banda A todos menos Mie
+seed('Agente 2',0,6,13); seed('Agente 2',1,6,13); seed('Agente 2',3,6,13); seed('Agente 2',4,6,13); seed('Agente 2',5,6,13); seed('Agente 2',6,6,13);
+// Agente 3: banda A todos menos Vie
+seed('Agente 3',0,6,13); seed('Agente 3',1,6,13); seed('Agente 3',2,6,13); seed('Agente 3',3,6,13); seed('Agente 3',5,6,13); seed('Agente 3',6,6,13);
+// Agente 4: banda B (12-19) todos menos Mar, tarde-noche Dom
+seed('Agente 4',0,12,19); seed('Agente 4',2,12,19); seed('Agente 4',3,12,19); seed('Agente 4',4,12,19); seed('Agente 4',5,12,19); seed('Agente 4',6,18,23);
+// Agente 5: banda B todos menos Jue
+seed('Agente 5',0,12,19); seed('Agente 5',1,12,19); seed('Agente 5',2,12,19); seed('Agente 5',4,12,19); seed('Agente 5',5,12,19); seed('Agente 5',6,12,19);
+// Agente 6: banda B todos menos Sab
+seed('Agente 6',0,12,19); seed('Agente 6',1,12,19); seed('Agente 6',2,12,19); seed('Agente 6',3,12,19); seed('Agente 6',4,12,19); seed('Agente 6',6,12,19);
+// Agente 7: tarde-noche Jue/Vie + noche (23-06, ahora libre/arrastrable) Lun,Mar,Mie,Dom
+seed('Agente 7',3,18,23); seed('Agente 7',4,18,23);
+seed('Agente 7',0,23,30); seed('Agente 7',1,23,30); seed('Agente 7',2,23,30); seed('Agente 7',6,23,30);
+// Agente 8: tarde-noche Lun-Mie + noche Jue,Vie,Sab
+seed('Agente 8',0,18,23); seed('Agente 8',1,18,23); seed('Agente 8',2,18,23);
+seed('Agente 8',3,23,30); seed('Agente 8',4,23,30); seed('Agente 8',5,23,30);
+
+// Copia profunda de la distribución original, para poder "Restablecer" más adelante
+const DEFAULT_SCHEDULE = JSON.parse(JSON.stringify(schedule));
+const DEFAULT_NEXT_ID = nextId;
+
+const STORAGE_KEY = 'malla_turnos_8_agentes_v1';
+
+function saveToLocalStorage(){
+  try{
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({schedule, nextId}));
+    const note = document.getElementById('autosaveNote');
+    if(note){
+      note.textContent = 'Guardado ' + new Date().toLocaleTimeString('es-CO',{hour:'2-digit',minute:'2-digit'});
+      note.classList.add('just-saved');
+      setTimeout(()=>note.classList.remove('just-saved'), 900);
+    }
+  }catch(err){
+    const note = document.getElementById('autosaveNote');
+    if(note) note.textContent = '⚠ No se pudo autoguardar en este navegador';
+  }
+}
+
+function loadFromLocalStorage(){
+  try{
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if(!raw) return false;
+    const data = JSON.parse(raw);
+    if(!data || !data.schedule) return false;
+    schedule = data.schedule;
+    nextId = data.nextId || nextId;
+    return true;
+  }catch(err){
+    return false;
+  }
+}
+
+function downloadJSON(obj, filename){
+  const blob = new Blob([JSON.stringify(obj, null, 2)], {type:'application/json'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = filename;
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+function exportConfig(){
+  const today = new Date().toISOString().slice(0,10);
+  downloadJSON({schedule, nextId}, `malla_turnos_${today}.json`);
+}
+
+function importConfig(file){
+  const reader = new FileReader();
+  reader.onload = (e)=>{
+    try{
+      const data = JSON.parse(e.target.result);
+      if(!data.schedule || typeof data.schedule !== 'object') throw new Error('formato inválido');
+      schedule = data.schedule;
+      nextId = data.nextId || nextId;
+      fullRerender();
+      saveToLocalStorage();
+    }catch(err){
+      alert('El archivo no tiene el formato esperado. Debe ser un .json exportado desde esta misma herramienta.');
+    }
+  };
+  reader.readAsText(file);
+}
+
+function resetToDefault(){
+  if(!confirm('¿Restablecer a la distribución original? Se perderán los cambios hechos en el navegador (podés exportarlos antes si querés conservarlos).')) return;
+  schedule = JSON.parse(JSON.stringify(DEFAULT_SCHEDULE));
+  nextId = DEFAULT_NEXT_ID;
+  selectedDay = 0;
+  fullRerender();
+  saveToLocalStorage();
+}
+
+let selectedDay = 0;
+
+function snap(h){ return Math.round(h*2)/2; }
+function clamp(v,lo,hi){ return Math.max(lo, Math.min(hi, v)); }
+function minRequired(hour){
+  if(hour>=STRONG_START && hour<STRONG_END) return 2; // banda fuerte 06:00-18:00
+  if(hour>=STRONG_END) return 1;                       // tarde-noche 18:00-24:00
+  return 0;                                            // madrugada 00:00-06:00: sin mínimo obligatorio
+}
+
+// ---------- Derived calculations ----------
+function hoursForAgent(agent){
+  return schedule[agent].reduce((sum,s)=>sum+(s.end-s.start), 0);
+}
+function workDaysForAgent(agent){
+  return new Set(schedule[agent].map(s=>s.day)).size;
+}
+function findShift(agent, id){ return schedule[agent].find(s=>s.id===id); }
+
+// Segmentos visibles para un agente en un día dado (propios + continuación de ayer)
+function blocksForAgentDay(agent, dayIdx){
+  const blocks = [];
+  schedule[agent].forEach(s=>{
+    if(s.day === dayIdx){
+      blocks.push({ id:s.id, start:s.start, end:Math.min(s.end,24), isOwn:true, continues: s.end>24 });
+    }
+    if(s.end > 24 && (s.day+1)%7 === dayIdx){
+      blocks.push({ id:s.id, start:0, end:s.end-24, isOwn:false, fromPrev:true, originDay:s.day });
+    }
+  });
+  return blocks;
+}
+
+function coverageForDay(dayIdx){
+  const counts = new Array(24).fill(0);
+  agents.forEach(agent=>{
+    blocksForAgentDay(agent, dayIdx).forEach(b=>{
+      for(let h=Math.floor(b.start); h<Math.ceil(b.end); h++){
+        if(h>=0 && h<24) counts[h]++;
+      }
+    });
+  });
+  return counts;
+}
+
+function fullWeekValidation(){
+  let problems = 0;
+  for(let d=0; d<7; d++){
+    const cov = coverageForDay(d);
+    for(let h=0; h<24; h++){
+      if(cov[h] < minRequired(h)) problems++;
+    }
+  }
+  let overCap = 0, noRest = 0;
+  agents.forEach(a=>{
+    if(hoursForAgent(a) > 42) overCap++;
+    if(workDaysForAgent(a) >= 7) noRest++;
+  });
+  return {problems, overCap, noRest};
+}
+
+// ---------- Rendering ----------
+function renderStatus(){
+  const v = fullWeekValidation();
+  const pill = document.getElementById('statusPill');
+  if(v.problems===0 && v.overCap===0 && v.noRest===0){
+    pill.className = 'status-pill ok';
+    pill.textContent = '✓ Cobertura y horas cumplen toda la semana';
+  } else {
+    pill.className = 'status-pill bad';
+    const parts = [];
+    if(v.problems>0) parts.push(`${v.problems}h con cobertura insuficiente`);
+    if(v.overCap>0) parts.push(`${v.overCap} agente(s) sobre 42h`);
+    if(v.noRest>0) parts.push(`${v.noRest} agente(s) sin día libre`);
+    pill.textContent = '⚠ ' + parts.join(' · ');
+  }
+}
+
+function renderSummary(){
+  const grid = document.getElementById('summaryGrid');
+  grid.innerHTML = agents.map(agent=>{
+    const hrs = hoursForAgent(agent);
+    const wd = workDaysForAgent(agent);
+    const over = hrs > 42;
+    const noRest = wd >= 7;
+    const warn = over || noRest;
+    return `<div class="agent-card ${warn?'warn':''}">
+      <div class="name"><span class="dot" style="background:${AGENT_COLOR[agent]}"></span>${agent}</div>
+      <div class="hrs ${over?'over':''}">${hrs}h<span style="font-size:10px;color:var(--text-dim);font-weight:400">/42h</span></div>
+      <div class="meta ${noRest?'warn':''}">${wd} días trabajados ${noRest?'⚠ sin descanso':''}</div>
+    </div>`;
+  }).join('');
+}
+
+function renderTabs(){
+  document.getElementById('tabs').innerHTML = days.map((d,i)=>
+    `<div class="tab ${i===selectedDay?'active':''}" onclick="selectDay(${i})">${d}</div>`
+  ).join('');
+}
+
+function selectDay(i){
+  selectedDay = i;
+  renderTabs();
+  renderGantt();
+}
+
+function renderGantt(){
+  const rows = document.getElementById('ganttRows');
+  let html = '';
+  agents.forEach(agent=>{
+    const blocks = blocksForAgentDay(agent, selectedDay);
+    let inner = `<div class="strong-band" style="left:${STRONG_START/24*100}%;width:${(STRONG_END-STRONG_START)/24*100}%"></div>`;
+    if(blocks.length===0){
+      inner += `<div class="libre-hint">Libre — clic para agregar turno</div>`;
+    }
+    blocks.forEach(b=>{
+      const left = b.start/24*100, width=(b.end-b.start)/24*100;
+      const color = AGENT_COLOR[agent];
+      if(b.isOwn){
+        inner += `<div class="bar flex ${b.continues?'continues':''}" data-agent="${agent}" data-id="${b.id}"
+            style="left:${left}%;width:${width}%;background:${color}">
+          <div class="handle l"></div>
+          <span class="lbl">${fmt(b.start)}–${fmt(b.end>24?b.end-24:b.end)} <b class="dur">${fmtDur(b.end-b.start)}</b></span>
+          <div class="handle r"></div>
+          <div class="del">×</div>
+        </div>`;
+      } else {
+        inner += `<div class="bar linked fromprev" data-origin="${b.originDay}"
+            style="left:${left}%;width:${width}%;background:${color}" title="Continúa desde ${days[b.originDay]} — clic para editar ahí">
+          <span class="lbl">${fmtDur(b.end-b.start)}</span>
+        </div>`;
+      }
+    });
+    html += `<div class="gantt-row"><div class="row-label"><span class="dot" style="background:${AGENT_COLOR[agent]}"></span>${agent}</div>
+      <div class="row-track" data-agent="${agent}">${inner}</div></div>`;
+  });
+  rows.innerHTML = html;
+  renderHourAxis();
+  renderCoverage();
+  attachInteractions();
+}
+
+function fmt(h){
+  const hh = Math.floor(h) % 24;
+  const mm = (h % 1) === 0.5 ? '30' : '00';
+  return String(hh).padStart(2,'0')+':'+mm;
+}
+
+function fmtDur(dur){
+  return (dur % 1 === 0 ? dur : dur.toFixed(1)) + 'h';
+}
+
+function renderHourAxis(){
+  const axis = document.getElementById('hourAxis');
+  let html = '';
+  for(let h=0; h<24; h+=2){
+    html += `<span style="flex:${h===22?1:2}">${String(h).padStart(2,'0')}:00</span>`;
+  }
+  axis.innerHTML = html;
+}
+
+function renderCoverage(){
+  const strip = document.getElementById('coverageStrip');
+  const counts = coverageForDay(selectedDay);
+  const max = Math.max(...counts, 1);
+  let html = '';
+  for(let h=0; h<24; h++){
+    const bad = counts[h] < minRequired(h);
+    const heightPct = counts[h]/max*100;
+    html += `<div class="cov-bar ${bad?'bad':''}" style="height:${Math.max(heightPct,5)}%"><span class="cov-val">${counts[h]}</span></div>`;
+  }
+  strip.innerHTML = html;
+  document.getElementById('covLabel').textContent =
+    'Agentes activos por hora · 06–18 requiere mínimo 2 · 18–24 requiere mínimo 1 · 00–06 (madrugada) sin mínimo obligatorio · en rojo = por debajo del mínimo aplicable';
+}
+
+function fullRerender(){
+  renderStatus();
+  renderSummary();
+  renderGantt();
+  saveToLocalStorage();
+}
+
+// ---------- Interactions: drag / resize / add / delete ----------
+function attachInteractions(){
+  document.querySelectorAll('.row-track').forEach(track=>{
+    track.addEventListener('click', (e)=>{
+      if(e.target !== track) return; // ignora clics sobre barras
+      const agent = track.dataset.agent;
+      const rect = track.getBoundingClientRect();
+      let hour = snap((e.clientX - rect.left) / rect.width * 24);
+      let start = clamp(hour - 3.5, 0, 17);
+      schedule[agent].push({ id:newId(), day:selectedDay, start:snap(start), end:snap(start+7) });
+      fullRerender();
+    });
+  });
+
+  document.querySelectorAll('.bar.linked').forEach(bar=>{
+    bar.addEventListener('click', ()=>{ selectDay(parseInt(bar.dataset.origin,10)); });
+  });
+
+  document.querySelectorAll('.bar.flex').forEach(bar=>{
+    const agent = bar.dataset.agent;
+    const shiftId = parseInt(bar.dataset.id,10);
+
+    bar.querySelector('.del').addEventListener('click', (e)=>{
+      e.stopPropagation();
+      schedule[agent] = schedule[agent].filter(s=>s.id!==shiftId);
+      fullRerender();
+    });
+
+    let mode = null; // 'move' | 'resize-l' | 'resize-r'
+    let startX = 0, origStart=0, origEnd=0, trackWidth=0;
+
+    function beginDrag(e, m){
+      mode = m;
+      startX = e.clientX;
+      const s = findShift(agent, shiftId);
+      origStart = s.start; origEnd = s.end;
+      const track = bar.parentElement;
+      const rect = track.getBoundingClientRect();
+      trackWidth = rect.width;
+      bar.classList.add('dragging');
+      document.addEventListener('pointermove', onMove);
+      document.addEventListener('pointerup', onUp);
+      e.preventDefault();
+      e.stopPropagation();
+    }
+
+    function onMove(e){
+      const deltaH = (e.clientX - startX) / trackWidth * 24;
+      const s = findShift(agent, shiftId);
+      if(mode === 'move'){
+        const dur = origEnd - origStart;
+        let newStart = clamp(snap(origStart + deltaH), 0, 23.5);
+        s.start = newStart; s.end = newStart + dur;
+      } else if(mode === 'resize-l'){
+        let maxStart = Math.min(origEnd - 0.5, 23.5);
+        let newStart = clamp(snap(origStart + deltaH), 0, maxStart);
+        s.start = newStart;
+      } else if(mode === 'resize-r'){
+        let newEnd = clamp(snap(origEnd + deltaH), origStart + 0.5, origStart + 16);
+        s.end = newEnd;
+      }
+      // Actualización liviana solo de esta barra (sin reconstruir todo el Gantt)
+      const clippedEnd = Math.min(s.end, 24);
+      const left = s.start/24*100, width = (clippedEnd - s.start)/24*100;
+      bar.style.left = left+'%'; bar.style.width = width+'%';
+      bar.classList.toggle('continues', s.end > 24);
+      const lbl = bar.querySelector('.lbl');
+      if(lbl) lbl.innerHTML = fmt(s.start)+'–'+fmt(s.end>24?s.end-24:s.end)+' <b class="dur">'+fmtDur(s.end-s.start)+'</b>';
+      renderCoverage();
+      renderStatus();
+      renderSummary();
+    }
+
+    function onUp(){
+      bar.classList.remove('dragging');
+      document.removeEventListener('pointermove', onMove);
+      document.removeEventListener('pointerup', onUp);
+      mode = null;
+      fullRerender(); // reconstruye el Gantt para reflejar el segmento "continúa" en el día siguiente si aplica
+    }
+
+    bar.addEventListener('pointerdown', (e)=>{
+      if(e.target.classList.contains('handle') && e.target.classList.contains('l')) beginDrag(e,'resize-l');
+      else if(e.target.classList.contains('handle') && e.target.classList.contains('r')) beginDrag(e,'resize-r');
+      else if(e.target.classList.contains('del')) { /* manejado aparte */ }
+      else beginDrag(e,'move');
+    });
+  });
+}
+
+// ---------- Init ----------
+const hadSaved = loadFromLocalStorage();
+renderTabs();
+fullRerender();
+
+document.getElementById('btnExport').addEventListener('click', exportConfig);
+document.getElementById('btnReset').addEventListener('click', resetToDefault);
+document.getElementById('btnImport').addEventListener('click', ()=>document.getElementById('fileImport').click());
+document.getElementById('fileImport').addEventListener('change', (e)=>{
+  if(e.target.files && e.target.files[0]) importConfig(e.target.files[0]);
+  e.target.value = ''; // permite volver a importar el mismo archivo si hace falta
+});
+</script>
+
+</body>
+</html>
