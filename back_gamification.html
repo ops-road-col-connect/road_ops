@@ -316,7 +316,7 @@
           <th class="num">Servicios</th>
           <th class="num">Arribo prom.</th>
           <th class="num">% Meta local</th>
-          <th class="num">Plan gam.</th>
+          <th class="num">% Plan gam.</th>
           <th>Puntos</th>
           <th class="num">Insignias</th>
         </tr>
@@ -329,7 +329,7 @@
       <br><br>
       <b>% Meta local:</b> de los servicios con tipo_localidad = "local", qué % llegó en ≤60 min. La insignia ⚡ la recibe quien tenga el % más alto.
       <br><br>
-      <b>Plan gamificación:</b> servicios con proveedor_plan_gamification = 0 y TipoServicio en (towBreakdown, towHeavyWeight, tow_heavy_weight_collision, towCollision). Columna informativa, no afecta puntos todavía.
+      <b>Plan gamificación:</b> % de servicios de tipo grúa (towBreakdown, towHeavyWeight, tow_heavy_weight_collision, towCollision) donde el agente asignó un proveedor del plan especial (proveedor_plan_gamification = 0 y ciudad en Bogotá/Cali/Medellín). El denominador es solo esos 4 tipos de servicio, no el total de servicios del agente. Columna informativa, no afecta puntos todavía.
     </div>
 
     <footer id="footerNote">Fuente: servicios_road_col vía n8n → GitHub.</footer>
@@ -355,6 +355,7 @@ const BACK_TEAM = [
 ];
 const NAME_ALIASES = { "Ana Milena Carrillo": "Ana Milena Carrillo Amaya" };
 const BADGE_ICON = { volumen:"🏁", velocidad:"⚡", meta_local:"🏆" };
+const TOW_TYPES = new Set(["towBreakdown", "towHeavyWeight", "tow_heavy_weight_collision", "towCollision"]);
 
 let ALL_RECORDS = [];
 let currentPeriod = 'week';
@@ -389,6 +390,7 @@ async function loadData(){
         tipo_servicio: r.tipo_servicio,
         tipo_localidad: r.tipo_localidad || null,
         estatus: r.estatus,
+        tipo_servicio: r.tipo_servicio,
         arribo_min: (r.arribo_min === null || r.arribo_min === undefined || r.arribo_min === "") ? null : Number(r.arribo_min),
         plan_gamification: !!r.plan_gamification
       };
@@ -452,7 +454,7 @@ function computeData(){
   });
 
   const byAgent = {};
-  BACK_TEAM.forEach(a=>{ byAgent[a] = {servicios:0, arribos:[], locales:[], planGam:0}; });
+  BACK_TEAM.forEach(a=>{ byAgent[a] = {servicios:0, arribos:[], locales:[], planGam:0, towElegibles:0}; });
 
   filtered.forEach(r=>{
     if(!byAgent[r.agente]) return;
@@ -463,7 +465,10 @@ function computeData(){
         byAgent[r.agente].locales.push(r.arribo_min <= 60);
       }
     }
-    if(r.plan_gamification) byAgent[r.agente].planGam++;
+    if(TOW_TYPES.has(r.tipo_servicio)){
+      byAgent[r.agente].towElegibles++;
+      if(r.plan_gamification) byAgent[r.agente].planGam++;
+    }
   });
 
   let data = BACK_TEAM.map(nombre=>{
@@ -474,10 +479,13 @@ function computeData(){
     d.arribos.forEach(v=>{ if(v<=60) puntos += 15; });
     const n_local = d.locales.length;
     const pct_meta_local = n_local>0 ? Math.round(100*d.locales.filter(Boolean).length/n_local) : null;
+    const pct_plan_gam = d.towElegibles>0 ? Math.round(100*d.planGam/d.towElegibles) : null;
     return {
       nombre, servicios: d.servicios,
       avg_arribo: avg_arribo!==null ? Math.round(avg_arribo*10)/10 : null,
-      n_arribo, puntos, pct_meta_local, n_local, plan_gam: d.planGam, badges: []
+      n_arribo, puntos, pct_meta_local, n_local,
+      plan_gam: d.planGam, tow_elegibles: d.towElegibles, pct_plan_gam,
+      badges: []
     };
   });
 
@@ -535,6 +543,7 @@ function render(){
     const tr = document.createElement('tr');
     const arriboText = a.n_arribo>0 ? `${a.avg_arribo} min` : `<span class="muted">Sin dato</span>`;
     const metaText = a.n_local>0 ? `${a.pct_meta_local}%` : `<span class="muted">—</span>`;
+    const planGamText = a.tow_elegibles>0 ? `${a.pct_plan_gam}% <span class="muted">(${a.plan_gam}/${a.tow_elegibles})</span>` : `<span class="muted">—</span>`;
     const badgeHtml = a.badges.map(b=>`<span class="ic" title="${b}">${BADGE_ICON[b]}</span>`).join("");
     tr.innerHTML = `
       <td class="pos">${i+1}</td>
@@ -542,7 +551,7 @@ function render(){
       <td class="num">${a.servicios}</td>
       <td class="num">${arriboText}</td>
       <td class="num">${metaText}</td>
-      <td class="num">${a.plan_gam}</td>
+      <td class="num">${planGamText}</td>
       <td class="bar-cell">
         <div class="pts">${a.puntos}</div>
         <div class="bar-track"><div class="bar-fill" style="width:${(a.puntos/maxPts*100).toFixed(0)}%"></div></div>
