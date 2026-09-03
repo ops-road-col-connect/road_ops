@@ -1,5 +1,5 @@
 {
-  "updated_at": "2026-09-03T21:45:31.904Z",
+  "updated_at": "2026-09-03T22:59:16.174Z",
   "records": [
     {
       "po_number": "5511840",
@@ -9,8 +9,10 @@
       "tipo_servicio": "jumpStart",
       "tipo_localidad": "local",
       "estatus": "Finished",
+      "programado": "No",
       "arribo_min": 2.183699996676296,
-      "plan_gamification": false
+      "plan_gamification": false,
+      "prioridad1": false
     },
     {
       "po_number": "5512132",
@@ -20,8 +22,10 @@
       "tipo_servicio": "flatTire",
       "tipo_localidad": "local",
       "estatus": "Finished",
+      "programado": "No",
       "arribo_min": 73.64338332787156,
-      "plan_gamification": false
+      "plan_gamification": false,
+      "prioridad1": false
     },
     {
       "po_number": "5512464",
@@ -31,8 +35,10 @@
       "tipo_servicio": "jumpStart",
       "tipo_localidad": "local",
       "estatus": "Finished",
+      "programado": "No",
       "arribo_min": 70.97551666083746,
-      "plan_gamification": false
+      "plan_gamification": false,
+      "prioridad1": false
     },
     {
       "po_number": "5512380",
@@ -42,8 +48,10 @@
       "tipo_servicio": "towBreakdown",
       "tipo_localidad": "local",
       "estatus": "Finished",
+      "programado": "No",
       "arribo_min": 43.638816674938425,
-      "plan_gamification": false
+      "plan_gamification": false,
+      "prioridad1": false
     },
     {
       "po_number": "5512201",
@@ -53,8 +61,10 @@
       "tipo_servicio": "towHeavyWeight",
       "tipo_localidad": "local",
       "estatus": "Finished",
+      "programado": "No",
       "arribo_min": null,
-      "plan_gamification": false
+      "plan_gamification": false,
+      "prioridad1": false
     },
     {
       "po_number": "5512429",
@@ -64,8 +74,10 @@
       "tipo_servicio": "towBreakdown",
       "tipo_localidad": "local",
       "estatus": "Finished",
+      "programado": "No",
       "arribo_min": 50.11986665893346,
-      "plan_gamification": true
+      "plan_gamification": true,
+      "prioridad1": false
     },
     {
       "po_number": "5512532",
@@ -75,8 +87,10 @@
       "tipo_servicio": "basic_vehicle_washing_on_site",
       "tipo_localidad": null,
       "estatus": "Finished",
+      "programado": "Si",
       "arribo_min": null,
-      "plan_gamification": false
+      "plan_gamification": false,
+      "prioridad1": false
     },
     {
       "po_number": "5512498",
@@ -86,8 +100,10 @@
       "tipo_servicio": "jumpStart",
       "tipo_localidad": "local",
       "estatus": "Finished",
+      "programado": "No",
       "arribo_min": 60.08006667019799,
-      "plan_gamification": false
+      "plan_gamification": false,
+      "prioridad1": false
     },
     {
       "po_number": "5512167",
@@ -97,8 +113,10 @@
       "tipo_servicio": "towBreakdown",
       "tipo_localidad": "local",
       "estatus": "Finished",
+      "programado": "No",
       "arribo_min": 89.87898333929479,
-      "plan_gamification": true
+      "plan_gamification": true,
+      "prioridad1": false
     },
     {
       "po_number": "5512348",
@@ -108,8 +126,10 @@
       "tipo_servicio": "towCollision",
       "tipo_localidad": "local",
       "estatus": "Finished",
+      "programado": "No",
       "arribo_min": 142.88279999163933,
-      "plan_gamification": false
+      "plan_gamification": false,
+      "prioridad1": false
     },
     {
       "po_number": "5512317",
@@ -119,8 +139,10 @@
       "tipo_servicio": "towBreakdown",
       "tipo_localidad": "foreign",
       "estatus": "Finished",
+      "programado": "No",
       "arribo_min": 104.7326666652225,
-      "plan_gamification": false
+      "plan_gamification": false,
+      "prioridad1": false
     },
     {
       "po_number": "5512484",
@@ -130,8 +152,10 @@
       "tipo_servicio": "towBreakdown",
       "tipo_localidad": "local",
       "estatus": "Finished",
+      "programado": "No",
       "arribo_min": 34.306283328915015,
-      "plan_gamification": false
+      "plan_gamification": false,
+      "prioridad1": false
     },
     {
       "po_number": "5509834",
@@ -141,8 +165,10 @@
       "tipo_servicio": "towBreakdown",
       "tipo_localidad": "foreign",
       "estatus": "Finished",
+      "programado": "No",
       "arribo_min": 242.60399999795482,
-      "plan_gamification": false
+      "plan_gamification": false,
+      "prioridad1": false
     },
     {
       "po_number": "5509926",
@@ -152,8 +178,10 @@
       "tipo_servicio": "jumpStart",
       "tipo_localidad": "local",
       "estatus": "Finished",
+      "programado": "Si",
       "arribo_min": 325.1747499941848,
-      "plan_gamification": false
+      "plan_gamification": false,
+      "prioridad1": false
     },
     {
       "po_number": "5511238",
@@ -163,8 +191,10 @@
       "tipo_servicio": "jumpStart",
       "tipo_localidad": "local",
       "estatus": "Finished",
+      "programado": "No",
       "arribo_min": 33.906199992634356,
-      "plan_gamification": false
+      "plan_gamification": false,
+      "prioridad1": false
     },
     {
       "po_number": "5511022",
@@ -174,8 +204,10 @@
       "tipo_servicio": "towCollision",
       "tipo_localidad": "local",
       "estatus": "Finished",
+      "programado": "Si",
       "arribo_min": 849.3938999972306,
-      "plan_gamification": false
+      "plan_gamification": false,
+      "prioridad1": false
     },
     {
       "po_number": "5510543",
@@ -185,8 +217,10 @@
       "tipo_servicio": "towBreakdown",
       "tipo_localidad": "local",
       "estatus": "Finished",
+      "programado": "No",
       "arribo_min": 58.23763333610259,
-      "plan_gamification": false
+      "plan_gamification": false,
+      "prioridad1": false
     },
     {
       "po_number": "5509360",
@@ -196,8 +230,10 @@
       "tipo_servicio": "towCollision",
       "tipo_localidad": "local",
       "estatus": "Finished",
+      "programado": "No",
       "arribo_min": 24.24725000280887,
-      "plan_gamification": false
+      "plan_gamification": false,
+      "prioridad1": false
     },
     {
       "po_number": "5510002",
@@ -207,8 +243,10 @@
       "tipo_servicio": "flatTire",
       "tipo_localidad": "local",
       "estatus": "Finished",
+      "programado": "No",
       "arribo_min": 108.1361333350651,
-      "plan_gamification": false
+      "plan_gamification": false,
+      "prioridad1": false
     },
     {
       "po_number": "5508947",
@@ -218,8 +256,10 @@
       "tipo_servicio": "jumpStart",
       "tipo_localidad": "local",
       "estatus": "Finished",
+      "programado": "No",
       "arribo_min": 112.86333333235234,
-      "plan_gamification": false
+      "plan_gamification": false,
+      "prioridad1": false
     },
     {
       "po_number": "5510733",
@@ -229,8 +269,10 @@
       "tipo_servicio": "towHeavyWeight",
       "tipo_localidad": "foreign",
       "estatus": "Finished",
+      "programado": "No",
       "arribo_min": null,
-      "plan_gamification": false
+      "plan_gamification": false,
+      "prioridad1": false
     },
     {
       "po_number": "5511367",
@@ -240,8 +282,10 @@
       "tipo_servicio": "flatTire",
       "tipo_localidad": "local",
       "estatus": "Finished",
+      "programado": "No",
       "arribo_min": 51.43199999816716,
-      "plan_gamification": false
+      "plan_gamification": false,
+      "prioridad1": false
     },
     {
       "po_number": "5511398",
@@ -251,8 +295,10 @@
       "tipo_servicio": "jumpStart",
       "tipo_localidad": "local",
       "estatus": "Finished",
+      "programado": "No",
       "arribo_min": 48.15481666359119,
-      "plan_gamification": false
+      "plan_gamification": false,
+      "prioridad1": false
     },
     {
       "po_number": "5509864",
@@ -262,8 +308,10 @@
       "tipo_servicio": "jumpStart",
       "tipo_localidad": "local",
       "estatus": "Finished",
+      "programado": "No",
       "arribo_min": 34.49966665939428,
-      "plan_gamification": false
+      "plan_gamification": false,
+      "prioridad1": false
     },
     {
       "po_number": "5510666",
@@ -273,8 +321,10 @@
       "tipo_servicio": "jumpStart",
       "tipo_localidad": "local",
       "estatus": "Finished",
+      "programado": "No",
       "arribo_min": 73.90591666800901,
-      "plan_gamification": false
+      "plan_gamification": false,
+      "prioridad1": false
     },
     {
       "po_number": "5509465",
@@ -284,8 +334,10 @@
       "tipo_servicio": "towBreakdown",
       "tipo_localidad": "local",
       "estatus": "Finished",
+      "programado": "No",
       "arribo_min": 133.67136666434817,
-      "plan_gamification": true
+      "plan_gamification": true,
+      "prioridad1": false
     },
     {
       "po_number": "5509013",
@@ -295,8 +347,10 @@
       "tipo_servicio": "jumpStart",
       "tipo_localidad": "local",
       "estatus": "Finished",
+      "programado": "No",
       "arribo_min": 41.06285000103526,
-      "plan_gamification": false
+      "plan_gamification": false,
+      "prioridad1": false
     },
     {
       "po_number": "5509823",
@@ -306,8 +360,10 @@
       "tipo_servicio": "towBreakdown",
       "tipo_localidad": "foreign",
       "estatus": "Finished",
+      "programado": "No",
       "arribo_min": 62.19939999980852,
-      "plan_gamification": true
+      "plan_gamification": false,
+      "prioridad1": false
     },
     {
       "po_number": "5511716",
@@ -317,8 +373,10 @@
       "tipo_servicio": "towBreakdown",
       "tipo_localidad": "foreign",
       "estatus": "Finished",
+      "programado": "Si",
       "arribo_min": 543.2555000006687,
-      "plan_gamification": true
+      "plan_gamification": false,
+      "prioridad1": false
     },
     {
       "po_number": "5510373",
@@ -328,8 +386,10 @@
       "tipo_servicio": "locksmith",
       "tipo_localidad": "local",
       "estatus": "Finished",
+      "programado": "No",
       "arribo_min": 12.700133328326046,
-      "plan_gamification": false
+      "plan_gamification": false,
+      "prioridad1": false
     },
     {
       "po_number": "5509856",
@@ -339,8 +399,10 @@
       "tipo_servicio": "jumpStart",
       "tipo_localidad": "local",
       "estatus": "Finished",
+      "programado": "No",
       "arribo_min": 21.823383334558457,
-      "plan_gamification": false
+      "plan_gamification": false,
+      "prioridad1": false
     },
     {
       "po_number": "5509429",
@@ -350,8 +412,10 @@
       "tipo_servicio": "towBreakdown",
       "tipo_localidad": "local",
       "estatus": "Finished",
+      "programado": "No",
       "arribo_min": 123.75759999733418,
-      "plan_gamification": false
+      "plan_gamification": false,
+      "prioridad1": false
     },
     {
       "po_number": "5509536",
@@ -361,8 +425,10 @@
       "tipo_servicio": "flatTire",
       "tipo_localidad": "local",
       "estatus": "Finished",
+      "programado": "No",
       "arribo_min": 12.10553333396092,
-      "plan_gamification": false
+      "plan_gamification": false,
+      "prioridad1": false
     },
     {
       "po_number": "5511792",
@@ -372,8 +438,10 @@
       "tipo_servicio": "towBreakdown",
       "tipo_localidad": "local",
       "estatus": "Finished",
+      "programado": "No",
       "arribo_min": 61.794366667745635,
-      "plan_gamification": false
+      "plan_gamification": false,
+      "prioridad1": false
     },
     {
       "po_number": "5508906",
@@ -383,8 +451,10 @@
       "tipo_servicio": "custodia_del_vehiculo_asegurado",
       "tipo_localidad": "local",
       "estatus": "Finished",
+      "programado": "No",
       "arribo_min": null,
-      "plan_gamification": false
+      "plan_gamification": false,
+      "prioridad1": false
     },
     {
       "po_number": "5508909",
@@ -394,8 +464,10 @@
       "tipo_servicio": "desplazamiento",
       "tipo_localidad": "local",
       "estatus": "Finished",
+      "programado": "Si",
       "arribo_min": null,
-      "plan_gamification": false
+      "plan_gamification": false,
+      "prioridad1": false
     },
     {
       "po_number": "5510370",
@@ -405,8 +477,10 @@
       "tipo_servicio": "towBreakdown",
       "tipo_localidad": "local",
       "estatus": "Finished",
+      "programado": "No",
       "arribo_min": 199.60800000582822,
-      "plan_gamification": false
+      "plan_gamification": false,
+      "prioridad1": true
     },
     {
       "po_number": "5510471",
@@ -416,8 +490,10 @@
       "tipo_servicio": "towTire",
       "tipo_localidad": "local",
       "estatus": "Finished",
+      "programado": "No",
       "arribo_min": null,
-      "plan_gamification": false
+      "plan_gamification": false,
+      "prioridad1": false
     },
     {
       "po_number": "5508904",
@@ -427,8 +503,10 @@
       "tipo_servicio": "towBreakdown",
       "tipo_localidad": "foreign",
       "estatus": "Finished",
+      "programado": "No",
       "arribo_min": 36.9939999980852,
-      "plan_gamification": true
+      "plan_gamification": false,
+      "prioridad1": false
     },
     {
       "po_number": "5510165",
@@ -438,8 +516,10 @@
       "tipo_servicio": "towBreakdown",
       "tipo_localidad": "foreign",
       "estatus": "Finished",
+      "programado": "No",
       "arribo_min": 82.32663333183154,
-      "plan_gamification": true
+      "plan_gamification": true,
+      "prioridad1": false
     },
     {
       "po_number": "5510561",
@@ -449,8 +529,10 @@
       "tipo_servicio": "towBreakdown",
       "tipo_localidad": "local",
       "estatus": "Finished",
+      "programado": "No",
       "arribo_min": 77.62293333071284,
-      "plan_gamification": false
+      "plan_gamification": false,
+      "prioridad1": true
     },
     {
       "po_number": "5509480",
@@ -460,8 +542,10 @@
       "tipo_servicio": "towBreakdown",
       "tipo_localidad": "local",
       "estatus": "Finished",
+      "programado": "No",
       "arribo_min": 93.51951667573303,
-      "plan_gamification": true
+      "plan_gamification": true,
+      "prioridad1": false
     },
     {
       "po_number": "5511038",
@@ -471,8 +555,10 @@
       "tipo_servicio": "towBreakdown",
       "tipo_localidad": "local",
       "estatus": "Finished",
+      "programado": "Si",
       "arribo_min": 1018.1409166683443,
-      "plan_gamification": true
+      "plan_gamification": true,
+      "prioridad1": false
     },
     {
       "po_number": "5511058",
@@ -482,8 +568,10 @@
       "tipo_servicio": "towBreakdown",
       "tipo_localidad": "local",
       "estatus": "Finished",
+      "programado": "Si",
       "arribo_min": 946.5723166661337,
-      "plan_gamification": true
+      "plan_gamification": true,
+      "prioridad1": false
     },
     {
       "po_number": "5511049",
@@ -493,8 +581,10 @@
       "tipo_servicio": "towBreakdown",
       "tipo_localidad": "local",
       "estatus": "Finished",
+      "programado": "Si",
       "arribo_min": 886.9240833213553,
-      "plan_gamification": true
+      "plan_gamification": true,
+      "prioridad1": false
     },
     {
       "po_number": "5509073",
@@ -504,8 +594,10 @@
       "tipo_servicio": "towBreakdown",
       "tipo_localidad": "local",
       "estatus": "Finished",
+      "programado": "No",
       "arribo_min": 46.101783328922465,
-      "plan_gamification": true
+      "plan_gamification": true,
+      "prioridad1": false
     },
     {
       "po_number": "5509450",
@@ -515,8 +607,10 @@
       "tipo_servicio": "towBreakdown",
       "tipo_localidad": "local",
       "estatus": "Finished",
+      "programado": "No",
       "arribo_min": 97.02366666169837,
-      "plan_gamification": true
+      "plan_gamification": true,
+      "prioridad1": false
     },
     {
       "po_number": "5510394",
@@ -526,8 +620,10 @@
       "tipo_servicio": "towBreakdown",
       "tipo_localidad": "local",
       "estatus": "Finished",
+      "programado": "No",
       "arribo_min": 118.81661666790023,
-      "plan_gamification": false
+      "plan_gamification": false,
+      "prioridad1": false
     },
     {
       "po_number": "5510991",
@@ -537,8 +633,10 @@
       "tipo_servicio": "jumpStart",
       "tipo_localidad": "local",
       "estatus": "Finished",
+      "programado": "No",
       "arribo_min": 75.36426666076295,
-      "plan_gamification": false
+      "plan_gamification": false,
+      "prioridad1": false
     },
     {
       "po_number": "5510880",
@@ -548,8 +646,10 @@
       "tipo_servicio": "jumpStart",
       "tipo_localidad": "local",
       "estatus": "Finished",
+      "programado": "No",
       "arribo_min": 86.46148333093151,
-      "plan_gamification": false
+      "plan_gamification": false,
+      "prioridad1": false
     },
     {
       "po_number": "5510758",
@@ -559,8 +659,10 @@
       "tipo_servicio": "flatTire",
       "tipo_localidad": "foreign",
       "estatus": "Finished",
+      "programado": "No",
       "arribo_min": 123.86279999627732,
-      "plan_gamification": false
+      "plan_gamification": false,
+      "prioridad1": false
     },
     {
       "po_number": "5510845",
@@ -570,8 +672,10 @@
       "tipo_servicio": "towBreakdown",
       "tipo_localidad": "local",
       "estatus": "Finished",
+      "programado": "Si",
       "arribo_min": 983.6960333422758,
-      "plan_gamification": true
+      "plan_gamification": true,
+      "prioridad1": false
     },
     {
       "po_number": "5510651",
@@ -581,8 +685,10 @@
       "tipo_servicio": "towBreakdown",
       "tipo_localidad": "local",
       "estatus": "Finished",
+      "programado": "No",
       "arribo_min": 32.50686667626724,
-      "plan_gamification": true
+      "plan_gamification": true,
+      "prioridad1": false
     },
     {
       "po_number": "5509257",
@@ -592,8 +698,10 @@
       "tipo_servicio": "towBreakdown",
       "tipo_localidad": "foreign",
       "estatus": "Finished",
+      "programado": "No",
       "arribo_min": 14.146483337972313,
-      "plan_gamification": false
+      "plan_gamification": false,
+      "prioridad1": false
     },
     {
       "po_number": "5511567",
@@ -603,8 +711,10 @@
       "tipo_servicio": "locksmith",
       "tipo_localidad": "foreign",
       "estatus": "Finished",
+      "programado": "No",
       "arribo_min": 2.45239999727346,
-      "plan_gamification": false
+      "plan_gamification": false,
+      "prioridad1": false
     },
     {
       "po_number": "5510596",
@@ -614,8 +724,10 @@
       "tipo_servicio": "towBreakdown",
       "tipo_localidad": "local",
       "estatus": "Finished",
+      "programado": "No",
       "arribo_min": 69.79293332551606,
-      "plan_gamification": false
+      "plan_gamification": false,
+      "prioridad1": false
     },
     {
       "po_number": "5509873",
@@ -625,8 +737,10 @@
       "tipo_servicio": "jumpStart",
       "tipo_localidad": "foreign",
       "estatus": "Finished",
+      "programado": "No",
       "arribo_min": 54.34961667051539,
-      "plan_gamification": false
+      "plan_gamification": false,
+      "prioridad1": false
     },
     {
       "po_number": "5510820",
@@ -636,8 +750,10 @@
       "tipo_servicio": "jumpStart",
       "tipo_localidad": "foreign",
       "estatus": "Finished",
+      "programado": "No",
       "arribo_min": null,
-      "plan_gamification": false
+      "plan_gamification": false,
+      "prioridad1": false
     },
     {
       "po_number": "5511004",
@@ -647,8 +763,10 @@
       "tipo_servicio": "jumpStart",
       "tipo_localidad": "local",
       "estatus": "Finished",
+      "programado": "No",
       "arribo_min": 23.58016666257754,
-      "plan_gamification": false
+      "plan_gamification": false,
+      "prioridad1": false
     },
     {
       "po_number": "5509399",
@@ -658,8 +776,10 @@
       "tipo_servicio": "flatTire",
       "tipo_localidad": "local",
       "estatus": "Finished",
+      "programado": "No",
       "arribo_min": 68.66404999396764,
-      "plan_gamification": false
+      "plan_gamification": false,
+      "prioridad1": false
     },
     {
       "po_number": "5510063",
@@ -669,8 +789,10 @@
       "tipo_servicio": "batteryDiagnostic",
       "tipo_localidad": null,
       "estatus": "Finished",
+      "programado": "No",
       "arribo_min": 4.042383336927742,
-      "plan_gamification": false
+      "plan_gamification": false,
+      "prioridad1": false
     },
     {
       "po_number": "5511077",
@@ -680,8 +802,10 @@
       "tipo_servicio": "locksmith",
       "tipo_localidad": "foreign",
       "estatus": "Finished",
+      "programado": "No",
       "arribo_min": 41.245733331888914,
-      "plan_gamification": false
+      "plan_gamification": false,
+      "prioridad1": false
     },
     {
       "po_number": "5509582",
@@ -691,8 +815,10 @@
       "tipo_servicio": "jumpStart",
       "tipo_localidad": "local",
       "estatus": "Finished",
+      "programado": "No",
       "arribo_min": 40.56958332890645,
-      "plan_gamification": false
+      "plan_gamification": false,
+      "prioridad1": false
     },
     {
       "po_number": "5510836",
@@ -702,8 +828,10 @@
       "tipo_servicio": "desplazamiento",
       "tipo_localidad": null,
       "estatus": "Finished",
+      "programado": "Si",
       "arribo_min": null,
-      "plan_gamification": false
+      "plan_gamification": false,
+      "prioridad1": false
     },
     {
       "po_number": "5509386",
@@ -713,8 +841,10 @@
       "tipo_servicio": "towTire",
       "tipo_localidad": "local",
       "estatus": "Finished",
+      "programado": "Si",
       "arribo_min": null,
-      "plan_gamification": false
+      "plan_gamification": false,
+      "prioridad1": false
     },
     {
       "po_number": "5508855",
@@ -724,8 +854,10 @@
       "tipo_servicio": "towCollision",
       "tipo_localidad": "local",
       "estatus": "Finished",
+      "programado": "Si",
       "arribo_min": 663.7894499930553,
-      "plan_gamification": false
+      "plan_gamification": false,
+      "prioridad1": false
     },
     {
       "po_number": "5509959",
@@ -735,8 +867,10 @@
       "tipo_servicio": "locksmith",
       "tipo_localidad": "local",
       "estatus": "Finished",
+      "programado": "No",
       "arribo_min": 40.60649999650195,
-      "plan_gamification": false
+      "plan_gamification": false,
+      "prioridad1": false
     },
     {
       "po_number": "5509801",
@@ -746,8 +880,10 @@
       "tipo_servicio": "towBreakdown",
       "tipo_localidad": "local",
       "estatus": "Finished",
+      "programado": "No",
       "arribo_min": 100.7467333402019,
-      "plan_gamification": false
+      "plan_gamification": false,
+      "prioridad1": false
     },
     {
       "po_number": "5511140",
@@ -757,8 +893,10 @@
       "tipo_servicio": "towCollision",
       "tipo_localidad": "foreign",
       "estatus": "Finished",
+      "programado": "Si",
       "arribo_min": 1050.4139166686218,
-      "plan_gamification": true
+      "plan_gamification": false,
+      "prioridad1": false
     },
     {
       "po_number": "5510464",
@@ -768,8 +906,10 @@
       "tipo_servicio": "towBreakdown",
       "tipo_localidad": "local",
       "estatus": "Finished",
+      "programado": "Si",
       "arribo_min": 1028.2003000017721,
-      "plan_gamification": false
+      "plan_gamification": false,
+      "prioridad1": false
     },
     {
       "po_number": "5510396",
@@ -779,8 +919,10 @@
       "tipo_servicio": "towBreakdown",
       "tipo_localidad": "foreign",
       "estatus": "Finished",
+      "programado": "No",
       "arribo_min": 242.01068332535215,
-      "plan_gamification": false
+      "plan_gamification": false,
+      "prioridad1": false
     },
     {
       "po_number": "5510463",
@@ -790,8 +932,10 @@
       "tipo_servicio": "custodia_del_vehiculo_asegurado",
       "tipo_localidad": null,
       "estatus": "Finished",
+      "programado": "No",
       "arribo_min": null,
-      "plan_gamification": false
+      "plan_gamification": false,
+      "prioridad1": false
     },
     {
       "po_number": "5509929",
@@ -801,8 +945,10 @@
       "tipo_servicio": "towHeavyWeight",
       "tipo_localidad": "foreign",
       "estatus": "Finished",
+      "programado": "Si",
       "arribo_min": null,
-      "plan_gamification": true
+      "plan_gamification": false,
+      "prioridad1": false
     },
     {
       "po_number": "5510832",
@@ -812,8 +958,10 @@
       "tipo_servicio": "towBreakdown",
       "tipo_localidad": "local",
       "estatus": "Finished",
+      "programado": "Si",
       "arribo_min": 990.5040999990888,
-      "plan_gamification": false
+      "plan_gamification": false,
+      "prioridad1": false
     },
     {
       "po_number": "5509487",
@@ -823,8 +971,10 @@
       "tipo_servicio": "towCollision",
       "tipo_localidad": "foreign",
       "estatus": "Finished",
+      "programado": "No",
       "arribo_min": 18.08409999939613,
-      "plan_gamification": false
+      "plan_gamification": false,
+      "prioridad1": true
     },
     {
       "po_number": "5508907",
@@ -834,8 +984,10 @@
       "tipo_servicio": "towBreakdown",
       "tipo_localidad": "local",
       "estatus": "Finished",
+      "programado": "Si",
       "arribo_min": 339.81861667125486,
-      "plan_gamification": false
+      "plan_gamification": false,
+      "prioridad1": false
     },
     {
       "po_number": "5509579",
@@ -845,8 +997,10 @@
       "tipo_servicio": "towBreakdown",
       "tipo_localidad": "foreign",
       "estatus": "Finished",
+      "programado": "No",
       "arribo_min": 127.58808333193883,
-      "plan_gamification": false
+      "plan_gamification": false,
+      "prioridad1": false
     },
     {
       "po_number": "5510300",
@@ -856,8 +1010,10 @@
       "tipo_servicio": "towBreakdown",
       "tipo_localidad": "local",
       "estatus": "Finished",
+      "programado": "No",
       "arribo_min": 67.95086666825227,
-      "plan_gamification": false
+      "plan_gamification": false,
+      "prioridad1": false
     },
     {
       "po_number": "5509803",
@@ -867,8 +1023,10 @@
       "tipo_servicio": "towBreakdown",
       "tipo_localidad": "local",
       "estatus": "Finished",
+      "programado": "No",
       "arribo_min": 333.99383333860897,
-      "plan_gamification": false
+      "plan_gamification": false,
+      "prioridad1": false
     },
     {
       "po_number": "5504308",
@@ -878,8 +1036,10 @@
       "tipo_servicio": "jumpStart",
       "tipo_localidad": "local",
       "estatus": "Finished",
+      "programado": "No",
       "arribo_min": 29.158999999053776,
-      "plan_gamification": false
+      "plan_gamification": false,
+      "prioridad1": false
     },
     {
       "po_number": "5503117",
@@ -889,8 +1049,10 @@
       "tipo_servicio": "towBreakdown",
       "tipo_localidad": "foreign",
       "estatus": "Finished",
+      "programado": "No",
       "arribo_min": 77.04296667245217,
-      "plan_gamification": false
+      "plan_gamification": false,
+      "prioridad1": false
     },
     {
       "po_number": "5504019",
@@ -900,8 +1062,10 @@
       "tipo_servicio": "towBreakdown",
       "tipo_localidad": "local",
       "estatus": "Finished",
+      "programado": "No",
       "arribo_min": 120.12500000651926,
-      "plan_gamification": false
+      "plan_gamification": false,
+      "prioridad1": false
     },
     {
       "po_number": "5502943",
@@ -911,8 +1075,10 @@
       "tipo_servicio": "towBreakdown",
       "tipo_localidad": "local",
       "estatus": "Finished",
+      "programado": "No",
       "arribo_min": 86.96341667091474,
-      "plan_gamification": false
+      "plan_gamification": false,
+      "prioridad1": false
     },
     {
       "po_number": "5504664",
@@ -922,8 +1088,10 @@
       "tipo_servicio": "towBreakdown",
       "tipo_localidad": "local",
       "estatus": "Finished",
+      "programado": "Si",
       "arribo_min": 837.8789333277382,
-      "plan_gamification": true
+      "plan_gamification": true,
+      "prioridad1": false
     },
     {
       "po_number": "5503190",
@@ -933,8 +1101,10 @@
       "tipo_servicio": "towBreakdown",
       "tipo_localidad": "foreign",
       "estatus": "Finished",
+      "programado": "Si",
       "arribo_min": 181.30495000630617,
-      "plan_gamification": false
+      "plan_gamification": false,
+      "prioridad1": false
     },
     {
       "po_number": "5504626",
@@ -944,8 +1114,10 @@
       "tipo_servicio": "towBreakdown",
       "tipo_localidad": "local",
       "estatus": "Finished",
+      "programado": "Si",
       "arribo_min": 904.3669999984559,
-      "plan_gamification": true
+      "plan_gamification": true,
+      "prioridad1": false
     },
     {
       "po_number": "5503057",
@@ -955,8 +1127,10 @@
       "tipo_servicio": "towCollision",
       "tipo_localidad": "local",
       "estatus": "Finished",
+      "programado": "Si",
       "arribo_min": 287.3258833272848,
-      "plan_gamification": true
+      "plan_gamification": true,
+      "prioridad1": false
     },
     {
       "po_number": "5502965",
@@ -966,8 +1140,10 @@
       "tipo_servicio": "towCollision",
       "tipo_localidad": "local",
       "estatus": "Finished",
+      "programado": "Si",
       "arribo_min": 352.95588333858177,
-      "plan_gamification": false
+      "plan_gamification": false,
+      "prioridad1": false
     },
     {
       "po_number": "5503708",
@@ -977,8 +1153,10 @@
       "tipo_servicio": "towCollision",
       "tipo_localidad": "foreign",
       "estatus": "Finished",
+      "programado": "Si",
       "arribo_min": 200.74463333934546,
-      "plan_gamification": false
+      "plan_gamification": false,
+      "prioridad1": false
     },
     {
       "po_number": "5502893",
@@ -988,8 +1166,10 @@
       "tipo_servicio": "jumpStart",
       "tipo_localidad": "local",
       "estatus": "Finished",
+      "programado": "No",
       "arribo_min": 68.91768332454376,
-      "plan_gamification": false
+      "plan_gamification": false,
+      "prioridad1": false
     },
     {
       "po_number": "5502407",
@@ -999,8 +1179,10 @@
       "tipo_servicio": "jumpStart",
       "tipo_localidad": "local",
       "estatus": "Finished",
+      "programado": "No",
       "arribo_min": 50.17495000152849,
-      "plan_gamification": false
+      "plan_gamification": false,
+      "prioridad1": false
     },
     {
       "po_number": "5503828",
@@ -1010,8 +1192,10 @@
       "tipo_servicio": "towBreakdown",
       "tipo_localidad": "local",
       "estatus": "Finished",
+      "programado": "No",
       "arribo_min": 62.12071666494012,
-      "plan_gamification": false
+      "plan_gamification": false,
+      "prioridad1": false
     },
     {
       "po_number": "5504679",
@@ -1021,8 +1205,10 @@
       "tipo_servicio": "towBreakdown",
       "tipo_localidad": "foreign",
       "estatus": "Finished",
+      "programado": "Si",
       "arribo_min": 1066.2817333324347,
-      "plan_gamification": false
+      "plan_gamification": false,
+      "prioridad1": false
     },
     {
       "po_number": "5503997",
@@ -1032,8 +1218,10 @@
       "tipo_servicio": "conductor_designado",
       "tipo_localidad": null,
       "estatus": "Finished",
+      "programado": "Si",
       "arribo_min": null,
-      "plan_gamification": false
+      "plan_gamification": false,
+      "prioridad1": false
     },
     {
       "po_number": "5503951",
@@ -1043,8 +1231,10 @@
       "tipo_servicio": "desplazamiento",
       "tipo_localidad": null,
       "estatus": "Finished",
+      "programado": "Si",
       "arribo_min": null,
-      "plan_gamification": false
+      "plan_gamification": false,
+      "prioridad1": false
     },
     {
       "po_number": "5503978",
@@ -1054,8 +1244,10 @@
       "tipo_servicio": "conductor_designado",
       "tipo_localidad": null,
       "estatus": "Finished",
+      "programado": "Si",
       "arribo_min": null,
-      "plan_gamification": false
+      "plan_gamification": false,
+      "prioridad1": false
     },
     {
       "po_number": "5504215",
@@ -1065,8 +1257,10 @@
       "tipo_servicio": "towBreakdown",
       "tipo_localidad": "local",
       "estatus": "Finished",
+      "programado": "Si",
       "arribo_min": 703.1205333361868,
-      "plan_gamification": false
+      "plan_gamification": false,
+      "prioridad1": false
     },
     {
       "po_number": "5503950",
@@ -1076,8 +1270,10 @@
       "tipo_servicio": "desplazamiento",
       "tipo_localidad": null,
       "estatus": "Finished",
+      "programado": "Si",
       "arribo_min": null,
-      "plan_gamification": false
+      "plan_gamification": false,
+      "prioridad1": false
     },
     {
       "po_number": "5504401",
@@ -1087,8 +1283,10 @@
       "tipo_servicio": "towBreakdown",
       "tipo_localidad": "local",
       "estatus": "Finished",
+      "programado": "Si",
       "arribo_min": 559.396466659382,
-      "plan_gamification": false
+      "plan_gamification": false,
+      "prioridad1": false
     },
     {
       "po_number": "5504162",
@@ -1098,8 +1296,10 @@
       "tipo_servicio": "locksmith",
       "tipo_localidad": "local",
       "estatus": "Finished",
+      "programado": "Si",
       "arribo_min": 753.8402500050142,
-      "plan_gamification": false
+      "plan_gamification": false,
+      "prioridad1": false
     },
     {
       "po_number": "5503941",
@@ -1109,8 +1309,10 @@
       "tipo_servicio": "desplazamiento",
       "tipo_localidad": null,
       "estatus": "Finished",
+      "programado": "Si",
       "arribo_min": null,
-      "plan_gamification": false
+      "plan_gamification": false,
+      "prioridad1": false
     },
     {
       "po_number": "5504188",
@@ -1120,8 +1322,10 @@
       "tipo_servicio": "conductor_designado",
       "tipo_localidad": null,
       "estatus": "Finished",
+      "programado": "Si",
       "arribo_min": null,
-      "plan_gamification": false
+      "plan_gamification": false,
+      "prioridad1": false
     },
     {
       "po_number": "5503934",
@@ -1131,8 +1335,10 @@
       "tipo_servicio": "towBreakdown",
       "tipo_localidad": "local",
       "estatus": "Finished",
+      "programado": "Si",
       "arribo_min": 646.6242833412252,
-      "plan_gamification": false
+      "plan_gamification": false,
+      "prioridad1": false
     },
     {
       "po_number": "5504153",
@@ -1142,8 +1348,10 @@
       "tipo_servicio": "conductor_designado",
       "tipo_localidad": null,
       "estatus": "Finished",
+      "programado": "Si",
       "arribo_min": null,
-      "plan_gamification": false
+      "plan_gamification": false,
+      "prioridad1": false
     },
     {
       "po_number": "5503992",
@@ -1153,8 +1361,10 @@
       "tipo_servicio": "desplazamiento",
       "tipo_localidad": null,
       "estatus": "Finished",
+      "programado": "Si",
       "arribo_min": null,
-      "plan_gamification": false
+      "plan_gamification": false,
+      "prioridad1": false
     },
     {
       "po_number": "5503926",
@@ -1164,8 +1374,10 @@
       "tipo_servicio": "towBreakdown",
       "tipo_localidad": "local",
       "estatus": "Finished",
+      "programado": "Si",
       "arribo_min": 643.9483333344106,
-      "plan_gamification": false
+      "plan_gamification": false,
+      "prioridad1": false
     },
     {
       "po_number": "5504333",
@@ -1175,8 +1387,10 @@
       "tipo_servicio": "towBreakdown",
       "tipo_localidad": "local",
       "estatus": "Finished",
+      "programado": "Si",
       "arribo_min": 599.6453166729771,
-      "plan_gamification": false
+      "plan_gamification": false,
+      "prioridad1": false
     },
     {
       "po_number": "5504031",
@@ -1186,8 +1400,10 @@
       "tipo_servicio": "conductor_designado",
       "tipo_localidad": null,
       "estatus": "Finished",
+      "programado": "Si",
       "arribo_min": null,
-      "plan_gamification": false
+      "plan_gamification": false,
+      "prioridad1": false
     },
     {
       "po_number": "5504156",
@@ -1197,8 +1413,10 @@
       "tipo_servicio": "conductor_designado",
       "tipo_localidad": null,
       "estatus": "Finished",
+      "programado": "Si",
       "arribo_min": null,
-      "plan_gamification": false
+      "plan_gamification": false,
+      "prioridad1": false
     },
     {
       "po_number": "5504318",
@@ -1208,8 +1426,10 @@
       "tipo_servicio": "jumpStart",
       "tipo_localidad": "local",
       "estatus": "Finished",
+      "programado": "Si",
       "arribo_min": 606.3836833310779,
-      "plan_gamification": false
+      "plan_gamification": false,
+      "prioridad1": false
     },
     {
       "po_number": "5503915",
@@ -1219,8 +1439,10 @@
       "tipo_servicio": "towBreakdown",
       "tipo_localidad": "local",
       "estatus": "Finished",
+      "programado": "Si",
       "arribo_min": 640.4650833306368,
-      "plan_gamification": false
+      "plan_gamification": false,
+      "prioridad1": false
     },
     {
       "po_number": "5503768",
@@ -1230,8 +1452,10 @@
       "tipo_servicio": "conductor_designado",
       "tipo_localidad": null,
       "estatus": "Finished",
+      "programado": "Si",
       "arribo_min": null,
-      "plan_gamification": false
+      "plan_gamification": false,
+      "prioridad1": false
     },
     {
       "po_number": "5504213",
@@ -1241,8 +1465,10 @@
       "tipo_servicio": "locksmith",
       "tipo_localidad": "local",
       "estatus": "Finished",
+      "programado": "Si",
       "arribo_min": 705.7119333359879,
-      "plan_gamification": false
+      "plan_gamification": false,
+      "prioridad1": false
     },
     {
       "po_number": "5504193",
@@ -1252,8 +1478,10 @@
       "tipo_servicio": "jumpStart",
       "tipo_localidad": "local",
       "estatus": "Finished",
+      "programado": "Si",
       "arribo_min": 726.1254666745663,
-      "plan_gamification": false
+      "plan_gamification": false,
+      "prioridad1": false
     },
     {
       "po_number": "5503935",
@@ -1263,8 +1491,10 @@
       "tipo_servicio": "towBreakdown",
       "tipo_localidad": "local",
       "estatus": "Finished",
+      "programado": "Si",
       "arribo_min": 650.0039166666102,
-      "plan_gamification": false
+      "plan_gamification": false,
+      "prioridad1": false
     },
     {
       "po_number": "5504152",
@@ -1274,8 +1504,10 @@
       "tipo_servicio": "towBreakdown",
       "tipo_localidad": "local",
       "estatus": "Finished",
+      "programado": "Si",
       "arribo_min": 760.632183321286,
-      "plan_gamification": false
+      "plan_gamification": false,
+      "prioridad1": false
     },
     {
       "po_number": "5504298",
@@ -1285,8 +1517,10 @@
       "tipo_servicio": "towBreakdown",
       "tipo_localidad": "local",
       "estatus": "Finished",
+      "programado": "Si",
       "arribo_min": 647.7695833321195,
-      "plan_gamification": false
+      "plan_gamification": false,
+      "prioridad1": false
     },
     {
       "po_number": "5504400",
@@ -1296,8 +1530,10 @@
       "tipo_servicio": "towBreakdown",
       "tipo_localidad": "local",
       "estatus": "Finished",
+      "programado": "Si",
       "arribo_min": 575.1654833368957,
-      "plan_gamification": false
+      "plan_gamification": false,
+      "prioridad1": false
     },
     {
       "po_number": "5504356",
@@ -1307,8 +1543,10 @@
       "tipo_servicio": "towBreakdown",
       "tipo_localidad": "local",
       "estatus": "Finished",
+      "programado": "Si",
       "arribo_min": 593.1706833187491,
-      "plan_gamification": false
+      "plan_gamification": false,
+      "prioridad1": false
     },
     {
       "po_number": "5504211",
@@ -1318,8 +1556,10 @@
       "tipo_servicio": "jumpStart",
       "tipo_localidad": "local",
       "estatus": "Finished",
+      "programado": "Si",
       "arribo_min": 708.7763666594401,
-      "plan_gamification": false
+      "plan_gamification": false,
+      "prioridad1": false
     },
     {
       "po_number": "5504198",
@@ -1329,8 +1569,10 @@
       "tipo_servicio": "towBreakdown",
       "tipo_localidad": "local",
       "estatus": "Finished",
+      "programado": "Si",
       "arribo_min": 721.0584333410952,
-      "plan_gamification": false
+      "plan_gamification": false,
+      "prioridad1": false
     },
     {
       "po_number": "5503982",
@@ -1340,8 +1582,10 @@
       "tipo_servicio": "flatTire",
       "tipo_localidad": "local",
       "estatus": "Finished",
+      "programado": "Si",
       "arribo_min": 623.635750003159,
-      "plan_gamification": false
+      "plan_gamification": false,
+      "prioridad1": false
     },
     {
       "po_number": "5504020",
@@ -1351,8 +1595,10 @@
       "tipo_servicio": "conductor_designado",
       "tipo_localidad": null,
       "estatus": "Finished",
+      "programado": "Si",
       "arribo_min": null,
-      "plan_gamification": false
+      "plan_gamification": false,
+      "prioridad1": false
     },
     {
       "po_number": "5504014",
@@ -1362,8 +1608,10 @@
       "tipo_servicio": "towBreakdown",
       "tipo_localidad": "local",
       "estatus": "Finished",
+      "programado": "Si",
       "arribo_min": 798.8456000061706,
-      "plan_gamification": false
+      "plan_gamification": false,
+      "prioridad1": false
     },
     {
       "po_number": "5503932",
@@ -1373,8 +1621,10 @@
       "tipo_servicio": "conductor_designado",
       "tipo_localidad": null,
       "estatus": "Finished",
+      "programado": "Si",
       "arribo_min": null,
-      "plan_gamification": false
+      "plan_gamification": false,
+      "prioridad1": false
     },
     {
       "po_number": "5504164",
@@ -1384,8 +1634,10 @@
       "tipo_servicio": "towBreakdown",
       "tipo_localidad": "local",
       "estatus": "Finished",
+      "programado": "Si",
       "arribo_min": 750.8624333306216,
-      "plan_gamification": false
+      "plan_gamification": false,
+      "prioridad1": false
     },
     {
       "po_number": "5504218",
@@ -1395,8 +1647,10 @@
       "tipo_servicio": "towBreakdown",
       "tipo_localidad": "foreign",
       "estatus": "Finished",
+      "programado": "Si",
       "arribo_min": 687.6203666639049,
-      "plan_gamification": false
+      "plan_gamification": false,
+      "prioridad1": false
     },
     {
       "po_number": "5503946",
@@ -1406,8 +1660,10 @@
       "tipo_servicio": "towBreakdown",
       "tipo_localidad": "local",
       "estatus": "Finished",
+      "programado": "Si",
       "arribo_min": 654.0068166714627,
-      "plan_gamification": false
+      "plan_gamification": false,
+      "prioridad1": false
     },
     {
       "po_number": "5504195",
@@ -1417,8 +1673,10 @@
       "tipo_servicio": "jumpStart",
       "tipo_localidad": "local",
       "estatus": "Finished",
+      "programado": "Si",
       "arribo_min": 723.6601500073448,
-      "plan_gamification": false
+      "plan_gamification": false,
+      "prioridad1": false
     },
     {
       "po_number": "5504181",
@@ -1428,8 +1686,10 @@
       "tipo_servicio": "towBreakdown",
       "tipo_localidad": "local",
       "estatus": "Finished",
+      "programado": "Si",
       "arribo_min": 742.1969666762743,
-      "plan_gamification": false
+      "plan_gamification": false,
+      "prioridad1": false
     },
     {
       "po_number": "5504175",
@@ -1439,8 +1699,10 @@
       "tipo_servicio": "conductor_designado",
       "tipo_localidad": null,
       "estatus": "Finished",
+      "programado": "Si",
       "arribo_min": null,
-      "plan_gamification": false
+      "plan_gamification": false,
+      "prioridad1": false
     },
     {
       "po_number": "5504190",
@@ -1450,8 +1712,10 @@
       "tipo_servicio": "jumpStart",
       "tipo_localidad": "local",
       "estatus": "Finished",
+      "programado": "Si",
       "arribo_min": 736.5010666719172,
-      "plan_gamification": false
+      "plan_gamification": false,
+      "prioridad1": false
     },
     {
       "po_number": "5504277",
@@ -1461,8 +1725,10 @@
       "tipo_servicio": "towBreakdown",
       "tipo_localidad": "local",
       "estatus": "Finished",
+      "programado": "Si",
       "arribo_min": 660.1128333387896,
-      "plan_gamification": false
+      "plan_gamification": false,
+      "prioridad1": false
     },
     {
       "po_number": "5503989",
@@ -1472,8 +1738,10 @@
       "tipo_servicio": "conductor_designado",
       "tipo_localidad": null,
       "estatus": "Finished",
+      "programado": "Si",
       "arribo_min": null,
-      "plan_gamification": false
+      "plan_gamification": false,
+      "prioridad1": false
     },
     {
       "po_number": "5503917",
@@ -1483,8 +1751,10 @@
       "tipo_servicio": "towBreakdown",
       "tipo_localidad": "local",
       "estatus": "Finished",
+      "programado": "Si",
       "arribo_min": 642.7124999987427,
-      "plan_gamification": false
+      "plan_gamification": false,
+      "prioridad1": false
     },
     {
       "po_number": "5504928",
@@ -1494,8 +1764,10 @@
       "tipo_servicio": "towBreakdown",
       "tipo_localidad": "local",
       "estatus": "Finished",
+      "programado": "Si",
       "arribo_min": 553.2911666762084,
-      "plan_gamification": false
+      "plan_gamification": false,
+      "prioridad1": false
     },
     {
       "po_number": "5505362",
@@ -1505,8 +1777,10 @@
       "tipo_servicio": "towBreakdown",
       "tipo_localidad": "local",
       "estatus": "Finished",
+      "programado": "No",
       "arribo_min": 3.235483334865421,
-      "plan_gamification": false
+      "plan_gamification": false,
+      "prioridad1": false
     },
     {
       "po_number": "5503611",
@@ -1516,8 +1790,10 @@
       "tipo_servicio": "towCollision",
       "tipo_localidad": "foreign",
       "estatus": "Finished",
+      "programado": "No",
       "arribo_min": 324.9850333377253,
-      "plan_gamification": false
+      "plan_gamification": false,
+      "prioridad1": false
     },
     {
       "po_number": "5502483",
@@ -1527,8 +1803,10 @@
       "tipo_servicio": "towBreakdown",
       "tipo_localidad": "foreign",
       "estatus": "Finished",
+      "programado": "No",
       "arribo_min": 348.69790000724606,
-      "plan_gamification": false
+      "plan_gamification": false,
+      "prioridad1": false
     },
     {
       "po_number": "5502670",
@@ -1538,8 +1816,10 @@
       "tipo_servicio": "desplazamiento",
       "tipo_localidad": null,
       "estatus": "Finished",
+      "programado": "No",
       "arribo_min": null,
-      "plan_gamification": false
+      "plan_gamification": false,
+      "prioridad1": false
     },
     {
       "po_number": "5502304",
@@ -1549,8 +1829,10 @@
       "tipo_servicio": "towBreakdown",
       "tipo_localidad": "local",
       "estatus": "Finished",
+      "programado": "No",
       "arribo_min": 3236.722350002965,
-      "plan_gamification": false
+      "plan_gamification": false,
+      "prioridad1": false
     },
     {
       "po_number": "5503295",
@@ -1560,8 +1842,10 @@
       "tipo_servicio": "towTire",
       "tipo_localidad": "foreign",
       "estatus": "Finished",
+      "programado": "No",
       "arribo_min": null,
-      "plan_gamification": false
+      "plan_gamification": false,
+      "prioridad1": false
     },
     {
       "po_number": "5503284",
@@ -1571,8 +1855,10 @@
       "tipo_servicio": "towBreakdown",
       "tipo_localidad": "foreign",
       "estatus": "Finished",
+      "programado": "Si",
       "arribo_min": 1266.999933323823,
-      "plan_gamification": false
+      "plan_gamification": false,
+      "prioridad1": false
     },
     {
       "po_number": "5505321",
@@ -1582,8 +1868,10 @@
       "tipo_servicio": "basic_vehicle_washing_home",
       "tipo_localidad": null,
       "estatus": "Finished",
+      "programado": "No",
       "arribo_min": null,
-      "plan_gamification": false
+      "plan_gamification": false,
+      "prioridad1": false
     },
     {
       "po_number": "5504694",
@@ -1593,8 +1881,10 @@
       "tipo_servicio": "towBreakdown",
       "tipo_localidad": "local",
       "estatus": "Finished",
+      "programado": "Si",
       "arribo_min": 804.0173000085633,
-      "plan_gamification": true
+      "plan_gamification": true,
+      "prioridad1": false
     },
     {
       "po_number": "5502307",
@@ -1604,8 +1894,10 @@
       "tipo_servicio": "towExtraction",
       "tipo_localidad": "local",
       "estatus": "Finished",
+      "programado": "No",
       "arribo_min": null,
-      "plan_gamification": false
+      "plan_gamification": false,
+      "prioridad1": false
     },
     {
       "po_number": "5503299",
@@ -1615,8 +1907,10 @@
       "tipo_servicio": "towExtraction",
       "tipo_localidad": "local",
       "estatus": "Finished",
+      "programado": "Si",
       "arribo_min": null,
-      "plan_gamification": false
+      "plan_gamification": false,
+      "prioridad1": false
     },
     {
       "po_number": "5502698",
@@ -1626,8 +1920,10 @@
       "tipo_servicio": "towBreakdown",
       "tipo_localidad": "local",
       "estatus": "Finished",
+      "programado": "No",
       "arribo_min": 32.96311666374095,
-      "plan_gamification": true
+      "plan_gamification": true,
+      "prioridad1": false
     },
     {
       "po_number": "5504027",
@@ -1637,8 +1933,10 @@
       "tipo_servicio": "towBreakdown",
       "tipo_localidad": "foreign",
       "estatus": "Finished",
+      "programado": "No",
       "arribo_min": 2381.4956333418377,
-      "plan_gamification": false
+      "plan_gamification": false,
+      "prioridad1": false
     },
     {
       "po_number": "5503931",
@@ -1648,8 +1946,10 @@
       "tipo_servicio": "towBreakdown",
       "tipo_localidad": "foreign",
       "estatus": "Finished",
+      "programado": "No",
       "arribo_min": 411.7785833333619,
-      "plan_gamification": false
+      "plan_gamification": false,
+      "prioridad1": false
     },
     {
       "po_number": "5505087",
@@ -1659,8 +1959,10 @@
       "tipo_servicio": "custodia_del_vehiculo_asegurado",
       "tipo_localidad": "local",
       "estatus": "Finished",
+      "programado": "No",
       "arribo_min": null,
-      "plan_gamification": false
+      "plan_gamification": false,
+      "prioridad1": false
     },
     {
       "po_number": "5502782",
@@ -1670,8 +1972,10 @@
       "tipo_servicio": "jumpStart",
       "tipo_localidad": "foreign",
       "estatus": "Finished",
+      "programado": "No",
       "arribo_min": null,
-      "plan_gamification": false
+      "plan_gamification": false,
+      "prioridad1": false
     },
     {
       "po_number": "5505103",
@@ -1681,8 +1985,10 @@
       "tipo_servicio": "jumpStart",
       "tipo_localidad": "local",
       "estatus": "Finished",
+      "programado": "No",
       "arribo_min": 70.71443332708441,
-      "plan_gamification": false
+      "plan_gamification": false,
+      "prioridad1": false
     },
     {
       "po_number": "5504284",
@@ -1692,8 +1998,10 @@
       "tipo_servicio": "towBreakdown",
       "tipo_localidad": "foreign",
       "estatus": "Finished",
+      "programado": "Si",
       "arribo_min": 935.0791000085883,
-      "plan_gamification": true
+      "plan_gamification": true,
+      "prioridad1": false
     },
     {
       "po_number": "5503700",
@@ -1703,8 +2011,10 @@
       "tipo_servicio": "towBreakdown",
       "tipo_localidad": "foreign",
       "estatus": "Finished",
+      "programado": "Si",
       "arribo_min": 123.26598333427683,
-      "plan_gamification": false
+      "plan_gamification": false,
+      "prioridad1": false
     },
     {
       "po_number": "5504779",
@@ -1714,8 +2024,10 @@
       "tipo_servicio": "towCollision",
       "tipo_localidad": "foreign",
       "estatus": "Finished",
+      "programado": "No",
       "arribo_min": 137.50378332682885,
-      "plan_gamification": false
+      "plan_gamification": false,
+      "prioridad1": false
     },
     {
       "po_number": "5504723",
@@ -1725,8 +2037,10 @@
       "tipo_servicio": "towBreakdown",
       "tipo_localidad": "foreign",
       "estatus": "Finished",
+      "programado": "No",
       "arribo_min": 93.39399999123998,
-      "plan_gamification": false
+      "plan_gamification": false,
+      "prioridad1": false
     },
     {
       "po_number": "5504821",
@@ -1736,8 +2050,10 @@
       "tipo_servicio": "custodia_del_vehiculo_asegurado",
       "tipo_localidad": "local",
       "estatus": "Finished",
+      "programado": "No",
       "arribo_min": null,
-      "plan_gamification": false
+      "plan_gamification": false,
+      "prioridad1": false
     },
     {
       "po_number": "5504868",
@@ -1747,8 +2063,10 @@
       "tipo_servicio": "orientacion_legal_telefonica",
       "tipo_localidad": null,
       "estatus": "Finished",
+      "programado": "No",
       "arribo_min": null,
-      "plan_gamification": false
+      "plan_gamification": false,
+      "prioridad1": false
     },
     {
       "po_number": "5504791",
@@ -1758,8 +2076,10 @@
       "tipo_servicio": "towBreakdown",
       "tipo_localidad": "foreign",
       "estatus": "Finished",
+      "programado": "No",
       "arribo_min": 1200.8068833255675,
-      "plan_gamification": false
+      "plan_gamification": false,
+      "prioridad1": false
     },
     {
       "po_number": "5504009",
@@ -1769,8 +2089,10 @@
       "tipo_servicio": "towBreakdown",
       "tipo_localidad": "local",
       "estatus": "Finished",
+      "programado": "Si",
       "arribo_min": 799.2159499973059,
-      "plan_gamification": false
+      "plan_gamification": false,
+      "prioridad1": false
     },
     {
       "po_number": "5505099",
@@ -1780,8 +2102,10 @@
       "tipo_servicio": "towBreakdown",
       "tipo_localidad": "foreign",
       "estatus": "Finished",
+      "programado": "Si",
       "arribo_min": null,
-      "plan_gamification": false
+      "plan_gamification": false,
+      "prioridad1": false
     },
     {
       "po_number": "5505323",
@@ -1791,8 +2115,10 @@
       "tipo_servicio": "towBreakdown",
       "tipo_localidad": "local",
       "estatus": "Finished",
+      "programado": "Si",
       "arribo_min": 690.1615333207883,
-      "plan_gamification": false
+      "plan_gamification": false,
+      "prioridad1": false
     },
     {
       "po_number": "5505296",
@@ -1802,8 +2128,10 @@
       "tipo_servicio": "towBreakdown",
       "tipo_localidad": "local",
       "estatus": "Finished",
+      "programado": "No",
       "arribo_min": 74.53675000579096,
-      "plan_gamification": false
+      "plan_gamification": false,
+      "prioridad1": false
     },
     {
       "po_number": "5503584",
@@ -1813,8 +2141,10 @@
       "tipo_servicio": "towCollision",
       "tipo_localidad": "local",
       "estatus": "Finished",
+      "programado": "No",
       "arribo_min": 1.3913333241362125,
-      "plan_gamification": false
+      "plan_gamification": false,
+      "prioridad1": false
     },
     {
       "po_number": "5505113",
@@ -1824,8 +2154,10 @@
       "tipo_servicio": "towBreakdown",
       "tipo_localidad": "local",
       "estatus": "Finished",
+      "programado": "No",
       "arribo_min": 0.19823333015665412,
-      "plan_gamification": false
+      "plan_gamification": false,
+      "prioridad1": false
     },
     {
       "po_number": "5505081",
@@ -1835,8 +2167,10 @@
       "tipo_servicio": "towBreakdown",
       "tipo_localidad": "local",
       "estatus": "Finished",
+      "programado": "Si",
       "arribo_min": 762.4339833261911,
-      "plan_gamification": false
+      "plan_gamification": false,
+      "prioridad1": false
     },
     {
       "po_number": "5505071",
@@ -1846,8 +2180,10 @@
       "tipo_servicio": "jumpStart",
       "tipo_localidad": "local",
       "estatus": "Finished",
+      "programado": "No",
       "arribo_min": null,
-      "plan_gamification": false
+      "plan_gamification": false,
+      "prioridad1": false
     },
     {
       "po_number": "5504576",
@@ -1857,8 +2193,10 @@
       "tipo_servicio": "jumpStart",
       "tipo_localidad": "local",
       "estatus": "Finished",
+      "programado": "No",
       "arribo_min": 64.43438334041275,
-      "plan_gamification": false
+      "plan_gamification": false,
+      "prioridad1": false
     },
     {
       "po_number": "5502343",
@@ -1868,8 +2206,10 @@
       "tipo_servicio": "towBreakdown",
       "tipo_localidad": "local",
       "estatus": "Finished",
+      "programado": "No",
       "arribo_min": 43.44055000576191,
-      "plan_gamification": false
+      "plan_gamification": false,
+      "prioridad1": false
     },
     {
       "po_number": "5503032",
@@ -1879,8 +2219,10 @@
       "tipo_servicio": "towBreakdown",
       "tipo_localidad": "local",
       "estatus": "Finished",
+      "programado": "No",
       "arribo_min": 78.47860001027584,
-      "plan_gamification": false
+      "plan_gamification": false,
+      "prioridad1": false
     },
     {
       "po_number": "5503261",
@@ -1890,8 +2232,10 @@
       "tipo_servicio": "towBreakdown",
       "tipo_localidad": "foreign",
       "estatus": "Finished",
+      "programado": "Si",
       "arribo_min": 1290.9650333365425,
-      "plan_gamification": false
+      "plan_gamification": false,
+      "prioridad1": false
     },
     {
       "po_number": "5505401",
@@ -1901,8 +2245,10 @@
       "tipo_servicio": "towBreakdown",
       "tipo_localidad": "local",
       "estatus": "Finished",
+      "programado": "Si",
       "arribo_min": 619.8473333346192,
-      "plan_gamification": true
+      "plan_gamification": true,
+      "prioridad1": false
     },
     {
       "po_number": "5505397",
@@ -1912,8 +2258,10 @@
       "tipo_servicio": "towBreakdown",
       "tipo_localidad": "local",
       "estatus": "Finished",
+      "programado": "Si",
       "arribo_min": 716.2625333375763,
-      "plan_gamification": false
+      "plan_gamification": false,
+      "prioridad1": true
     },
     {
       "po_number": "5505391",
@@ -1923,8 +2271,10 @@
       "tipo_servicio": "towBreakdown",
       "tipo_localidad": "local",
       "estatus": "Finished",
+      "programado": "Si",
       "arribo_min": 875.0871333223768,
-      "plan_gamification": false
+      "plan_gamification": false,
+      "prioridad1": true
     },
     {
       "po_number": "5505395",
@@ -1934,8 +2284,10 @@
       "tipo_servicio": "towBreakdown",
       "tipo_localidad": "local",
       "estatus": "Finished",
+      "programado": "Si",
       "arribo_min": 836.6840833285823,
-      "plan_gamification": false
+      "plan_gamification": false,
+      "prioridad1": true
     },
     {
       "po_number": "5505382",
@@ -1945,8 +2297,10 @@
       "tipo_servicio": "towBreakdown",
       "tipo_localidad": "local",
       "estatus": "Finished",
+      "programado": "Si",
       "arribo_min": 983.2209833327215,
-      "plan_gamification": false
+      "plan_gamification": false,
+      "prioridad1": true
     },
     {
       "po_number": "5505384",
@@ -1956,8 +2310,10 @@
       "tipo_servicio": "towBreakdown",
       "tipo_localidad": "local",
       "estatus": "Finished",
+      "programado": "Si",
       "arribo_min": 759.2322666663677,
-      "plan_gamification": false
+      "plan_gamification": false,
+      "prioridad1": true
     },
     {
       "po_number": "5502610",
@@ -1967,8 +2323,10 @@
       "tipo_servicio": "desplazamiento",
       "tipo_localidad": null,
       "estatus": "Finished",
+      "programado": "No",
       "arribo_min": null,
-      "plan_gamification": false
+      "plan_gamification": false,
+      "prioridad1": false
     },
     {
       "po_number": "5502768",
@@ -1978,8 +2336,10 @@
       "tipo_servicio": "flatTire",
       "tipo_localidad": "local",
       "estatus": "Finished",
+      "programado": "No",
       "arribo_min": 37.692150003276765,
-      "plan_gamification": false
+      "plan_gamification": false,
+      "prioridad1": false
     },
     {
       "po_number": "5503532",
@@ -1989,8 +2349,10 @@
       "tipo_servicio": "jumpStart",
       "tipo_localidad": "local",
       "estatus": "Finished",
+      "programado": "No",
       "arribo_min": 38.33451666170731,
-      "plan_gamification": false
+      "plan_gamification": false,
+      "prioridad1": false
     },
     {
       "po_number": "5504510",
@@ -2000,8 +2362,10 @@
       "tipo_servicio": "locksmith",
       "tipo_localidad": "local",
       "estatus": "Finished",
+      "programado": "No",
       "arribo_min": 49.204899994656444,
-      "plan_gamification": false
+      "plan_gamification": false,
+      "prioridad1": false
     },
     {
       "po_number": "5504425",
@@ -2011,8 +2375,10 @@
       "tipo_servicio": "towCollision",
       "tipo_localidad": "local",
       "estatus": "Finished",
+      "programado": "Si",
       "arribo_min": 1062.3238333454356,
-      "plan_gamification": true
+      "plan_gamification": true,
+      "prioridad1": false
     },
     {
       "po_number": "5502983",
@@ -2022,8 +2388,10 @@
       "tipo_servicio": "jumpStart",
       "tipo_localidad": "local",
       "estatus": "Finished",
+      "programado": "No",
       "arribo_min": 36.149850001093,
-      "plan_gamification": false
+      "plan_gamification": false,
+      "prioridad1": false
     },
     {
       "po_number": "5502735",
@@ -2033,8 +2401,10 @@
       "tipo_servicio": "towCollision",
       "tipo_localidad": "local",
       "estatus": "Finished",
+      "programado": "No",
       "arribo_min": 124.64476666529663,
-      "plan_gamification": false
+      "plan_gamification": false,
+      "prioridad1": true
     },
     {
       "po_number": "5503424",
@@ -2044,8 +2414,10 @@
       "tipo_servicio": "towHeavyWeight",
       "tipo_localidad": "foreign",
       "estatus": "Finished",
+      "programado": "No",
       "arribo_min": null,
-      "plan_gamification": false
+      "plan_gamification": false,
+      "prioridad1": false
     },
     {
       "po_number": "5503529",
@@ -2055,8 +2427,10 @@
       "tipo_servicio": "towBreakdown",
       "tipo_localidad": "local",
       "estatus": "Finished",
+      "programado": "No",
       "arribo_min": 81.06381666962989,
-      "plan_gamification": false
+      "plan_gamification": false,
+      "prioridad1": false
     },
     {
       "po_number": "5503384",
@@ -2066,8 +2440,10 @@
       "tipo_servicio": "towCollision",
       "tipo_localidad": "foreign",
       "estatus": "Finished",
+      "programado": "Si",
       "arribo_min": 270.35514999646693,
-      "plan_gamification": false
+      "plan_gamification": false,
+      "prioridad1": false
     },
     {
       "po_number": "5503401",
@@ -2077,8 +2453,10 @@
       "tipo_servicio": "towBreakdown",
       "tipo_localidad": "local",
       "estatus": "Finished",
+      "programado": "No",
       "arribo_min": 8.949266674462706,
-      "plan_gamification": false
+      "plan_gamification": false,
+      "prioridad1": false
     },
     {
       "po_number": "5505277",
@@ -2088,8 +2466,10 @@
       "tipo_servicio": "jumpStart",
       "tipo_localidad": "local",
       "estatus": "Finished",
+      "programado": "No",
       "arribo_min": 42.35231667291373,
-      "plan_gamification": false
+      "plan_gamification": false,
+      "prioridad1": false
     },
     {
       "po_number": "5503738",
@@ -2099,8 +2479,10 @@
       "tipo_servicio": "towHeavyWeight",
       "tipo_localidad": "local",
       "estatus": "Finished",
+      "programado": "No",
       "arribo_min": null,
-      "plan_gamification": false
+      "plan_gamification": false,
+      "prioridad1": false
     },
     {
       "po_number": "5502344",
@@ -2110,8 +2492,10 @@
       "tipo_servicio": "servicio_acompanante",
       "tipo_localidad": null,
       "estatus": "Finished",
+      "programado": "No",
       "arribo_min": null,
-      "plan_gamification": false
+      "plan_gamification": false,
+      "prioridad1": false
     },
     {
       "po_number": "5503019",
@@ -2121,8 +2505,10 @@
       "tipo_servicio": "towBreakdown",
       "tipo_localidad": "local",
       "estatus": "Finished",
+      "programado": "Si",
       "arribo_min": 128.36316665634513,
-      "plan_gamification": false
+      "plan_gamification": false,
+      "prioridad1": false
     },
     {
       "po_number": "5503757",
@@ -2132,8 +2518,10 @@
       "tipo_servicio": "towCollision",
       "tipo_localidad": "foreign",
       "estatus": "Finished",
+      "programado": "No",
       "arribo_min": 64.92171667283401,
-      "plan_gamification": true
+      "plan_gamification": true,
+      "prioridad1": false
     },
     {
       "po_number": "5504574",
@@ -2143,8 +2531,10 @@
       "tipo_servicio": "towBreakdown",
       "tipo_localidad": "local",
       "estatus": "Finished",
+      "programado": "Si",
       "arribo_min": 882.9513333260547,
-      "plan_gamification": true
+      "plan_gamification": true,
+      "prioridad1": false
     },
     {
       "po_number": "5503444",
@@ -2154,8 +2544,10 @@
       "tipo_servicio": "towBreakdown",
       "tipo_localidad": "local",
       "estatus": "Finished",
+      "programado": "Si",
       "arribo_min": 1094.7145333397202,
-      "plan_gamification": false
+      "plan_gamification": false,
+      "prioridad1": false
     },
     {
       "po_number": "5502402",
@@ -2165,8 +2557,10 @@
       "tipo_servicio": "jumpStart",
       "tipo_localidad": "local",
       "estatus": "Finished",
+      "programado": "No",
       "arribo_min": 103.30191666609608,
-      "plan_gamification": false
+      "plan_gamification": false,
+      "prioridad1": false
     },
     {
       "po_number": "5504483",
@@ -2176,8 +2570,10 @@
       "tipo_servicio": "towBreakdown",
       "tipo_localidad": "foreign",
       "estatus": "Finished",
+      "programado": "No",
       "arribo_min": 98.74223333084956,
-      "plan_gamification": false
+      "plan_gamification": false,
+      "prioridad1": false
     },
     {
       "po_number": "5504980",
@@ -2187,8 +2583,10 @@
       "tipo_servicio": "towBreakdown",
       "tipo_localidad": "local",
       "estatus": "Finished",
+      "programado": "Si",
       "arribo_min": 789.7290833399165,
-      "plan_gamification": false
+      "plan_gamification": false,
+      "prioridad1": false
     },
     {
       "po_number": "5504976",
@@ -2198,8 +2596,10 @@
       "tipo_servicio": "custodia_del_vehiculo_asegurado",
       "tipo_localidad": null,
       "estatus": "Finished",
+      "programado": "No",
       "arribo_min": null,
-      "plan_gamification": false
+      "plan_gamification": false,
+      "prioridad1": false
     },
     {
       "po_number": "5505106",
@@ -2209,8 +2609,10 @@
       "tipo_servicio": "towBreakdown",
       "tipo_localidad": "local",
       "estatus": "Finished",
+      "programado": "No",
       "arribo_min": 0.17316667246632278,
-      "plan_gamification": false
+      "plan_gamification": false,
+      "prioridad1": false
     },
     {
       "po_number": "5506882",
@@ -2220,8 +2622,10 @@
       "tipo_servicio": "jumpStart",
       "tipo_localidad": "local",
       "estatus": "Finished",
+      "programado": "No",
       "arribo_min": 33.05056667304598,
-      "plan_gamification": false
+      "plan_gamification": false,
+      "prioridad1": false
     },
     {
       "po_number": "5506466",
@@ -2231,8 +2635,10 @@
       "tipo_servicio": "desplazamiento",
       "tipo_localidad": null,
       "estatus": "Finished",
+      "programado": "No",
       "arribo_min": null,
-      "plan_gamification": false
+      "plan_gamification": false,
+      "prioridad1": false
     },
     {
       "po_number": "5506009",
@@ -2242,8 +2648,10 @@
       "tipo_servicio": "towBreakdown",
       "tipo_localidad": "local",
       "estatus": "Finished",
+      "programado": "No",
       "arribo_min": 116.93426666781306,
-      "plan_gamification": false
+      "plan_gamification": false,
+      "prioridad1": false
     },
     {
       "po_number": "5505987",
@@ -2253,8 +2661,10 @@
       "tipo_servicio": "towBreakdown",
       "tipo_localidad": "local",
       "estatus": "Finished",
+      "programado": "No",
       "arribo_min": 28.818183339899406,
-      "plan_gamification": false
+      "plan_gamification": false,
+      "prioridad1": false
     },
     {
       "po_number": "5508429",
@@ -2264,8 +2674,10 @@
       "tipo_servicio": "jumpStart",
       "tipo_localidad": "local",
       "estatus": "Finished",
+      "programado": "No",
       "arribo_min": 55.092500002356246,
-      "plan_gamification": false
+      "plan_gamification": false,
+      "prioridad1": false
     },
     {
       "po_number": "5507713",
@@ -2275,8 +2687,10 @@
       "tipo_servicio": "towBreakdown",
       "tipo_localidad": "local",
       "estatus": "Finished",
+      "programado": "No",
       "arribo_min": 98.08928333572112,
-      "plan_gamification": true
+      "plan_gamification": true,
+      "prioridad1": false
     },
     {
       "po_number": "5507686",
@@ -2286,8 +2700,10 @@
       "tipo_servicio": "jumpStart",
       "tipo_localidad": "local",
       "estatus": "Finished",
+      "programado": "No",
       "arribo_min": 79.27048332989216,
-      "plan_gamification": false
+      "plan_gamification": false,
+      "prioridad1": false
     },
     {
       "po_number": "5505403",
@@ -2297,8 +2713,10 @@
       "tipo_servicio": "towBreakdown",
       "tipo_localidad": "local",
       "estatus": "Finished",
+      "programado": "Si",
       "arribo_min": null,
-      "plan_gamification": true
+      "plan_gamification": true,
+      "prioridad1": false
     },
     {
       "po_number": "5506074",
@@ -2308,8 +2726,10 @@
       "tipo_servicio": "jumpStart",
       "tipo_localidad": "local",
       "estatus": "Finished",
+      "programado": "No",
       "arribo_min": 24.39808333525434,
-      "plan_gamification": false
+      "plan_gamification": false,
+      "prioridad1": false
     },
     {
       "po_number": "5507442",
@@ -2319,8 +2739,10 @@
       "tipo_servicio": "jumpStart",
       "tipo_localidad": "local",
       "estatus": "Finished",
+      "programado": "No",
       "arribo_min": 32.104716666508466,
-      "plan_gamification": false
+      "plan_gamification": false,
+      "prioridad1": false
     },
     {
       "po_number": "5508208",
@@ -2330,8 +2752,10 @@
       "tipo_servicio": "jumpStart",
       "tipo_localidad": "local",
       "estatus": "Finished",
+      "programado": "No",
       "arribo_min": 33.18423333344981,
-      "plan_gamification": false
+      "plan_gamification": false,
+      "prioridad1": false
     },
     {
       "po_number": "5506901",
@@ -2341,8 +2765,10 @@
       "tipo_servicio": "towBreakdown",
       "tipo_localidad": "local",
       "estatus": "Finished",
+      "programado": "No",
       "arribo_min": 142.20409999368712,
-      "plan_gamification": false
+      "plan_gamification": false,
+      "prioridad1": false
     },
     {
       "po_number": "5508420",
@@ -2352,8 +2778,10 @@
       "tipo_servicio": "towBreakdown",
       "tipo_localidad": "foreign",
       "estatus": "Finished",
+      "programado": "Si",
       "arribo_min": 744.6494999981951,
-      "plan_gamification": true
+      "plan_gamification": true,
+      "prioridad1": false
     },
     {
       "po_number": "5508452",
@@ -2363,8 +2791,10 @@
       "tipo_servicio": "towBreakdown",
       "tipo_localidad": "local",
       "estatus": "Finished",
+      "programado": "Si",
       "arribo_min": 600.9122333326377,
-      "plan_gamification": true
+      "plan_gamification": true,
+      "prioridad1": false
     },
     {
       "po_number": "5508181",
@@ -2374,8 +2804,10 @@
       "tipo_servicio": "towBreakdown",
       "tipo_localidad": "local",
       "estatus": "Finished",
+      "programado": "No",
       "arribo_min": 98.84478332824074,
-      "plan_gamification": true
+      "plan_gamification": false,
+      "prioridad1": false
     },
     {
       "po_number": "5507342",
@@ -2385,8 +2817,10 @@
       "tipo_servicio": "towBreakdown",
       "tipo_localidad": "local",
       "estatus": "Finished",
+      "programado": "No",
       "arribo_min": 84.51514998916537,
-      "plan_gamification": false
+      "plan_gamification": false,
+      "prioridad1": false
     },
     {
       "po_number": "5507680",
@@ -2396,8 +2830,10 @@
       "tipo_servicio": "jumpStart",
       "tipo_localidad": "local",
       "estatus": "Finished",
+      "programado": "No",
       "arribo_min": 10.807266669580713,
-      "plan_gamification": false
+      "plan_gamification": false,
+      "prioridad1": false
     },
     {
       "po_number": "5506417",
@@ -2407,8 +2843,10 @@
       "tipo_servicio": "towBreakdown",
       "tipo_localidad": "local",
       "estatus": "Finished",
+      "programado": "No",
       "arribo_min": 89.67328333645128,
-      "plan_gamification": true
+      "plan_gamification": true,
+      "prioridad1": false
     },
     {
       "po_number": "5505794",
@@ -2418,8 +2856,10 @@
       "tipo_servicio": "towBreakdown",
       "tipo_localidad": "local",
       "estatus": "Finished",
+      "programado": "No",
       "arribo_min": 149.1678499931004,
-      "plan_gamification": true
+      "plan_gamification": true,
+      "prioridad1": false
     },
     {
       "po_number": "5505546",
@@ -2429,8 +2869,10 @@
       "tipo_servicio": "jumpStart",
       "tipo_localidad": "local",
       "estatus": "Finished",
+      "programado": "No",
       "arribo_min": 162.28186666499823,
-      "plan_gamification": false
+      "plan_gamification": false,
+      "prioridad1": false
     },
     {
       "po_number": "5506673",
@@ -2440,8 +2882,10 @@
       "tipo_servicio": "towBreakdown",
       "tipo_localidad": "foreign",
       "estatus": "Finished",
+      "programado": "No",
       "arribo_min": 418.0070999963209,
-      "plan_gamification": false
+      "plan_gamification": false,
+      "prioridad1": false
     },
     {
       "po_number": "5507531",
@@ -2451,8 +2895,10 @@
       "tipo_servicio": "flatTire",
       "tipo_localidad": "local",
       "estatus": "Finished",
+      "programado": "No",
       "arribo_min": 66.39826667960733,
-      "plan_gamification": false
+      "plan_gamification": false,
+      "prioridad1": false
     },
     {
       "po_number": "5506902",
@@ -2462,8 +2908,10 @@
       "tipo_servicio": "towBreakdown",
       "tipo_localidad": "local",
       "estatus": "Finished",
+      "programado": "No",
       "arribo_min": 97.292616663035,
-      "plan_gamification": false
+      "plan_gamification": false,
+      "prioridad1": true
     },
     {
       "po_number": "5507252",
@@ -2473,8 +2921,10 @@
       "tipo_servicio": "towBreakdown",
       "tipo_localidad": "local",
       "estatus": "Finished",
+      "programado": "Si",
       "arribo_min": 1021.8034333270043,
-      "plan_gamification": true
+      "plan_gamification": true,
+      "prioridad1": false
     },
     {
       "po_number": "5507409",
@@ -2484,8 +2934,10 @@
       "tipo_servicio": "towBreakdown",
       "tipo_localidad": "local",
       "estatus": "Finished",
+      "programado": "No",
       "arribo_min": 38.53899999987334,
-      "plan_gamification": true
+      "plan_gamification": true,
+      "prioridad1": false
     },
     {
       "po_number": "5506045",
@@ -2495,8 +2947,10 @@
       "tipo_servicio": "towBreakdown",
       "tipo_localidad": "local",
       "estatus": "Finished",
+      "programado": "No",
       "arribo_min": 48.777833331841975,
-      "plan_gamification": true
+      "plan_gamification": true,
+      "prioridad1": false
     },
     {
       "po_number": "5506550",
@@ -2506,8 +2960,10 @@
       "tipo_servicio": "towBreakdown",
       "tipo_localidad": "foreign",
       "estatus": "Finished",
+      "programado": "No",
       "arribo_min": 53.88441666495055,
-      "plan_gamification": false
+      "plan_gamification": false,
+      "prioridad1": false
     },
     {
       "po_number": "5505503",
@@ -2517,8 +2973,10 @@
       "tipo_servicio": "towBreakdown",
       "tipo_localidad": "foreign",
       "estatus": "Finished",
+      "programado": "No",
       "arribo_min": 146.6584499948658,
-      "plan_gamification": false
+      "plan_gamification": false,
+      "prioridad1": false
     },
     {
       "po_number": "5506571",
@@ -2528,8 +2986,10 @@
       "tipo_servicio": "towBreakdown",
       "tipo_localidad": "local",
       "estatus": "Finished",
+      "programado": "No",
       "arribo_min": 54.38016665400937,
-      "plan_gamification": false
+      "plan_gamification": false,
+      "prioridad1": false
     },
     {
       "po_number": "5507671",
@@ -2539,8 +2999,10 @@
       "tipo_servicio": "towBreakdown",
       "tipo_localidad": "local",
       "estatus": "Finished",
+      "programado": "Si",
       "arribo_min": 945.138349996414,
-      "plan_gamification": false
+      "plan_gamification": false,
+      "prioridad1": false
     },
     {
       "po_number": "5508463",
@@ -2550,8 +3012,10 @@
       "tipo_servicio": "jumpStart",
       "tipo_localidad": "local",
       "estatus": "Finished",
+      "programado": "No",
       "arribo_min": 71.90118332742713,
-      "plan_gamification": false
+      "plan_gamification": false,
+      "prioridad1": false
     },
     {
       "po_number": "5507257",
@@ -2561,8 +3025,10 @@
       "tipo_servicio": "towBreakdown",
       "tipo_localidad": "local",
       "estatus": "Finished",
+      "programado": "No",
       "arribo_min": 71.50676666060463,
-      "plan_gamification": true
+      "plan_gamification": true,
+      "prioridad1": false
     },
     {
       "po_number": "5507985",
@@ -2572,8 +3038,10 @@
       "tipo_servicio": "custodia_del_vehiculo_asegurado",
       "tipo_localidad": "local",
       "estatus": "Finished",
+      "programado": "No",
       "arribo_min": null,
-      "plan_gamification": false
+      "plan_gamification": false,
+      "prioridad1": false
     },
     {
       "po_number": "5507995",
@@ -2583,8 +3051,10 @@
       "tipo_servicio": "towCollision",
       "tipo_localidad": "local",
       "estatus": "Finished",
+      "programado": "No",
       "arribo_min": 3.9761166810058057,
-      "plan_gamification": true
+      "plan_gamification": true,
+      "prioridad1": false
     },
     {
       "po_number": "5506025",
@@ -2594,8 +3064,10 @@
       "tipo_servicio": "towBreakdown",
       "tipo_localidad": "local",
       "estatus": "Finished",
+      "programado": "No",
       "arribo_min": 135.5759999959264,
-      "plan_gamification": true
+      "plan_gamification": true,
+      "prioridad1": false
     },
     {
       "po_number": "5507639",
@@ -2605,8 +3077,10 @@
       "tipo_servicio": "towHeavyWeight",
       "tipo_localidad": "foreign",
       "estatus": "Finished",
+      "programado": "No",
       "arribo_min": null,
-      "plan_gamification": false
+      "plan_gamification": false,
+      "prioridad1": false
     },
     {
       "po_number": "5508098",
@@ -2616,8 +3090,10 @@
       "tipo_servicio": "jumpStart",
       "tipo_localidad": "foreign",
       "estatus": "Finished",
+      "programado": "No",
       "arribo_min": 32.120883335592225,
-      "plan_gamification": false
+      "plan_gamification": false,
+      "prioridad1": false
     },
     {
       "po_number": "5505797",
@@ -2627,8 +3103,10 @@
       "tipo_servicio": "jumpStart",
       "tipo_localidad": "local",
       "estatus": "Finished",
+      "programado": "No",
       "arribo_min": 45.4437500028871,
-      "plan_gamification": false
+      "plan_gamification": false,
+      "prioridad1": false
     },
     {
       "po_number": "5508390",
@@ -2638,8 +3116,10 @@
       "tipo_servicio": "jumpStart",
       "tipo_localidad": "local",
       "estatus": "Finished",
+      "programado": "No",
       "arribo_min": 68.29843332641758,
-      "plan_gamification": false
+      "plan_gamification": false,
+      "prioridad1": false
     },
     {
       "po_number": "5507377",
@@ -2649,8 +3129,10 @@
       "tipo_servicio": "jumpStart",
       "tipo_localidad": "local",
       "estatus": "Finished",
+      "programado": "No",
       "arribo_min": 70.15953333699144,
-      "plan_gamification": false
+      "plan_gamification": false,
+      "prioridad1": false
     },
     {
       "po_number": "5507337",
@@ -2660,8 +3142,10 @@
       "tipo_servicio": "towBreakdown",
       "tipo_localidad": "local",
       "estatus": "Finished",
+      "programado": "No",
       "arribo_min": 24.765800004824996,
-      "plan_gamification": true
+      "plan_gamification": true,
+      "prioridad1": false
     },
     {
       "po_number": "5508261",
@@ -2671,8 +3155,10 @@
       "tipo_servicio": "towBreakdown",
       "tipo_localidad": "foreign",
       "estatus": "Finished",
+      "programado": "No",
       "arribo_min": 81.11921665957198,
-      "plan_gamification": true
+      "plan_gamification": true,
+      "prioridad1": false
     },
     {
       "po_number": "5508021",
@@ -2682,8 +3168,10 @@
       "tipo_servicio": "conductor_designado",
       "tipo_localidad": null,
       "estatus": "Finished",
+      "programado": "Si",
       "arribo_min": null,
-      "plan_gamification": false
+      "plan_gamification": false,
+      "prioridad1": false
     },
     {
       "po_number": "5508587",
@@ -2693,8 +3181,10 @@
       "tipo_servicio": "taxi_to_airport",
       "tipo_localidad": null,
       "estatus": "Finished",
+      "programado": "Si",
       "arribo_min": null,
-      "plan_gamification": false
+      "plan_gamification": false,
+      "prioridad1": false
     },
     {
       "po_number": "5506046",
@@ -2704,8 +3194,10 @@
       "tipo_servicio": "towBreakdown",
       "tipo_localidad": "foreign",
       "estatus": "Finished",
+      "programado": "No",
       "arribo_min": 443.5505333309993,
-      "plan_gamification": false
+      "plan_gamification": false,
+      "prioridad1": false
     },
     {
       "po_number": "5508833",
@@ -2715,8 +3207,10 @@
       "tipo_servicio": "towTire",
       "tipo_localidad": "local",
       "estatus": "Finished",
+      "programado": "No",
       "arribo_min": null,
-      "plan_gamification": false
+      "plan_gamification": false,
+      "prioridad1": false
     },
     {
       "po_number": "5508844",
@@ -2726,8 +3220,10 @@
       "tipo_servicio": "towCollision",
       "tipo_localidad": "local",
       "estatus": "Finished",
+      "programado": "No",
       "arribo_min": 45.65433333395049,
-      "plan_gamification": false
+      "plan_gamification": false,
+      "prioridad1": false
     },
     {
       "po_number": "5506923",
@@ -2737,8 +3233,10 @@
       "tipo_servicio": "towBreakdown",
       "tipo_localidad": "local",
       "estatus": "Finished",
+      "programado": "No",
       "arribo_min": 125.95920000923797,
-      "plan_gamification": false
+      "plan_gamification": false,
+      "prioridad1": false
     },
     {
       "po_number": "5507497",
@@ -2748,8 +3246,10 @@
       "tipo_servicio": "jumpStart",
       "tipo_localidad": "local",
       "estatus": "Finished",
+      "programado": "No",
       "arribo_min": 46.5843000006862,
-      "plan_gamification": false
+      "plan_gamification": false,
+      "prioridad1": false
     },
     {
       "po_number": "5506940",
@@ -2759,8 +3259,10 @@
       "tipo_servicio": "basic_vehicle_washing_on_site",
       "tipo_localidad": null,
       "estatus": "Finished",
+      "programado": "Si",
       "arribo_min": null,
-      "plan_gamification": false
+      "plan_gamification": false,
+      "prioridad1": false
     },
     {
       "po_number": "5505543",
@@ -2770,8 +3272,10 @@
       "tipo_servicio": "basic_vehicle_washing_on_site",
       "tipo_localidad": null,
       "estatus": "Finished",
+      "programado": "Si",
       "arribo_min": null,
-      "plan_gamification": false
+      "plan_gamification": false,
+      "prioridad1": false
     },
     {
       "po_number": "5505511",
@@ -2781,8 +3285,10 @@
       "tipo_servicio": "towBreakdown",
       "tipo_localidad": "local",
       "estatus": "Finished",
+      "programado": "No",
       "arribo_min": 149.5034499967005,
-      "plan_gamification": false
+      "plan_gamification": false,
+      "prioridad1": false
     },
     {
       "po_number": "5507109",
@@ -2792,8 +3298,10 @@
       "tipo_servicio": "towCollision",
       "tipo_localidad": "local",
       "estatus": "Finished",
+      "programado": "No",
       "arribo_min": 80.81599999219179,
-      "plan_gamification": false
+      "plan_gamification": false,
+      "prioridad1": false
     },
     {
       "po_number": "5508406",
@@ -2803,8 +3311,10 @@
       "tipo_servicio": "jumpStart",
       "tipo_localidad": "local",
       "estatus": "Finished",
+      "programado": "No",
       "arribo_min": 36.20834999601357,
-      "plan_gamification": false
+      "plan_gamification": false,
+      "prioridad1": false
     },
     {
       "po_number": "5506072",
@@ -2814,8 +3324,10 @@
       "tipo_servicio": "towCollision",
       "tipo_localidad": "local",
       "estatus": "Finished",
+      "programado": "Si",
       "arribo_min": 368.49161666817963,
-      "plan_gamification": false
+      "plan_gamification": false,
+      "prioridad1": false
     },
     {
       "po_number": "5508397",
@@ -2825,8 +3337,10 @@
       "tipo_servicio": "towBreakdown",
       "tipo_localidad": "local",
       "estatus": "Finished",
+      "programado": "No",
       "arribo_min": 74.88369999686256,
-      "plan_gamification": false
+      "plan_gamification": false,
+      "prioridad1": false
     },
     {
       "po_number": "5505405",
@@ -2836,8 +3350,10 @@
       "tipo_servicio": "towBreakdown",
       "tipo_localidad": "local",
       "estatus": "Finished",
+      "programado": "Si",
       "arribo_min": 670.4600500012748,
-      "plan_gamification": false
+      "plan_gamification": false,
+      "prioridad1": true
     },
     {
       "po_number": "5507600",
@@ -2847,8 +3363,10 @@
       "tipo_servicio": "towBreakdown",
       "tipo_localidad": "local",
       "estatus": "Finished",
+      "programado": "No",
       "arribo_min": 95.96913332585245,
-      "plan_gamification": false
+      "plan_gamification": false,
+      "prioridad1": false
     },
     {
       "po_number": "5505798",
@@ -2858,8 +3376,10 @@
       "tipo_servicio": "towBreakdown",
       "tipo_localidad": "local",
       "estatus": "Finished",
+      "programado": "Si",
       "arribo_min": 190.19905000110157,
-      "plan_gamification": false
+      "plan_gamification": false,
+      "prioridad1": false
     },
     {
       "po_number": "5505547",
@@ -2869,8 +3389,10 @@
       "tipo_servicio": "towBreakdown",
       "tipo_localidad": "foreign",
       "estatus": "Finished",
+      "programado": "No",
       "arribo_min": 205.09334999718703,
-      "plan_gamification": false
+      "plan_gamification": false,
+      "prioridad1": false
     },
     {
       "po_number": "5506885",
@@ -2880,8 +3402,10 @@
       "tipo_servicio": "towBreakdown",
       "tipo_localidad": "local",
       "estatus": "Finished",
+      "programado": "No",
       "arribo_min": 68.95773333613761,
-      "plan_gamification": false
+      "plan_gamification": false,
+      "prioridad1": false
     },
     {
       "po_number": "5506230",
@@ -2891,8 +3415,10 @@
       "tipo_servicio": "towBreakdown",
       "tipo_localidad": "local",
       "estatus": "Finished",
+      "programado": "No",
       "arribo_min": 96.64481666637585,
-      "plan_gamification": false
+      "plan_gamification": false,
+      "prioridad1": false
     },
     {
       "po_number": "5508630",
@@ -2902,8 +3428,10 @@
       "tipo_servicio": "towHeavyWeight",
       "tipo_localidad": "foreign",
       "estatus": "Finished",
+      "programado": "No",
       "arribo_min": null,
-      "plan_gamification": false
+      "plan_gamification": false,
+      "prioridad1": false
     },
     {
       "po_number": "5507744",
@@ -2913,8 +3441,10 @@
       "tipo_servicio": "towBreakdown",
       "tipo_localidad": "foreign",
       "estatus": "Finished",
+      "programado": "No",
       "arribo_min": 171.47635000292212,
-      "plan_gamification": false
+      "plan_gamification": false,
+      "prioridad1": false
     },
     {
       "po_number": "5507106",
@@ -2924,8 +3454,10 @@
       "tipo_servicio": "towBreakdown",
       "tipo_localidad": "local",
       "estatus": "Finished",
+      "programado": "No",
       "arribo_min": 89.1848500049673,
-      "plan_gamification": false
+      "plan_gamification": false,
+      "prioridad1": false
     },
     {
       "po_number": "5506118",
@@ -2935,8 +3467,10 @@
       "tipo_servicio": "towBreakdown",
       "tipo_localidad": "local",
       "estatus": "Finished",
+      "programado": "Si",
       "arribo_min": 195.1000166684389,
-      "plan_gamification": false
+      "plan_gamification": false,
+      "prioridad1": false
     },
     {
       "po_number": "5508249",
@@ -2946,8 +3480,10 @@
       "tipo_servicio": "towBreakdown",
       "tipo_localidad": "local",
       "estatus": "Finished",
+      "programado": "Si",
       "arribo_min": 760.7240999944042,
-      "plan_gamification": false
+      "plan_gamification": false,
+      "prioridad1": false
     }
   ]
 }
