@@ -323,6 +323,24 @@ table.ranking-table tbody tr.agent-row{cursor:pointer;}
   table.detail-table td.det-plan{ text-align:center; }
   .detail-scroll{ max-height:260px; overflow-y:auto; }
 
+  .p1{ position:relative; }
+  .p1::before{
+    content:'👑'; position:absolute; top:-22px; left:50%; transform:translateX(-50%);
+    font-size:22px; animation:crownFloat 2s ease-in-out infinite;
+  }
+  @keyframes crownFloat{ 0%,100%{transform:translateX(-50%) translateY(0);} 50%{transform:translateX(-50%) translateY(-4px);} }
+
+  .level-tag{
+    display:inline-block; font-size:8.5px; font-weight:700; letter-spacing:0.6px;
+    text-transform:uppercase; padding:2px 6px; border-radius:4px; margin-top:2px;
+    background:rgba(255,176,0,0.1); color:var(--yellow); border:1px solid rgba(255,176,0,0.25);
+  }
+  .gap-text{
+    font-size:9px; color:var(--text-dim); margin-top:3px; white-space:nowrap;
+  }
+  .gap-text.leader{ color:var(--yellow); font-weight:700; }
+  .gap-text .flame{ margin-right:2px; }
+
   .formula{
     margin-top:20px; padding-top:16px; border-top:1px solid var(--border-soft);
     font-size:11px; color:var(--text-dim); line-height:1.7;
@@ -347,7 +365,7 @@ table.ranking-table tbody tr.agent-row{cursor:pointer;}
   <header>
     <div>
       <h1>Ranking Back</h1>
-      <div class="subtitle">Gamificación de desempeño · velocidad de arribo y volumen de servicios · Connect Colombia</div>
+      <div class="subtitle">🎮 Compite por el primer lugar · sube de rango · gana el podio de la semana</div>
     </div>
     <div class="controls">
       <div class="updated-label" id="statusLine">Cargando datos…</div>
@@ -441,6 +459,19 @@ const BADGE_ICON = { volumen:"🏁", velocidad:"⚡", meta_local:"🏆" };
 const TOW_TYPES = new Set(["towBreakdown", "towHeavyWeight", "tow_heavy_weight_collision", "towCollision"]);
 const URGENTE_TYPES = new Set(["towBreakdown", "jumpStart", "onsite_legal_assistance", "towCollision", "flatTire", "locksmith", "fuelDelivery", "batteryDiagnostic"]);
 
+const LEVELS = [
+  { min: 0,   name: "Novato",     icon: "🔹" },
+  { min: 100, name: "Competidor", icon: "🔸" },
+  { min: 250, name: "Veterano",   icon: "⭐" },
+  { min: 400, name: "Élite",      icon: "🌟" },
+  { min: 600, name: "Leyenda",    icon: "🔥" }
+];
+function getLevel(pts){
+  let lvl = LEVELS[0];
+  for(const l of LEVELS){ if(pts >= l.min) lvl = l; }
+  return lvl;
+}
+
 let ALL_RECORDS = [];
 let currentPeriod = 'week';
 
@@ -471,6 +502,8 @@ async function loadData(){
         fecha: r.fecha,
         agente,
         cuenta: r.cuenta,
+        proveedor: r.proveedor || null,
+        ciudad: r.ciudad || null,
         tipo_servicio: r.tipo_servicio,
         tipo_localidad: r.tipo_localidad || null,
         estatus: r.estatus,
@@ -613,12 +646,14 @@ function render(){
     [0,1,2].forEach(i=>{
       const a = top3[i];
       if(!a) return;
+      const lvl = getLevel(a.puntos);
       const div = document.createElement('div');
       div.className = 'pcard p' + (i+1);
       div.innerHTML = `
         <div class="medal">${i+1}</div>
         <div class="pname">${a.nombre}</div>
         <div class="ppts">${a.puntos}<small>puntos</small></div>
+        <div class="level-tag">${lvl.icon} ${lvl.name}</div>
       `;
       podiumEl.appendChild(div);
     });
@@ -627,6 +662,7 @@ function render(){
   const tbody = document.getElementById('tbody');
   tbody.innerHTML = "";
   const maxPts = Math.max(1, data[0].puntos);
+  const leaderPts = data[0].puntos;
   data.forEach((a, i)=>{
     const tr = document.createElement('tr');
     tr.className = 'agent-row';
@@ -635,9 +671,22 @@ function render(){
     const metaText = a.n_local>0 ? `${a.pct_meta_local}%` : `<span class="muted">—</span>`;
     const planGamText = a.tow_elegibles>0 ? `${a.pct_plan_gam}% <span class="muted">(${a.plan_gam}/${a.tow_elegibles})</span>` : `<span class="muted">—</span>`;
     const badgeHtml = a.badges.map(b=>`<span class="ic" title="${b}">${BADGE_ICON[b]}</span>`).join("");
+    const lvl = getLevel(a.puntos);
+    let gapHtml = '';
+    if(a.puntos > 0){
+      if(i === 0){
+        gapHtml = `<div class="gap-text leader"><span class="flame">🔥</span>En la cima</div>`;
+      } else {
+        const gap = leaderPts - a.puntos;
+        gapHtml = `<div class="gap-text">+${gap} pts para el 1°</div>`;
+      }
+    }
     tr.innerHTML = `
       <td class="pos">${i+1}</td>
-      <td class="name"><span class="chevron">▸</span>${a.nombre}</td>
+      <td class="name">
+        <span class="chevron">▸</span>${a.nombre}
+        <div class="level-tag">${lvl.icon} ${lvl.name}</div>
+      </td>
       <td>${a.servicios}</td>
       <td>${arriboText}</td>
       <td>${metaText}</td>
@@ -645,6 +694,7 @@ function render(){
       <td class="bar-cell">
         <div class="pts">${a.puntos}</div>
         <div class="bar-track"><div class="bar-fill" style="width:${(a.puntos/maxPts*100).toFixed(0)}%"></div></div>
+        ${gapHtml}
       </td>
       <td><div class="badges">${badgeHtml}</div></td>
     `;
@@ -672,14 +722,18 @@ function buildDetailHtml(records){
   }
   const sorted = [...records].sort((a,b)=> (b.fecha||'').localeCompare(a.fecha||''));
   const rows = sorted.map(r=>{
-    const arribo = r.arribo_min !== null ? `${r.arribo_min} min` : '<span class="muted">—</span>';
+    const arribo = r.arribo_min !== null ? `${Math.round(r.arribo_min)} min` : '<span class="muted">—</span>';
     const plan = r.plan_gamification ? '✓' : '<span class="muted">—</span>';
     const loc = r.tipo_localidad || '<span class="muted">—</span>';
+    const proveedor = r.proveedor || '<span class="muted">—</span>';
+    const ciudad = r.ciudad || '<span class="muted">—</span>';
     return `<tr>
       <td>${r.fecha || '—'}</td>
       <td class="det-po">${r.po_number || '—'}</td>
       <td>${r.cuenta || '—'}</td>
+      <td>${proveedor}</td>
       <td>${r.tipo_servicio || '—'}</td>
+      <td>${ciudad}</td>
       <td>${loc}</td>
       <td class="det-arribo">${arribo}</td>
       <td class="det-plan">${plan}</td>
@@ -690,7 +744,7 @@ function buildDetailHtml(records){
       <div class="detail-scroll">
         <table class="detail-table">
           <thead>
-            <tr><th>Fecha</th><th>PO</th><th>Cuenta</th><th>Tipo servicio</th><th>Localidad</th><th>Arribo</th><th>Plan gam.</th></tr>
+            <tr><th>Fecha</th><th>PO</th><th>Cuenta</th><th>Proveedor</th><th>Tipo servicio</th><th>Ciudad</th><th>Localidad</th><th>Arribo</th><th>Plan gam.</th></tr>
           </thead>
           <tbody>${rows}</tbody>
         </table>
