@@ -1,0 +1,582 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Tablero de Despacho — Ranking Back</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700;800&family=Inter:wght@400;500;600;700&display=swap');
+
+  :root{
+    --bg:#14171C;
+    --panel:#1B1F26;
+    --panel-2:#20252D;
+    --line:#333944;
+    --orange:#FF7A1A;
+    --cyan:#2FE0C6;
+    --text:#F2F0EA;
+    --text-muted:#9098A3;
+    --gold:#F2C14E;
+    --silver:#C9CFD8;
+    --bronze:#D08A5C;
+    --red:#E8604C;
+  }
+
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    background:var(--bg);
+    color:var(--text);
+    font-family:'Inter', system-ui, sans-serif;
+    -webkit-font-smoothing:antialiased;
+  }
+
+  .wrap{
+    max-width:960px;
+    margin:0 auto;
+    padding:32px 20px 64px;
+  }
+
+  header{padding-bottom:22px;}
+  .kicker{
+    font-family:'Inter';
+    font-size:13px;
+    color:var(--cyan);
+    letter-spacing:0.02em;
+    margin:0 0 10px;
+  }
+  h1{
+    font-family:'Barlow Condensed';
+    font-weight:800;
+    font-size:clamp(38px, 7vw, 64px);
+    line-height:0.96;
+    margin:0 0 12px;
+    letter-spacing:-0.01em;
+  }
+  h1 span{color:var(--orange);}
+  .sub{
+    font-size:16px;
+    color:var(--text-muted);
+    max-width:560px;
+    line-height:1.5;
+    margin:0;
+  }
+
+  .dashline{
+    height:0;
+    border-top:3px dashed #3B4149;
+    margin:24px 0;
+  }
+
+  /* ---- controls ---- */
+  .controls{
+    display:flex;
+    flex-wrap:wrap;
+    align-items:center;
+    gap:10px 18px;
+    margin-bottom:6px;
+  }
+  .control-group{
+    display:flex;
+    align-items:center;
+    gap:10px;
+  }
+  .control-label{
+    font-size:12.5px;
+    color:var(--text-muted);
+    white-space:nowrap;
+  }
+  .period-btns{
+    display:flex;
+    background:var(--panel);
+    border:1px solid var(--line);
+    border-radius:5px;
+    overflow:hidden;
+  }
+  .period-btns button{
+    background:transparent;
+    border:none;
+    color:var(--text-muted);
+    font-family:'Inter';
+    font-size:13px;
+    font-weight:600;
+    padding:8px 14px;
+    cursor:pointer;
+    border-right:1px solid var(--line);
+    transition:background .15s, color .15s;
+  }
+  .period-btns button:last-child{border-right:none;}
+  .period-btns button:hover{background:var(--panel-2); color:var(--text);}
+  .period-btns button.active{background:var(--orange); color:#1A1200;}
+
+  .date-range{
+    display:flex;
+    align-items:center;
+    gap:6px;
+  }
+  .date-range input[type="date"], select#cuentaFilter{
+    background:var(--panel);
+    border:1px solid var(--line);
+    color:var(--text);
+    font-family:'Inter';
+    font-size:13px;
+    font-weight:600;
+    padding:6px 10px;
+    border-radius:4px;
+    cursor:pointer;
+  }
+  .date-range{display:none;}
+  .date-range.visible{display:flex;}
+
+  .status-line{
+    font-size:12.5px;
+    color:var(--text-muted);
+    margin-top:10px;
+  }
+  .status-line .dot{
+    display:inline-block; width:7px; height:7px; border-radius:50%;
+    background:var(--cyan); margin-right:6px; position:relative; top:-1px;
+  }
+  .status-line.error .dot{background:var(--red);}
+
+  /* ---- stat strip ---- */
+  .strip{
+    display:grid;
+    grid-template-columns:repeat(3, 1fr);
+    gap:1px;
+    background:var(--line);
+    border:1px solid var(--line);
+    border-radius:4px;
+    overflow:hidden;
+    margin-bottom:30px;
+  }
+  .stat{background:var(--panel); padding:18px 16px;}
+  .stat .n{
+    font-family:'Barlow Condensed';
+    font-weight:700;
+    font-size:34px;
+    color:var(--orange);
+    line-height:1;
+  }
+  .stat .l{font-size:12.5px; color:var(--text-muted); margin-top:6px;}
+
+  /* ---- podium ---- */
+  .podium-title{
+    font-family:'Barlow Condensed';
+    font-weight:700;
+    font-size:24px;
+    margin:0 0 16px;
+  }
+  .podium{
+    display:grid;
+    grid-template-columns:1fr 1fr 1fr;
+    align-items:end;
+    gap:10px;
+    margin-bottom:12px;
+    min-height:120px;
+  }
+  .pcard{
+    background:var(--panel);
+    border:1px solid var(--line);
+    border-radius:6px 6px 3px 3px;
+    padding:16px 12px 18px;
+    text-align:center;
+  }
+  .pcard.p1{ order:2; padding-top:24px; border-color:var(--gold); box-shadow:0 0 0 1px var(--gold) inset;}
+  .pcard.p2{order:1;}
+  .pcard.p3{order:3;}
+  .medal{
+    width:34px;height:34px; border-radius:50%;
+    display:flex;align-items:center;justify-content:center;
+    font-family:'Barlow Condensed'; font-weight:700; font-size:17px;
+    margin:0 auto 10px; color:#14171C;
+  }
+  .p1 .medal{background:var(--gold); width:42px;height:42px; font-size:19px;}
+  .p2 .medal{background:var(--silver);}
+  .p3 .medal{background:var(--bronze);}
+  .pname{
+    font-size:13.5px; font-weight:600; line-height:1.25; margin-bottom:6px;
+    min-height:34px; display:flex; align-items:center; justify-content:center;
+  }
+  .ppts{font-family:'Barlow Condensed'; font-weight:700; font-size:26px; color:var(--cyan);}
+  .ppts small{font-family:'Inter'; font-size:11px; color:var(--text-muted); font-weight:500; display:block; margin-top:1px;}
+  .empty-podium{
+    grid-column:1 / -1; text-align:center; color:var(--text-muted); font-size:13.5px; padding:30px 0;
+  }
+
+  /* ---- badges legend ---- */
+  .badges-legend{display:flex; gap:18px; flex-wrap:wrap; margin-bottom:8px;}
+  .badge-def{display:flex; align-items:center; gap:8px; font-size:13px; color:var(--text-muted);}
+  .badge-def .ic{font-size:16px;}
+
+  /* ---- table ---- */
+  table{width:100%; border-collapse:collapse; margin-top:8px;}
+  thead th{
+    text-align:left; font-size:11px; color:var(--text-muted); font-weight:600;
+    padding:8px 8px; border-bottom:1px solid var(--line);
+  }
+  thead th.num, tbody td.num{text-align:right;}
+  tbody tr{border-bottom:1px solid #262B33;}
+  tbody tr:hover{background:var(--panel-2);}
+  tbody td{padding:11px 8px; font-size:13.5px; vertical-align:middle;}
+  td.pos{font-family:'Barlow Condensed'; font-weight:700; font-size:17px; color:var(--text-muted); width:30px;}
+  td.name{font-weight:600;}
+  td.bar-cell{width:140px;}
+  .bar-track{height:6px; background:#262B33; border-radius:3px; overflow:hidden;}
+  .bar-fill{height:100%; background:linear-gradient(90deg, var(--orange), var(--cyan)); border-radius:3px;}
+  .pts{font-family:'Barlow Condensed'; font-weight:700; font-size:17px; color:var(--text);}
+  .badges{display:flex; gap:4px;}
+  .badges .ic{font-size:14px;}
+  .muted{color:var(--text-muted);}
+
+  /* ---- footer ---- */
+  .formula{
+    margin-top:34px; padding:16px 18px; background:var(--panel);
+    border:1px solid var(--line); border-radius:4px; font-size:13px;
+    color:var(--text-muted); line-height:1.6;
+  }
+  .formula b{color:var(--text);}
+  footer{margin-top:20px; font-size:12px; color:#5C636D;}
+
+  .loading, .error-box{
+    text-align:center; padding:60px 20px; color:var(--text-muted); font-size:14px;
+  }
+  .error-box{color:var(--red);}
+  .error-box code{
+    display:block; margin-top:10px; font-size:12px; background:var(--panel);
+    padding:10px; border-radius:4px; color:var(--text-muted); word-break:break-all;
+  }
+
+  @media (max-width:520px){
+    .strip{grid-template-columns:1fr;}
+    thead th:nth-child(4), tbody td:nth-child(4){display:none;}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <p class="kicker">Equipo Back · Servicios Road Colombia</p>
+    <h1>Tablero de <span>Despacho</span></h1>
+    <p class="sub">Ranking de desempeño para motivar velocidad de respuesta y volumen de servicios atendidos. Solo cuentan servicios con estado Finished.</p>
+  </header>
+
+  <div class="controls">
+    <div class="control-group">
+      <span class="control-label">Período</span>
+      <div class="period-btns" id="periodBtns">
+        <button data-period="day">Hoy</button>
+        <button data-period="week" class="active">Esta semana</button>
+        <button data-period="month">Este mes</button>
+        <button data-period="all">Todo</button>
+        <button data-period="custom">Rango</button>
+      </div>
+    </div>
+    <div class="control-group date-range" id="dateRange">
+      <input type="date" id="dateFrom">
+      <span class="control-label">a</span>
+      <input type="date" id="dateTo">
+    </div>
+    <div class="control-group">
+      <span class="control-label">Cuenta</span>
+      <select id="cuentaFilter"><option value="__ALL__">Todas</option></select>
+    </div>
+  </div>
+  <div class="status-line" id="statusLine"><span class="dot"></span>Cargando datos…</div>
+
+  <div id="content" style="display:none;">
+
+    <div class="dashline"></div>
+
+    <div class="strip">
+      <div class="stat"><div class="n" id="stTotal">—</div><div class="l">Servicios en el período</div></div>
+      <div class="stat"><div class="n" id="stAgentes">—</div><div class="l">Agentes activos</div></div>
+      <div class="stat"><div class="n" id="stArribo">—</div><div class="l">Min. promedio de arribo</div></div>
+    </div>
+
+    <div class="dashline"></div>
+
+    <p class="podium-title">Podio del período</p>
+    <div class="podium" id="podium"></div>
+
+    <div class="dashline"></div>
+
+    <div class="badges-legend">
+      <div class="badge-def"><span class="ic">🏁</span> Más servicios del período</div>
+      <div class="badge-def"><span class="ic">⚡</span> Mayor cumplimiento de SLA (% arribo ≤60 min)</div>
+      <div class="badge-def"><span class="ic">🏆</span> 100% meta local (60 min) cumplida</div>
+    </div>
+
+    <table>
+      <thead>
+        <tr>
+          <th class="num">#</th>
+          <th>Agente</th>
+          <th class="num">Servicios</th>
+          <th class="num">Arribo prom.</th>
+          <th class="num">% Meta local</th>
+          <th class="num">Plan gam.</th>
+          <th>Puntos</th>
+          <th class="num">Insignias</th>
+        </tr>
+      </thead>
+      <tbody id="tbody"></tbody>
+    </table>
+
+    <div class="formula">
+      <b>Cómo se calculan los puntos:</b> 10 pts por servicio con estado Finished, + 15 pts de bono de velocidad si el arribo fue en ≤60 minutos. Solo cuentan los servicios ya finalizados.
+      <br><br>
+      <b>% Meta local:</b> de los servicios con tipo_localidad = "local", qué % llegó en ≤60 min. La insignia ⚡ la recibe quien tenga el % más alto.
+      <br><br>
+      <b>Plan gamificación:</b> servicios con proveedor_plan_gamification = 0 y TipoServicio en (towBreakdown, towHeavyWeight, tow_heavy_weight_collision, towCollision). Columna informativa, no afecta puntos todavía.
+    </div>
+
+    <footer id="footerNote">Fuente: servicios_road_col vía n8n → GitHub.</footer>
+  </div>
+
+  <div class="error-box" id="errorBox" style="display:none;">
+    No se pudieron cargar los datos.
+    <code id="errorDetail"></code>
+  </div>
+
+</div>
+
+<script>
+// ======= CONFIGURA ESTA URL cuando tengas el JSON publicado por n8n/GitHub =======
+const JSON_URL = "https://raw.githubusercontent.com/TU-USUARIO/TU-REPO/main/servicios_back.json";
+// ===================================================================================
+
+const BACK_TEAM = [
+  "Edwin Camilo Corredor Amud", "Ingrid Dayanna Pérez Vargas", "Juan Sebastian Tinjaca Ortiz",
+  "Lady Yojanna Alfonso Casas", "Laura Camila Parada Vargas", "Laura Daniela Menjura Velásquez",
+  "Leidy Nicol Cañon Ibañez", "Lizeth Tatiana Rodriguez Peña", "Yury Alexandra Gonzalez Arias",
+  "Ana Milena Carrillo Amaya"
+];
+const NAME_ALIASES = { "Ana Milena Carrillo": "Ana Milena Carrillo Amaya" };
+const BADGE_ICON = { volumen:"🏁", velocidad:"⚡", meta_local:"🏆" };
+
+let ALL_RECORDS = [];
+let currentPeriod = 'week';
+
+const statusLine = document.getElementById('statusLine');
+const contentEl = document.getElementById('content');
+const errorBox = document.getElementById('errorBox');
+const errorDetail = document.getElementById('errorDetail');
+
+function pad(n){ return n<10 ? '0'+n : ''+n; }
+function toISO(d){ return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate()); }
+function startOfWeek(d){
+  const dt = new Date(d);
+  const day = (dt.getDay()+6)%7; // lunes=0
+  dt.setDate(dt.getDate()-day);
+  return dt;
+}
+function startOfMonth(d){ return new Date(d.getFullYear(), d.getMonth(), 1); }
+
+async function loadData(){
+  try{
+    const res = await fetch(JSON_URL, {cache:"no-store"});
+    if(!res.ok) throw new Error("HTTP " + res.status);
+    const data = await res.json();
+    const records = (data.records || []).map(r=>{
+      const agente = NAME_ALIASES[r.agente] || r.agente;
+      return {
+        po_number: r.po_number,
+        fecha: r.fecha,
+        agente,
+        cuenta: r.cuenta,
+        tipo_servicio: r.tipo_servicio,
+        tipo_localidad: r.tipo_localidad || null,
+        estatus: r.estatus,
+        arribo_min: (r.arribo_min === null || r.arribo_min === undefined || r.arribo_min === "") ? null : Number(r.arribo_min),
+        plan_gamification: !!r.plan_gamification
+      };
+    }).filter(r => BACK_TEAM.includes(r.agente) && r.estatus === 'Finished');
+
+    ALL_RECORDS = records;
+    statusLine.innerHTML = `<span class="dot"></span>Datos actualizados` + (data.updated_at ? ` · corte n8n: ${new Date(data.updated_at).toLocaleString('es-CO')}` : '') + ` · ${records.length} servicios cargados`;
+    contentEl.style.display = 'block';
+    populateCuentas();
+    render();
+  }catch(err){
+    statusLine.classList.add('error');
+    statusLine.innerHTML = `<span class="dot"></span>Error al cargar datos`;
+    errorBox.style.display = 'block';
+    errorDetail.textContent = (JSON_URL.includes('TU-USUARIO') ? 'Falta configurar JSON_URL en el HTML con la URL real del JSON en GitHub. ' : '') + String(err);
+  }
+}
+
+function populateCuentas(){
+  const sel = document.getElementById('cuentaFilter');
+  const cuentas = Array.from(new Set(ALL_RECORDS.map(r=>r.cuenta))).sort();
+  cuentas.forEach(c=>{
+    const opt = document.createElement('option');
+    opt.value = c; opt.textContent = c;
+    sel.appendChild(opt);
+  });
+  sel.addEventListener('change', render);
+}
+
+function getDateBounds(){
+  const today = new Date();
+  today.setHours(0,0,0,0);
+  if(currentPeriod === 'day'){
+    return [toISO(today), toISO(today)];
+  }
+  if(currentPeriod === 'week'){
+    const start = startOfWeek(today);
+    return [toISO(start), toISO(today)];
+  }
+  if(currentPeriod === 'month'){
+    const start = startOfMonth(today);
+    return [toISO(start), toISO(today)];
+  }
+  if(currentPeriod === 'custom'){
+    const from = document.getElementById('dateFrom').value;
+    const to = document.getElementById('dateTo').value;
+    return [from || null, to || null];
+  }
+  return [null, null]; // all
+}
+
+function computeData(){
+  const cuentaFiltro = document.getElementById('cuentaFilter').value;
+  const [from, to] = getDateBounds();
+
+  let filtered = ALL_RECORDS.filter(r=>{
+    if(cuentaFiltro !== '__ALL__' && r.cuenta !== cuentaFiltro) return false;
+    if(from && r.fecha < from) return false;
+    if(to && r.fecha > to) return false;
+    return true;
+  });
+
+  const byAgent = {};
+  BACK_TEAM.forEach(a=>{ byAgent[a] = {servicios:0, arribos:[], locales:[], planGam:0}; });
+
+  filtered.forEach(r=>{
+    if(!byAgent[r.agente]) return;
+    byAgent[r.agente].servicios++;
+    if(r.arribo_min !== null){
+      byAgent[r.agente].arribos.push(r.arribo_min);
+      if(r.tipo_localidad === 'local'){
+        byAgent[r.agente].locales.push(r.arribo_min <= 60);
+      }
+    }
+    if(r.plan_gamification) byAgent[r.agente].planGam++;
+  });
+
+  let data = BACK_TEAM.map(nombre=>{
+    const d = byAgent[nombre];
+    const n_arribo = d.arribos.length;
+    const avg_arribo = n_arribo>0 ? d.arribos.reduce((s,v)=>s+v,0)/n_arribo : null;
+    let puntos = d.servicios * 10;
+    d.arribos.forEach(v=>{ if(v<=60) puntos += 15; });
+    const n_local = d.locales.length;
+    const pct_meta_local = n_local>0 ? Math.round(100*d.locales.filter(Boolean).length/n_local) : null;
+    return {
+      nombre, servicios: d.servicios,
+      avg_arribo: avg_arribo!==null ? Math.round(avg_arribo*10)/10 : null,
+      n_arribo, puntos, pct_meta_local, n_local, plan_gam: d.planGam, badges: []
+    };
+  });
+
+  const withServ = data.filter(a=>a.servicios>0);
+  if(withServ.length){
+    const maxServ = Math.max(...withServ.map(a=>a.servicios));
+    data.forEach(a=>{ if(a.servicios===maxServ && maxServ>0) a.badges.push('volumen'); });
+  }
+  const withSla = data.filter(a=>a.n_local>=1);
+  if(withSla.length){
+    const maxSla = Math.max(...withSla.map(a=>a.pct_meta_local));
+    data.forEach(a=>{ if(a.n_local>=1 && a.pct_meta_local===maxSla) a.badges.push('velocidad'); });
+  }
+  data.forEach(a=>{ if(a.n_local>=1 && a.pct_meta_local===100) a.badges.push('meta_local'); });
+
+  data.sort((a,b)=>b.puntos - a.puntos);
+  return data;
+}
+
+function render(){
+  const data = computeData();
+
+  const totalServicios = data.reduce((s,a)=>s+a.servicios,0);
+  const withArribo = data.filter(a=>a.n_arribo>0);
+  const sumArribo = withArribo.reduce((s,a)=>s+a.avg_arribo*a.n_arribo,0);
+  const cntArribo = withArribo.reduce((s,a)=>s+a.n_arribo,0);
+  document.getElementById('stTotal').textContent = totalServicios;
+  document.getElementById('stAgentes').textContent = data.filter(a=>a.servicios>0).length;
+  document.getElementById('stArribo').textContent = cntArribo>0 ? (sumArribo/cntArribo).toFixed(0) : "—";
+
+  const podiumEl = document.getElementById('podium');
+  podiumEl.innerHTML = "";
+  const top3 = data.filter(a=>a.puntos>0).slice(0,3);
+  if(top3.length === 0){
+    podiumEl.innerHTML = '<div class="empty-podium">Sin servicios en este período</div>';
+  }else{
+    [0,1,2].forEach(i=>{
+      const a = top3[i];
+      if(!a) return;
+      const div = document.createElement('div');
+      div.className = 'pcard p' + (i+1);
+      div.innerHTML = `
+        <div class="medal">${i+1}</div>
+        <div class="pname">${a.nombre}</div>
+        <div class="ppts">${a.puntos}<small>puntos</small></div>
+      `;
+      podiumEl.appendChild(div);
+    });
+  }
+
+  const tbody = document.getElementById('tbody');
+  tbody.innerHTML = "";
+  const maxPts = Math.max(1, data[0].puntos);
+  data.forEach((a, i)=>{
+    const tr = document.createElement('tr');
+    const arriboText = a.n_arribo>0 ? `${a.avg_arribo} min` : `<span class="muted">Sin dato</span>`;
+    const metaText = a.n_local>0 ? `${a.pct_meta_local}%` : `<span class="muted">—</span>`;
+    const badgeHtml = a.badges.map(b=>`<span class="ic" title="${b}">${BADGE_ICON[b]}</span>`).join("");
+    tr.innerHTML = `
+      <td class="pos">${i+1}</td>
+      <td class="name">${a.nombre}</td>
+      <td class="num">${a.servicios}</td>
+      <td class="num">${arriboText}</td>
+      <td class="num">${metaText}</td>
+      <td class="num">${a.plan_gam}</td>
+      <td class="bar-cell">
+        <div class="pts">${a.puntos}</div>
+        <div class="bar-track"><div class="bar-fill" style="width:${(a.puntos/maxPts*100).toFixed(0)}%"></div></div>
+      </td>
+      <td class="num"><div class="badges" style="justify-content:flex-end">${badgeHtml}</div></td>
+    `;
+    tbody.appendChild(tr);
+  });
+}
+
+// period buttons
+document.getElementById('periodBtns').addEventListener('click', (e)=>{
+  const btn = e.target.closest('button');
+  if(!btn) return;
+  document.querySelectorAll('#periodBtns button').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  currentPeriod = btn.dataset.period;
+  const dateRangeEl = document.getElementById('dateRange');
+  if(currentPeriod === 'custom'){
+    dateRangeEl.classList.add('visible');
+    if(!document.getElementById('dateFrom').value){
+      const today = new Date();
+      document.getElementById('dateTo').value = toISO(today);
+      document.getElementById('dateFrom').value = toISO(startOfWeek(today));
+    }
+  }else{
+    dateRangeEl.classList.remove('visible');
+  }
+  render();
+});
+document.getElementById('dateFrom').addEventListener('change', render);
+document.getElementById('dateTo').addEventListener('change', render);
+
+loadData();
+</script>
+</body>
+</html>
