@@ -489,7 +489,7 @@ table.ranking-table tbody tr.agent-row{cursor:pointer;}
         <div class="section-divider"></div>
         <div>
           <div class="section-note">No depende del agrupamiento día/semana/mes de arriba</div>
-          <div class="card-desc" style="margin-bottom:10px;">Todos los servicios elegibles (grúa) — marcados si el proveedor es del plan gamificación</div>
+          <div class="card-desc" style="margin-bottom:10px;">Servicios de grúa en ciudades del plan (Bogotá/Cali/Medellín) — marcados si el proveedor es del plan gamificación</div>
           <div class="detail-scroll">
             <table class="detail-table" id="planGamDetailTable">
               <thead>
@@ -575,6 +575,7 @@ async function loadData(){
         cuenta: r.cuenta,
         proveedor: r.proveedor || null,
         ciudad: r.ciudad || null,
+        ciudad_en_gamification: !!r.ciudad_en_gamification,
         tipo_servicio: r.tipo_servicio,
         tipo_localidad: r.tipo_localidad || null,
         estatus: r.estatus,
@@ -846,7 +847,7 @@ function getGroupKey(fechaStr, group){
 
 function renderPlanGamDetail(records){
   const body = document.getElementById('planGamDetailBody');
-  const items = records.filter(r => TOW_TYPES.has(r.tipo_servicio));
+  const items = records.filter(r => TOW_TYPES.has(r.tipo_servicio) && r.ciudad_en_gamification);
   items.sort((a,b) => (b.fecha||'').localeCompare(a.fecha||''));
   if(items.length === 0){
     body.innerHTML = '<tr><td colspan="7" style="color:var(--text-dim); text-align:center; padding:14px;">Sin servicios elegibles en este filtro.</td></tr>';
