@@ -358,6 +358,14 @@ table.ranking-table tbody tr.agent-row{cursor:pointer;}
   .chart-box{ position:relative; height:340px; }
   .chart-box canvas{ max-width:100%; }
 
+  .section-divider{
+    border-top:1px dashed var(--border);
+    margin:6px 0 4px;
+  }
+  .section-note{
+    font-size:9.5px; color:var(--text-dim); text-transform:uppercase; letter-spacing:1px; margin-bottom:6px;
+  }
+
   .formula{
     margin-top:20px; padding-top:16px; border-top:1px solid var(--border-soft);
     font-size:11px; color:var(--text-dim); line-height:1.7;
@@ -477,12 +485,14 @@ table.ranking-table tbody tr.agent-row{cursor:pointer;}
       <div class="chart-grid">
         <div class="chart-box"><canvas id="chartServiciosBack"></canvas></div>
         <div class="chart-box"><canvas id="chartPlanGam"></canvas></div>
+        <div class="section-divider"></div>
         <div>
+          <div class="section-note">No depende del agrupamiento día/semana/mes de arriba</div>
           <div class="card-desc" style="margin-bottom:10px;">Detalle de servicios con proveedor del plan gamificación</div>
           <div class="detail-scroll">
             <table class="detail-table" id="planGamDetailTable">
               <thead>
-                <tr><th>Fecha</th><th>Tipo servicio</th><th>Ciudad</th><th>Proveedor</th><th>Arribo</th></tr>
+                <tr><th>Fecha</th><th>PO</th><th>Tipo servicio</th><th>Ciudad</th><th>Proveedor</th><th>Arribo</th></tr>
               </thead>
               <tbody id="planGamDetailBody"></tbody>
             </table>
@@ -838,13 +848,14 @@ function renderPlanGamDetail(records){
   const items = records.filter(r => r.plan_gamification);
   items.sort((a,b) => (b.fecha||'').localeCompare(a.fecha||''));
   if(items.length === 0){
-    body.innerHTML = '<tr><td colspan="5" style="color:var(--text-dim); text-align:center; padding:14px;">Sin servicios de plan gamificación en este filtro.</td></tr>';
+    body.innerHTML = '<tr><td colspan="6" style="color:var(--text-dim); text-align:center; padding:14px;">Sin servicios de plan gamificación en este filtro.</td></tr>';
     return;
   }
   body.innerHTML = items.map(r=>{
     const arribo = r.arribo_min !== null ? `${Math.round(r.arribo_min)} min` : '<span class="muted">—</span>';
     return `<tr>
       <td>${r.fecha || '—'}</td>
+      <td class="det-po"><a href="https://helios-web.connect.pr/service/${r.po_number}" target="_blank" rel="noopener" class="po-link">${r.po_number || '—'}</a></td>
       <td>${r.tipo_servicio || '—'}</td>
       <td>${r.ciudad || '<span class="muted">—</span>'}</td>
       <td>${r.proveedor || '<span class="muted">—</span>'}</td>
