@@ -345,11 +345,10 @@ table.ranking-table tbody tr.agent-row{cursor:pointer;}
   .gap-text .flame{ margin-right:2px; }
 
   .chart-grid{
-    display:grid; grid-template-columns:1fr 1fr; gap:20px;
+    display:flex; flex-direction:column; gap:28px;
   }
-  .chart-box{ position:relative; height:220px; }
+  .chart-box{ position:relative; height:340px; }
   .chart-box canvas{ max-width:100%; }
-  @media (max-width:700px){ .chart-grid{ grid-template-columns:1fr; } }
 
   .formula{
     margin-top:20px; padding-top:16px; border-top:1px solid var(--border-soft);
@@ -456,7 +455,7 @@ table.ranking-table tbody tr.agent-row{cursor:pointer;}
         <button class="view-tab" data-group="month">Por mes</button>
       </nav>
       <div class="chart-grid">
-        <div class="chart-box"><canvas id="chartServicios"></canvas></div>
+        <div class="chart-box"><canvas id="chartServiciosBack"></canvas></div>
         <div class="chart-box"><canvas id="chartPlanGam"></canvas></div>
       </div>
     </div>
@@ -497,6 +496,7 @@ function getLevel(pts){
 }
 
 let ALL_RECORDS = [];
+let ALL_TOTALES_POR_FECHA = {};
 let currentPeriod = 'week';
 
 const statusLine = document.getElementById('statusLine');
@@ -539,6 +539,7 @@ async function loadData(){
     }).filter(r => BACK_TEAM.includes(r.agente) && r.estatus === 'Finished');
 
     ALL_RECORDS = records;
+    ALL_TOTALES_POR_FECHA = data.totales_por_fecha || {};
     statusLine.innerHTML = (data.updated_at ? `Corte: ${new Date(data.updated_at).toLocaleString('es-CO')}` : 'Datos cargados');
     contentEl.style.display = 'block';
     populateCuentas();
@@ -778,7 +779,7 @@ function buildDetailHtml(records){
   `;
 }
 
-let chartServiciosInstance = null;
+let chartServiciosBackInstance = null;
 let chartPlanGamInstance = null;
 let historicoGroup = 'day';
 
@@ -800,23 +801,42 @@ function getGroupKey(fechaStr, group){
 function renderHistorico(){
   const cuentaFiltro = document.getElementById('cuentaFilter').value;
   const records = ALL_RECORDS.filter(r => cuentaFiltro === '__ALL__' || r.cuenta === cuentaFiltro);
+  const cuentaActiva = cuentaFiltro === '__ALL__';
 
-  const byDate = {};
+  const byGroup = {};
   records.forEach(r=>{
     const key = getGroupKey(r.fecha, historicoGroup);
-    if(!byDate[key]) byDate[key] = { servicios: 0, towElegibles: 0, planGam: 0 };
-    byDate[key].servicios++;
+    if(!byGroup[key]) byGroup[key] = { servicios: 0, towElegibles: 0, planGam: 0, backServicios: 0 };
+    byGroup[key].servicios++;
     if(TOW_TYPES.has(r.tipo_servicio)){
-      byDate[key].towElegibles++;
-      if(r.plan_gamification) byDate[key].planGam++;
+      byGroup[key].towElegibles++;
+      if(r.plan_gamification) byGroup[key].planGam++;
     }
   });
 
-  const fechas = Object.keys(byDate).sort();
-  const servicios = fechas.map(f=>byDate[f].servicios);
-  const pctPlanGam = fechas.map(f=>{
-    const d = byDate[f];
-    return d.towElegibles>0 ? Math.round(100*d.planGam/d.towElegibles) : null;
+  // Totales de TODOS los equipos por fecha (solo disponible sin filtro de cuenta,
+  // ya que totales_por_fecha no está desglosado por cuenta).
+  if(cuentaActiva){
+    Object.entries(ALL_TOTALES_POR_FECHA).forEach(([fecha, total])=>{
+      const key = getGroupKey(fecha, historicoGroup);
+      if(!byGroup[key]) byGroup[key] = { servicios: 0, towElegibles: 0, planGam: 0, backServicios: 0 };
+      byGroup[key].totalGeneral = (byGroup[key].totalGeneral || 0) + total;
+    });
+  }
+  // backServicios = servicios de Back para ese grupo (ya contado arriba como 'servicios')
+  Object.values(byGroup).forEach(g=>{ g.backServicios = g.servicios; });
+
+  const claves = Object.keys(byGroup).sort();
+  const totalesGenerales = claves.map(k => byGroup[k].totalGeneral !== undefined ? byGroup[k].totalGeneral : null);
+  const backServicios = claves.map(k => byGroup[k].backServicios);
+  const pctBack = claves.map(k=>{
+    const g = byGroup[k];
+    if(g.totalGeneral === undefined || g.totalGeneral === 0) return null;
+    return Math.round(100 * g.backServicios / g.totalGeneral);
+  });
+  const pctPlanGam = claves.map(k=>{
+    const g = byGroup[k];
+    return g.towElegibles>0 ? Math.round(100*g.planGam/g.towElegibles) : null;
   });
 
   const chartTextColor = getComputedStyle(document.documentElement).getPropertyValue('--text-dim').trim();
@@ -826,25 +846,44 @@ function renderHistorico(){
   Chart.defaults.font.family = fontFamily;
   Chart.defaults.color = chartTextColor;
 
-  if(chartServiciosInstance) chartServiciosInstance.destroy();
-  chartServiciosInstance = new Chart(document.getElementById('chartServicios'), {
-    type: 'bar',
+  if(chartServiciosBackInstance) chartServiciosBackInstance.destroy();
+  chartServiciosBackInstance = new Chart(document.getElementById('chartServiciosBack'), {
     data: {
-      labels: fechas,
-      datasets: [{
-        label: 'Servicios',
-        data: servicios,
-        backgroundColor: 'rgba(39,155,176,0.6)',
-        borderRadius: 3,
-        maxBarThickness: 28
-      }]
+      labels: claves,
+      datasets: [
+        {
+          type: 'bar',
+          label: 'Total servicios (todos los equipos)',
+          data: totalesGenerales,
+          backgroundColor: 'rgba(39,155,176,0.5)',
+          borderRadius: 3,
+          maxBarThickness: 34,
+          yAxisID: 'y'
+        },
+        {
+          type: 'line',
+          label: '% asignado a Back',
+          data: pctBack,
+          borderColor: '#ffb000',
+          backgroundColor: 'rgba(255,176,0,0.15)',
+          tension: 0.25,
+          spanGaps: true,
+          pointRadius: 3,
+          pointBackgroundColor: '#ffb000',
+          yAxisID: 'y1'
+        }
+      ]
     },
     options: {
       responsive: true, maintainAspectRatio: false,
-      plugins: { legend: { display: false }, title: { display: true, text: 'Servicios por día', font:{size:11, weight:700}, color:'#f5f7fa' } },
+      plugins: {
+        legend: { display: true, labels: { font:{size:10} } },
+        title: { display: true, text: cuentaActiva ? 'Total de servicios vs. % asignado a Back' : '% asignado a Back no disponible con filtro de cuenta activo', font:{size:11, weight:700}, color:'#f5f7fa' }
+      },
       scales: {
         x: { grid: { color: gridColor }, ticks: { font:{size:9.5} } },
-        y: { grid: { color: gridColor }, beginAtZero: true, ticks: { font:{size:9.5}, precision:0 } }
+        y: { position:'left', grid: { color: gridColor }, beginAtZero: true, ticks: { font:{size:9.5}, precision:0 }, title:{display:true, text:'Servicios', font:{size:9.5}} },
+        y1: { position:'right', beginAtZero: true, max: 100, grid: { display:false }, ticks: { font:{size:9.5}, callback:v=>v+'%' }, title:{display:true, text:'% Back', font:{size:9.5}} }
       }
     }
   });
@@ -853,7 +892,7 @@ function renderHistorico(){
   chartPlanGamInstance = new Chart(document.getElementById('chartPlanGam'), {
     type: 'line',
     data: {
-      labels: fechas,
+      labels: claves,
       datasets: [{
         label: '% Plan gamificación',
         data: pctPlanGam,
@@ -868,7 +907,7 @@ function renderHistorico(){
     },
     options: {
       responsive: true, maintainAspectRatio: false,
-      plugins: { legend: { display: false }, title: { display: true, text: '% servicios con proveedor del plan', font:{size:11, weight:700}, color:'#f5f7fa' } },
+      plugins: { legend: { display: false }, title: { display: true, text: '% servicios de Back con proveedor del plan', font:{size:11, weight:700}, color:'#f5f7fa' } },
       scales: {
         x: { grid: { color: gridColor }, ticks: { font:{size:9.5} } },
         y: { grid: { color: gridColor }, beginAtZero: true, max: 100, ticks: { font:{size:9.5}, callback:v=>v+'%' } }
