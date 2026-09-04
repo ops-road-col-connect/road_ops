@@ -344,6 +344,14 @@ table.ranking-table tbody tr.agent-row{cursor:pointer;}
   .gap-text.leader{ color:var(--yellow); font-weight:700; }
   .gap-text .flame{ margin-right:2px; }
 
+
+  .page-tab{
+    font-size:12.5px; padding:11px 20px;
+  }
+  .page-tab.active{
+    background: rgba(241,91,43,0.12);
+  }
+
   .chart-grid{
     display:flex; flex-direction:column; gap:28px;
   }
@@ -381,6 +389,13 @@ table.ranking-table tbody tr.agent-row{cursor:pointer;}
       <select id="cuentaFilter"><option value="__ALL__">Todas las cuentas</option></select>
     </div>
   </header>
+
+  <nav class="views" id="pageNavBtns" style="margin-bottom:18px;">
+    <button class="view-tab page-tab active" data-page="ranking">🏆 Ranking</button>
+    <button class="view-tab page-tab" data-page="analitica">📊 Analítica</button>
+  </nav>
+
+  <div id="viewRanking">
 
   <nav class="views" id="periodBtns">
     <button class="view-tab" data-period="day">Hoy</button>
@@ -446,10 +461,15 @@ table.ranking-table tbody tr.agent-row{cursor:pointer;}
 
     <footer class="foot-note" id="footerNote">Fuente: servicios_road_col · sincronizado vía n8n → GitHub</footer>
 
+  </div><!-- /content -->
+
+  </div><!-- /viewRanking -->
+
+  <div id="viewAnalitica" style="display:none;">
     <div class="card">
       <div class="card-title"><span class="dot"></span>Histórico del equipo Back</div>
-      <div class="card-desc">Todo el historial disponible (ignora el filtro de período, respeta el filtro de cuenta)</div>
-      <nav class="views" id="historicoGroupBtns" style="margin-bottom:16px;">
+      <div class="card-desc">Todo el historial disponible, agrupado por el período que elijas. Respeta el filtro de cuenta.</div>
+      <nav class="views" id="historicoGroupBtns">
         <button class="view-tab active" data-group="day">Por día</button>
         <button class="view-tab" data-group="week">Por semana</button>
         <button class="view-tab" data-group="month">Por mes</button>
@@ -457,9 +477,20 @@ table.ranking-table tbody tr.agent-row{cursor:pointer;}
       <div class="chart-grid">
         <div class="chart-box"><canvas id="chartServiciosBack"></canvas></div>
         <div class="chart-box"><canvas id="chartPlanGam"></canvas></div>
+        <div>
+          <div class="card-desc" style="margin-bottom:10px;">Detalle de servicios con proveedor del plan gamificación</div>
+          <div class="detail-scroll">
+            <table class="detail-table" id="planGamDetailTable">
+              <thead>
+                <tr><th>Fecha</th><th>Tipo servicio</th><th>Ciudad</th><th>Proveedor</th><th>Arribo</th></tr>
+              </thead>
+              <tbody id="planGamDetailBody"></tbody>
+            </table>
+          </div>
+        </div>
       </div>
     </div>
-  </div>
+  </div><!-- /viewAnalitica -->
 
   <div class="state-msg error" id="errorBox" style="display:none;">
     No se pudieron cargar los datos.
@@ -467,6 +498,8 @@ table.ranking-table tbody tr.agent-row{cursor:pointer;}
   </div>
 
 </div>
+
+
 
 <script>
 const JSON_URL = "https://raw.githubusercontent.com/ops-road-col-connect/road_ops/main/servicios_back.json";
@@ -481,6 +514,10 @@ const NAME_ALIASES = { "Ana Milena Carrillo": "Ana Milena Carrillo Amaya" };
 const BADGE_ICON = { volumen:"🏁", velocidad:"⚡", meta_local:"🏆" };
 const TOW_TYPES = new Set(["towBreakdown", "towHeavyWeight", "tow_heavy_weight_collision", "towCollision"]);
 const URGENTE_TYPES = new Set(["towBreakdown", "jumpStart", "onsite_legal_assistance", "towCollision", "flatTire", "locksmith", "fuelDelivery", "batteryDiagnostic"]);
+let ALL_TOTALES_POR_FECHA = {};
+let historicoGroup = 'day';
+let chartServiciosBackInstance = null;
+let chartPlanGamInstance = null;
 
 const LEVELS = [
   { min: 0,   name: "Novato",     icon: "🔹" },
@@ -496,7 +533,6 @@ function getLevel(pts){
 }
 
 let ALL_RECORDS = [];
-let ALL_TOTALES_POR_FECHA = {};
 let currentPeriod = 'week';
 
 const statusLine = document.getElementById('statusLine');
@@ -544,7 +580,6 @@ async function loadData(){
     contentEl.style.display = 'block';
     populateCuentas();
     render();
-    renderHistorico();
   }catch(err){
     statusLine.classList.add('error');
     statusLine.textContent = 'Error al cargar datos';
@@ -561,7 +596,10 @@ function populateCuentas(){
     opt.value = c; opt.textContent = c;
     sel.appendChild(opt);
   });
-  sel.addEventListener('change', ()=>{ render(); renderHistorico(); });
+  sel.addEventListener('change', ()=>{
+    render();
+    if(document.getElementById('viewAnalitica').style.display !== 'none') renderHistorico();
+  });
 }
 
 function getDateBounds(){
@@ -779,9 +817,6 @@ function buildDetailHtml(records){
   `;
 }
 
-let chartServiciosBackInstance = null;
-let chartPlanGamInstance = null;
-let historicoGroup = 'day';
 
 function getGroupKey(fechaStr, group){
   if(!fechaStr) return 'Sin fecha';
@@ -798,10 +833,32 @@ function getGroupKey(fechaStr, group){
   return fechaStr;
 }
 
+function renderPlanGamDetail(records){
+  const body = document.getElementById('planGamDetailBody');
+  const items = records.filter(r => r.plan_gamification);
+  items.sort((a,b) => (b.fecha||'').localeCompare(a.fecha||''));
+  if(items.length === 0){
+    body.innerHTML = '<tr><td colspan="5" style="color:var(--text-dim); text-align:center; padding:14px;">Sin servicios de plan gamificación en este filtro.</td></tr>';
+    return;
+  }
+  body.innerHTML = items.map(r=>{
+    const arribo = r.arribo_min !== null ? `${Math.round(r.arribo_min)} min` : '<span class="muted">—</span>';
+    return `<tr>
+      <td>${r.fecha || '—'}</td>
+      <td>${r.tipo_servicio || '—'}</td>
+      <td>${r.ciudad || '<span class="muted">—</span>'}</td>
+      <td>${r.proveedor || '<span class="muted">—</span>'}</td>
+      <td class="det-arribo">${arribo}</td>
+    </tr>`;
+  }).join('');
+}
+
 function renderHistorico(){
   const cuentaFiltro = document.getElementById('cuentaFilter').value;
   const records = ALL_RECORDS.filter(r => cuentaFiltro === '__ALL__' || r.cuenta === cuentaFiltro);
   const cuentaActiva = cuentaFiltro === '__ALL__';
+
+  renderPlanGamDetail(records);
 
   const byGroup = {};
   records.forEach(r=>{
@@ -814,8 +871,6 @@ function renderHistorico(){
     }
   });
 
-  // Totales de TODOS los equipos por fecha (solo disponible sin filtro de cuenta,
-  // ya que totales_por_fecha no está desglosado por cuenta).
   if(cuentaActiva){
     Object.entries(ALL_TOTALES_POR_FECHA).forEach(([fecha, total])=>{
       const key = getGroupKey(fecha, historicoGroup);
@@ -823,12 +878,10 @@ function renderHistorico(){
       byGroup[key].totalGeneral = (byGroup[key].totalGeneral || 0) + total;
     });
   }
-  // backServicios = servicios de Back para ese grupo (ya contado arriba como 'servicios')
   Object.values(byGroup).forEach(g=>{ g.backServicios = g.servicios; });
 
   const claves = Object.keys(byGroup).sort();
   const totalesGenerales = claves.map(k => byGroup[k].totalGeneral !== undefined ? byGroup[k].totalGeneral : null);
-  const backServicios = claves.map(k => byGroup[k].backServicios);
   const pctBack = claves.map(k=>{
     const g = byGroup[k];
     if(g.totalGeneral === undefined || g.totalGeneral === 0) return null;
@@ -841,9 +894,7 @@ function renderHistorico(){
 
   const chartTextColor = getComputedStyle(document.documentElement).getPropertyValue('--text-dim').trim();
   const gridColor = getComputedStyle(document.documentElement).getPropertyValue('--grid-line').trim();
-  const fontFamily = "'JetBrains Mono', monospace";
-
-  Chart.defaults.font.family = fontFamily;
+  Chart.defaults.font.family = "'JetBrains Mono', monospace";
   Chart.defaults.color = chartTextColor;
 
   if(chartServiciosBackInstance) chartServiciosBackInstance.destroy();
@@ -923,6 +974,17 @@ document.getElementById('historicoGroupBtns').addEventListener('click', (e)=>{
   btn.classList.add('active');
   historicoGroup = btn.dataset.group;
   renderHistorico();
+});
+
+document.getElementById('pageNavBtns').addEventListener('click', (e)=>{
+  const btn = e.target.closest('button');
+  if(!btn) return;
+  document.querySelectorAll('#pageNavBtns button').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  const page = btn.dataset.page;
+  document.getElementById('viewRanking').style.display = (page === 'ranking') ? '' : 'none';
+  document.getElementById('viewAnalitica').style.display = (page === 'analitica') ? '' : 'none';
+  if(page === 'analitica') renderHistorico();
 });
 
 document.getElementById('periodBtns').addEventListener('click', (e)=>{
