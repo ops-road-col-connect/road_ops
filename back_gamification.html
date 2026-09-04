@@ -6,6 +6,7 @@
 <title>Ranking Back</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@700;900&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
 <style>
   :root {
     --orange: #f15b2b;
@@ -319,6 +320,8 @@ table.ranking-table tbody tr.agent-row{cursor:pointer;}
     color:var(--text-dim); text-transform:uppercase; letter-spacing:0.8px; font-weight:600; font-size:9px;
   }
   table.detail-table td.det-po{ color:var(--text-dim); }
+  .po-link{ color:var(--turquoise); text-decoration:none; }
+  .po-link:hover{ text-decoration:underline; }
   table.detail-table td.det-arribo{ color:var(--turquoise); font-weight:600; }
   table.detail-table td.det-plan{ text-align:center; }
   .detail-scroll{ max-height:260px; overflow-y:auto; }
@@ -340,6 +343,13 @@ table.ranking-table tbody tr.agent-row{cursor:pointer;}
   }
   .gap-text.leader{ color:var(--yellow); font-weight:700; }
   .gap-text .flame{ margin-right:2px; }
+
+  .chart-grid{
+    display:grid; grid-template-columns:1fr 1fr; gap:20px;
+  }
+  .chart-box{ position:relative; height:220px; }
+  .chart-box canvas{ max-width:100%; }
+  @media (max-width:700px){ .chart-grid{ grid-template-columns:1fr; } }
 
   .formula{
     margin-top:20px; padding-top:16px; border-top:1px solid var(--border-soft);
@@ -436,6 +446,20 @@ table.ranking-table tbody tr.agent-row{cursor:pointer;}
     </div>
 
     <footer class="foot-note" id="footerNote">Fuente: servicios_road_col · sincronizado vía n8n → GitHub</footer>
+
+    <div class="card">
+      <div class="card-title"><span class="dot"></span>Histórico del equipo Back</div>
+      <div class="card-desc">Todo el historial disponible (ignora el filtro de período, respeta el filtro de cuenta)</div>
+      <nav class="views" id="historicoGroupBtns" style="margin-bottom:16px;">
+        <button class="view-tab active" data-group="day">Por día</button>
+        <button class="view-tab" data-group="week">Por semana</button>
+        <button class="view-tab" data-group="month">Por mes</button>
+      </nav>
+      <div class="chart-grid">
+        <div class="chart-box"><canvas id="chartServicios"></canvas></div>
+        <div class="chart-box"><canvas id="chartPlanGam"></canvas></div>
+      </div>
+    </div>
   </div>
 
   <div class="state-msg error" id="errorBox" style="display:none;">
@@ -519,6 +543,7 @@ async function loadData(){
     contentEl.style.display = 'block';
     populateCuentas();
     render();
+    renderHistorico();
   }catch(err){
     statusLine.classList.add('error');
     statusLine.textContent = 'Error al cargar datos';
@@ -535,7 +560,7 @@ function populateCuentas(){
     opt.value = c; opt.textContent = c;
     sel.appendChild(opt);
   });
-  sel.addEventListener('change', render);
+  sel.addEventListener('change', ()=>{ render(); renderHistorico(); });
 }
 
 function getDateBounds(){
@@ -729,7 +754,7 @@ function buildDetailHtml(records){
     const ciudad = r.ciudad || '<span class="muted">—</span>';
     return `<tr>
       <td>${r.fecha || '—'}</td>
-      <td class="det-po">${r.po_number || '—'}</td>
+      <td class="det-po"><a href="https://helios-web.connect.pr/service/${r.po_number}" target="_blank" rel="noopener" class="po-link">${r.po_number || '—'}</a></td>
       <td>${r.cuenta || '—'}</td>
       <td>${proveedor}</td>
       <td>${r.tipo_servicio || '—'}</td>
@@ -752,6 +777,114 @@ function buildDetailHtml(records){
     </div>
   `;
 }
+
+let chartServiciosInstance = null;
+let chartPlanGamInstance = null;
+let historicoGroup = 'day';
+
+function getGroupKey(fechaStr, group){
+  if(!fechaStr) return 'Sin fecha';
+  const [y,m,d] = fechaStr.split('-').map(Number);
+  const dt = new Date(y, m-1, d);
+  if(group === 'day') return fechaStr;
+  if(group === 'week'){
+    const start = startOfWeek(dt);
+    return 'Sem ' + toISO(start);
+  }
+  if(group === 'month'){
+    return `${y}-${pad(m)}`;
+  }
+  return fechaStr;
+}
+
+function renderHistorico(){
+  const cuentaFiltro = document.getElementById('cuentaFilter').value;
+  const records = ALL_RECORDS.filter(r => cuentaFiltro === '__ALL__' || r.cuenta === cuentaFiltro);
+
+  const byDate = {};
+  records.forEach(r=>{
+    const key = getGroupKey(r.fecha, historicoGroup);
+    if(!byDate[key]) byDate[key] = { servicios: 0, towElegibles: 0, planGam: 0 };
+    byDate[key].servicios++;
+    if(TOW_TYPES.has(r.tipo_servicio)){
+      byDate[key].towElegibles++;
+      if(r.plan_gamification) byDate[key].planGam++;
+    }
+  });
+
+  const fechas = Object.keys(byDate).sort();
+  const servicios = fechas.map(f=>byDate[f].servicios);
+  const pctPlanGam = fechas.map(f=>{
+    const d = byDate[f];
+    return d.towElegibles>0 ? Math.round(100*d.planGam/d.towElegibles) : null;
+  });
+
+  const chartTextColor = getComputedStyle(document.documentElement).getPropertyValue('--text-dim').trim();
+  const gridColor = getComputedStyle(document.documentElement).getPropertyValue('--grid-line').trim();
+  const fontFamily = "'JetBrains Mono', monospace";
+
+  Chart.defaults.font.family = fontFamily;
+  Chart.defaults.color = chartTextColor;
+
+  if(chartServiciosInstance) chartServiciosInstance.destroy();
+  chartServiciosInstance = new Chart(document.getElementById('chartServicios'), {
+    type: 'bar',
+    data: {
+      labels: fechas,
+      datasets: [{
+        label: 'Servicios',
+        data: servicios,
+        backgroundColor: 'rgba(39,155,176,0.6)',
+        borderRadius: 3,
+        maxBarThickness: 28
+      }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: false }, title: { display: true, text: 'Servicios por día', font:{size:11, weight:700}, color:'#f5f7fa' } },
+      scales: {
+        x: { grid: { color: gridColor }, ticks: { font:{size:9.5} } },
+        y: { grid: { color: gridColor }, beginAtZero: true, ticks: { font:{size:9.5}, precision:0 } }
+      }
+    }
+  });
+
+  if(chartPlanGamInstance) chartPlanGamInstance.destroy();
+  chartPlanGamInstance = new Chart(document.getElementById('chartPlanGam'), {
+    type: 'line',
+    data: {
+      labels: fechas,
+      datasets: [{
+        label: '% Plan gamificación',
+        data: pctPlanGam,
+        borderColor: '#ffb000',
+        backgroundColor: 'rgba(255,176,0,0.15)',
+        fill: true,
+        tension: 0.25,
+        spanGaps: true,
+        pointRadius: 3,
+        pointBackgroundColor: '#ffb000'
+      }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: false }, title: { display: true, text: '% servicios con proveedor del plan', font:{size:11, weight:700}, color:'#f5f7fa' } },
+      scales: {
+        x: { grid: { color: gridColor }, ticks: { font:{size:9.5} } },
+        y: { grid: { color: gridColor }, beginAtZero: true, max: 100, ticks: { font:{size:9.5}, callback:v=>v+'%' } }
+      }
+    }
+  });
+}
+
+document.getElementById('historicoGroupBtns').addEventListener('click', (e)=>{
+  const btn = e.target.closest('button');
+  if(!btn) return;
+  document.querySelectorAll('#historicoGroupBtns button').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  historicoGroup = btn.dataset.group;
+  renderHistorico();
+});
 
 document.getElementById('periodBtns').addEventListener('click', (e)=>{
   const btn = e.target.closest('button');
