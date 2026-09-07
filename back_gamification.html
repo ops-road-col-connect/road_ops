@@ -462,7 +462,7 @@ table.ranking-table tbody tr.agent-row{cursor:pointer;}
       </div>
 
       <div class="formula">
-        <b>Puntos:</b> +10 pts base por servicio Finished. +20 pts si es "local urgente" (towBreakdown, jumpStart, onsite_legal_assistance, towCollision, flatTire, locksmith, fuelDelivery, batteryDiagnostic; local; no programado) y arribó en ≤60 min. +10 pts si el proveedor es del plan gamificación (proveedor_plan_gamification=0). +5 pts si el proveedor es prioridad 1 (proveedor_plan_gamification=1). Estos dos últimos bonos solo aplican a los 4 tipos de servicio de grúa y con ciudad en Bogotá/Cali/Medellín.
+        <b>Puntos:</b> +2 pts base por coordinar el servicio (Finished). +20 pts si es "local urgente" (towBreakdown, jumpStart, onsite_legal_assistance, towCollision, flatTire, locksmith, fuelDelivery, batteryDiagnostic; local; no programado) y arribó en ≤60 min. +10 pts si el proveedor es Proveedor G (proveedor_plan_gamification=0). +5 pts si el proveedor es prioridad 1 (proveedor_plan_gamification=1). Estos dos últimos bonos solo aplican a los 4 tipos de servicio de grúa y con ciudad en Bogotá/Cali/Medellín.
         <br><b>% Meta local:</b> de los servicios locales, % que llegó en ≤60 min.
         <br><b>% Plan gamificación:</b> de los servicios de grúa elegibles, % con proveedor del plan (0).
       </div>
@@ -532,10 +532,8 @@ let chartPlanGamInstance = null;
 
 const LEVELS = [
   { min: 0,   name: "Novato",     icon: "🔹" },
-  { min: 100, name: "Competidor", icon: "🔸" },
-  { min: 250, name: "Veterano",   icon: "⭐" },
-  { min: 400, name: "Élite",      icon: "🌟" },
-  { min: 600, name: "Leyenda",    icon: "🔥" }
+  { min: 70,  name: "Competidor", icon: "⭐" },
+  { min: 150, name: "Leyenda",    icon: "🔥" }
 ];
 function getLevel(pts){
   let lvl = LEVELS[0];
@@ -647,7 +645,7 @@ function computeData(){
     const ag = byAgent[r.agente];
     ag.servicios++;
     ag.records.push(r);
-    let pts = 10; // base por servicio Finished
+    let pts = 2; // base por coordinar el servicio
 
     if(r.arribo_min !== null){
       ag.arribos.push(r.arribo_min);
