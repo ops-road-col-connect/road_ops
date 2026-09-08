@@ -1,5 +1,5 @@
 {
-  "updated_at": "2026-09-08T15:01:32.257Z",
+  "updated_at": "2026-09-08T15:37:06.766Z",
   "records": [
     {
       "po_number": "5509429",
@@ -11488,6 +11488,9 @@
       "arribo_min": 162.28186666499823,
       "plan_gamification": false,
       "prioridad1": false
+    },
+    {
+      "isArtificialRecoveredEventItem": true
     }
   ],
   "totales_por_fecha": {
