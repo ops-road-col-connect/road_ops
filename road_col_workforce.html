@@ -517,7 +517,7 @@
   .week-wrap { min-width: 1260px; }
   .week-header, .week-row {
     display: grid;
-    grid-template-columns: 200px repeat(7, 1fr) 55px repeat(4, 62px);
+    grid-template-columns: 200px repeat(7, 1fr) 55px repeat(4, 62px) repeat(4, 62px);
   }
   .week-wrap.no-totals { min-width: 900px; }
   .week-wrap.no-totals .week-header, .week-wrap.no-totals .week-row {
@@ -566,6 +566,30 @@
   .week-extra-type-cell.festiva.has-extra {
     color: #ff5d73; background: rgba(255,93,115,0.1);
   }
+  .week-recargo-type-cell {
+    text-align: center; font-size: 10px; color: var(--text-dim);
+    font-family: 'JetBrains Mono', monospace; cursor: default; margin: 0 3px;
+  }
+  .week-recargo-type-cell.has-recargo {
+    font-weight: 700; border-radius: 5px;
+  }
+  .week-recargo-type-cell.base.has-recargo {
+    color: var(--text-mid); background: rgba(255,255,255,0.04);
+  }
+  .week-recargo-type-cell.nocturno.has-recargo {
+    color: var(--turquoise); background: rgba(39,155,176,0.1);
+  }
+  .week-recargo-type-cell.festivo-diurno.has-recargo {
+    color: var(--yellow); background: rgba(255,176,0,0.1);
+  }
+  .week-recargo-type-cell.festivo-nocturno.has-recargo {
+    color: #b98cff; background: rgba(185,140,255,0.1);
+  }
+  .week-recargo-type-cell.conflict {
+    color: #ff2d4a !important;
+    font-weight: 700;
+    cursor: help;
+  }
   .week-hours-cell.conflict, .week-extra-type-cell.conflict {
     color: #ff2d4a !important;
     font-weight: 700;
@@ -587,7 +611,7 @@
     cursor: help;
   }
   .week-team-section-row {
-    display: grid; grid-template-columns: 200px repeat(7, 1fr) 55px repeat(4, 62px);
+    display: grid; grid-template-columns: 200px repeat(7, 1fr) 55px repeat(4, 62px) repeat(4, 62px);
     align-items: center; height: 30px; background: rgba(255,255,255,0.02);
   }
   .week-team-section-row .team-section-label {
@@ -724,6 +748,16 @@
   };
   const FESTIVOS_SET = new Set(Object.values(FESTIVOS_COLOMBIA).flat());
   const EXTRA_LABELS = { HED: 'H. Extra Diurna', HEN: 'H. Extra Nocturna', HEDD: 'H. Extra Diurna Dom/Fest', HEND: 'H. Extra Nocturna Dom/Fest' };
+  // Horas ORDINARIAS (dentro de las 42h) que llevan recargo salarial aunque no sean
+  // horas extra: nocturna (trabajo entre 19:00-06:00 sin ser festivo), festiva diurna
+  // y festiva nocturna (domingo o festivo). La diurna normal (RBASE) no lleva recargo,
+  // se muestra solo como referencia de cuánto del total ordinario es "base".
+  const RECARGO_LABELS = {
+    RBASE: 'H. Ordinaria Diurna (sin recargo)',
+    RNOC: 'H. Ordinaria Nocturna (recargo)',
+    RFDI: 'H. Ordinaria Festiva Diurna (recargo)',
+    RFNO: 'H. Ordinaria Festiva Nocturna (recargo)'
+  };
 
   function esHoraDiurna(hour) { return hour >= 6 && hour < 19; }
 
@@ -749,24 +783,31 @@
       (a.date + String(a.hour).padStart(2, '0')).localeCompare(b.date + String(b.hour).padStart(2, '0'))
     );
     const extra = { HED: 0, HEN: 0, HEDD: 0, HEND: 0 };
+    const recargo = { RBASE: 0, RNOC: 0, RFDI: 0, RFNO: 0 };
     let ordinarias = 0;
     let cierre = null;
     sorted.forEach((c, i) => {
       const n = i + 1; // número de hora trabajada en la semana, en orden cronológico
+      const diurno = esHoraDiurna(c.hour);
+      const festivo = esDomingoOFestivo(c.date);
       if (n <= JORNADA_ORDINARIA_SEMANAL) {
         ordinarias = n;
         if (n === JORNADA_ORDINARIA_SEMANAL) cierre = { date: c.date, hour: c.hour };
+        // Dentro de las 42h ordinarias, clasificar por recargo (nocturno y/o festivo)
+        // aunque no sean horas extra — el recargo salarial aplica igual.
+        if (diurno && !festivo) recargo.RBASE++;
+        else if (!diurno && !festivo) recargo.RNOC++;
+        else if (diurno && festivo) recargo.RFDI++;
+        else recargo.RFNO++;
         return;
       }
-      const diurno = esHoraDiurna(c.hour);
-      const festivo = esDomingoOFestivo(c.date);
       if (diurno && !festivo) extra.HED++;
       else if (!diurno && !festivo) extra.HEN++;
       else if (diurno && festivo) extra.HEDD++;
       else extra.HEND++;
     });
     const totalExtra = extra.HED + extra.HEN + extra.HEDD + extra.HEND;
-    return { total: sorted.length, ordinarias, extra, totalExtra, cierre };
+    return { total: sorted.length, ordinarias, extra, totalExtra, recargo, cierre };
   }
 
   let rawData = null;
@@ -1172,6 +1213,10 @@
           return `<div class="day-label">${DAY_NAMES_SHORT[dt.getDay()]}<span class="date-sub">${dt.getDate()} ${MONTH_NAMES[dt.getMonth()].slice(0,3)}</span>${markHtml}</div>`;
         }).join('')}
         ${isAllView ? `<div class="corner hours-col">horas</div>
+        <div class="corner extra-type-col" title="${RECARGO_LABELS.RBASE}">ord</div>
+        <div class="corner extra-type-col" title="${RECARGO_LABELS.RNOC}">r.noc</div>
+        <div class="corner extra-type-col" title="${RECARGO_LABELS.RFDI}">r.fdi</div>
+        <div class="corner extra-type-col" title="${RECARGO_LABELS.RFNO}">r.fno</div>
         <div class="corner extra-type-col" title="${EXTRA_LABELS.HED}">hed</div>
         <div class="corner extra-type-col" title="${EXTRA_LABELS.HEN}">hen</div>
         <div class="corner extra-type-col" title="${EXTRA_LABELS.HEDD}">hedd</div>
@@ -1222,6 +1267,9 @@
           });
           const warnTitle = `⚠ No se calculan horas/extra: horario duplicado entre equipos esta semana.\n${detailLines.join('\n')}\nCorregir el Sheet y actualizar.`;
           totalsHtml = `<div class="week-hours-cell conflict" title="${warnTitle}">⚠</div>`
+            + ['RBASE','RNOC','RFDI','RFNO'].map(() =>
+              `<div class="week-recargo-type-cell conflict" title="${warnTitle}">⚠</div>`
+            ).join('')
             + ['HED','HEN','HEDD','HEND'].map(() =>
               `<div class="week-extra-type-cell conflict" title="${warnTitle}">⚠</div>`
             ).join('');
@@ -1238,6 +1286,10 @@
             const v = calc.extra[key];
             return `<div class="week-extra-type-cell ${tipo}${v > 0 ? ' has-extra' : ''}" title="${EXTRA_LABELS[key]}: ${v}h">${v > 0 ? v + 'h' : '&mdash;'}</div>`;
           };
+          const recargoTypeCell = (key, tipo) => {
+            const v = calc.recargo[key];
+            return `<div class="week-recargo-type-cell ${tipo}${v > 0 ? ' has-recargo' : ''}" title="${RECARGO_LABELS[key]}: ${v}h">${v > 0 ? v + 'h' : '&mdash;'}</div>`;
+          };
           const overLimit = calc.total > LIMITE_LEGAL_SEMANAL;
           const isIdeal = calc.total === JORNADA_ORDINARIA_SEMANAL;
           let hoursClass = '';
@@ -1250,6 +1302,8 @@
             hoursTitle = `✓ Cumple exactamente la jornada ordinaria ideal (${JORNADA_ORDINARIA_SEMANAL}h), sin horas extra.`;
           }
           totalsHtml = `<div class="week-hours-cell${hoursClass}" title="${hoursTitle}">${calc.total}h</div>`
+            + recargoTypeCell('RBASE','base') + recargoTypeCell('RNOC','nocturno')
+            + recargoTypeCell('RFDI','festivo-diurno') + recargoTypeCell('RFNO','festivo-nocturno')
             + extraTypeCell('HED','ordinaria') + extraTypeCell('HEN','ordinaria')
             + extraTypeCell('HEDD','festiva') + extraTypeCell('HEND','festiva');
         }
