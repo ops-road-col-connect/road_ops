@@ -167,6 +167,26 @@
     flex-shrink: 0;
   }
   @keyframes pulse { 0%,100%{opacity:1;} 50%{opacity:0.35;} }
+  .export-btn {
+    margin-left: auto;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    letter-spacing: .5px;
+    text-transform: none;
+    color: var(--green);
+    background: rgba(159,209,164,0.08);
+    border: 1px solid rgba(159,209,164,0.35);
+    border-radius: 6px;
+    padding: 5px 10px;
+    cursor: pointer;
+  }
+  .export-btn:hover { background: rgba(159,209,164,0.16); }
+  .export-btn:disabled {
+    color: var(--text-dim);
+    background: rgba(255,255,255,0.03);
+    border-color: var(--border-soft);
+    cursor: not-allowed;
+  }
   .card-desc {
     font-family: 'JetBrains Mono', monospace;
     font-size: 11.5px;
@@ -666,7 +686,10 @@
 
   <div class="view" id="view-week">
     <div class="card">
-      <div class="card-title"><span class="dot"></span>Programación semanal</div>
+      <div class="card-title">
+        <span class="dot"></span>Programación semanal
+        <button class="export-btn" id="export-week-xlsx" title="Descarga un Excel con horas, recargos y extras de todos los agentes de la semana seleccionada">⬇ Descargar Excel</button>
+      </div>
       <div class="card-desc">Rango de turno por agente, lunes a domingo</div>
       <div class="week-scroll"><div id="week-content"><div class="state-msg">Cargando datos&hellip;</div></div></div>
     </div>
@@ -698,6 +721,7 @@
   </div>
 </div>
 
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <script>
   const WEBHOOK_URL = "https://iagb.app.n8n.cloud/webhook/b81f597c-d181-4545-9a2a-a08cb3188e61";
 
@@ -1319,6 +1343,73 @@
     weekContent.innerHTML = html;
   }
 
+  // Exporta a Excel las 9 columnas de horas (horas, recargos ordinarios y extras) de
+  // TODOS los agentes de la semana seleccionada. Usa exactamente el mismo cálculo que
+  // la tabla en pantalla (calcularHorasSemana), sobre todas las horas del agente sin
+  // importar el equipo — igual que en la vista "Todos".
+  function exportWeekXlsx() {
+    if (!rawData) return;
+    const dateVal = dateInput.value;
+    if (!dateVal) return;
+    const monday = getMondayOfWeek(dateVal);
+    const weekDates = Array.from({length:7}, (_,i) => {
+      const dt = new Date(monday);
+      dt.setDate(dt.getDate()+i);
+      return dt;
+    });
+    const weekDateStrs = weekDates.map(fmtDateISO);
+
+    const cellsInWeek = (rawData.workforceCells || []).filter(c => weekDateStrs.includes(c.date));
+    const byAgentDateCells = {};
+    const byAgentWeek = {};
+    for (const c of cellsInWeek) {
+      const key = c.agent + '|' + c.date;
+      if (!byAgentDateCells[key]) byAgentDateCells[key] = [];
+      byAgentDateCells[key].push({ hour: c.hour, team: c.team });
+      if (!byAgentWeek[c.agent]) byAgentWeek[c.agent] = new Set();
+      byAgentWeek[c.agent].add(c.team);
+    }
+
+    const agents = Object.keys(byAgentWeek).sort((a,b) => a.localeCompare(b));
+    if (!agents.length) { alert('No hay agentes programados esta semana.'); return; }
+
+    const header = ['Agente','Equipo(s)','horas','ord','r.noc','r.fdi','r.fno','hed','hen','hedd','hend','Observación'];
+    const rows = [header];
+
+    agents.forEach(agent => {
+      const teams = [...byAgentWeek[agent]].filter(Boolean).join(', ');
+      const conflictDates = weekDateStrs.filter(ds => hasTeamConflict(byAgentDateCells[agent+'|'+ds] || []));
+      if (conflictDates.length) {
+        rows.push([agent, teams, '⚠','⚠','⚠','⚠','⚠','⚠','⚠','⚠','⚠',
+          'Conflicto de equipo (horario duplicado): no se calculan horas. Corregir el Sheet.']);
+        return;
+      }
+      const cellsAgente = weekDateStrs.flatMap(ds => {
+        const hours = [...new Set((byAgentDateCells[agent+'|'+ds] || []).map(c => c.hour))];
+        return hours.map(h => ({ date: ds, hour: h }));
+      });
+      const calc = calcularHorasSemana(cellsAgente);
+      let obs = '';
+      if (calc.total > LIMITE_LEGAL_SEMANAL) obs = `Supera el tope legal semanal (${LIMITE_LEGAL_SEMANAL}h)`;
+      else if (calc.total === JORNADA_ORDINARIA_SEMANAL) obs = 'Cumple jornada ordinaria ideal, sin extra';
+      rows.push([
+        agent, teams, calc.total,
+        calc.recargo.RBASE, calc.recargo.RNOC, calc.recargo.RFDI, calc.recargo.RFNO,
+        calc.extra.HED, calc.extra.HEN, calc.extra.HEDD, calc.extra.HEND,
+        obs
+      ]);
+    });
+
+    const ws = XLSX.utils.aoa_to_sheet(rows);
+    ws['!cols'] = [
+      {wch:28},{wch:20},{wch:7},{wch:7},{wch:7},{wch:7},{wch:7},{wch:6},{wch:6},{wch:7},{wch:7},{wch:46}
+    ];
+    const wb = XLSX.utils.book_new();
+    const sheetLabel = `Semana ${weekDateStrs[0]}`;
+    XLSX.utils.book_append_sheet(wb, ws, sheetLabel.slice(0,31));
+    XLSX.writeFile(wb, `road_col_horas_${weekDateStrs[0]}_a_${weekDateStrs[6]}.xlsx`);
+  }
+
   function renderForecast() {
     if (!rawData) return;
     const forecastContent = document.getElementById('forecast-content');
@@ -1528,6 +1619,7 @@
   tipoServicioSelect.addEventListener('change', renderHeatmap);
 
   refreshBtn.addEventListener('click', () => loadData(true));
+  document.getElementById('export-week-xlsx').addEventListener('click', exportWeekXlsx);
   loadData(false);
 </script>
 </body>
