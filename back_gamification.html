@@ -762,7 +762,8 @@ function render(){
     tr.className = 'agent-row';
     tr.dataset.agentIndex = i;
     const arriboText = a.n_arribo>0 ? `${a.avg_arribo} min` : `<span class="muted">—</span>`;
-    const metaText = a.n_local>0 ? `${a.pct_meta_local}% <span class="muted">(${a.n_meta_cumple}/${a.n_local})</span>` : `<span class="muted">—</span>`;
+    const metaColor = a.pct_meta_local===null ? null : (a.pct_meta_local>=80 ? 'var(--pg-green)' : (a.pct_meta_local>=60 ? 'var(--pg-mustard)' : 'var(--pg-red)'));
+    const metaText = a.n_local>0 ? `<span style="color:${metaColor}; font-weight:700;">${a.pct_meta_local}%</span> <span class="muted">(${a.n_meta_cumple}/${a.n_local})</span>` : `<span class="muted">—</span>`;
     const planGamColor = a.pct_plan_gam===null ? null : (a.pct_plan_gam>=60 ? 'var(--pg-green)' : (a.pct_plan_gam>=40 ? 'var(--pg-mustard)' : 'var(--pg-red)'));
     const planGamText = a.tow_elegibles>0 ? `<span style="color:${planGamColor}; font-weight:700;">${a.pct_plan_gam}%</span> <span class="muted">(${a.plan_gam}/${a.tow_elegibles})</span>` : `<span class="muted">—</span>`;
     const badgeHtml = a.badges.map(b=>`<span class="ic" title="${b}">${BADGE_ICON[b]}</span>`).join("");
