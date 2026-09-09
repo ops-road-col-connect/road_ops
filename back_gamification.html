@@ -564,11 +564,12 @@ function startOfMonth(d){ return new Date(d.getFullYear(), d.getMonth(), 1); }
 
 async function loadData(){
   try{
-    // El "no-store" evita que el propio navegador reuse su caché, pero
-    // raw.githubusercontent.com está detrás de un CDN que puede seguir
-    // sirviendo una copia vieja durante unos minutos. El parámetro ?t=
-    // fuerza una URL distinta en cada carga para saltarse ese caché también.
-    const res = await fetch(`${JSON_URL}?t=${Date.now()}`, {cache:"no-store"});
+    // Bucket de 5 minutos: suficiente para no depender del caché "no-store"
+    // del navegador (que no controla el CDN de GitHub), pero sin pedir un
+    // recurso nuevo en CADA carga — eso fue lo que causó los 503 (GitHub
+    // empezó a rechazar peticiones directas al origen sin pasar por el CDN).
+    const cacheBucket = Math.floor(Date.now() / (5 * 60 * 1000));
+    const res = await fetch(`${JSON_URL}?t=${cacheBucket}`, {cache:"no-store"});
     if(!res.ok) throw new Error("HTTP " + res.status);
     const data = await res.json();
     const records = (data.records || []).map(r=>{
