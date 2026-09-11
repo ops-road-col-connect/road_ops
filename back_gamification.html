@@ -492,11 +492,11 @@ table.ranking-table tbody tr.agent-row{cursor:pointer;}
         <div class="section-divider"></div>
         <div>
           <div class="section-note">No depende del agrupamiento día/semana/mes de arriba</div>
-          <div class="card-desc" style="margin-bottom:10px;">Servicios de grúa en ciudades del plan (Bogotá/Cali/Medellín) — marcados si el proveedor es del plan gamificación</div>
+          <div class="card-desc" style="margin-bottom:10px;">Servicios de grúa en ciudades del plan (Bogotá/Cali/Medellín) — de todos los equipos, marcados si el proveedor es del plan gamificación</div>
           <div class="detail-scroll">
             <table class="detail-table" id="planGamDetailTable">
               <thead>
-                <tr><th>Fecha</th><th>PO</th><th>Tipo servicio</th><th>Ciudad</th><th>Proveedor</th><th>Arribo</th><th>Plan gam.</th></tr>
+                <tr><th>Fecha</th><th>PO</th><th>Agente</th><th>Tipo servicio</th><th>Ciudad</th><th>Proveedor</th><th>Arribo</th><th>Plan gam.</th></tr>
               </thead>
               <tbody id="planGamDetailBody"></tbody>
             </table>
@@ -529,6 +529,7 @@ const BADGE_ICON = { volumen:"🏁", velocidad:"⚡", meta_local:"🏆" };
 const TOW_TYPES = new Set(["towBreakdown", "towHeavyWeight", "tow_heavy_weight_collision", "towCollision"]);
 const URGENTE_TYPES = new Set(["towBreakdown", "jumpStart", "onsite_legal_assistance", "towCollision", "flatTire", "locksmith", "fuelDelivery", "batteryDiagnostic"]);
 let ALL_TOTALES_POR_FECHA = {};
+let ALL_GRUAS_PLAN_TODOS = [];
 let historicoGroup = 'day';
 let chartServiciosBackInstance = null;
 let chartPlanGamInstance = null;
@@ -594,6 +595,17 @@ async function loadData(){
 
     ALL_RECORDS = records;
     ALL_TOTALES_POR_FECHA = data.totales_por_fecha || {};
+    ALL_GRUAS_PLAN_TODOS = (data.gruas_plan_todos_equipos || []).map(r=>({
+      po_number: r.po_number,
+      fecha: r.fecha,
+      agente: NAME_ALIASES[r.agente] || r.agente, // solo por si aplica a alguien de Back
+      cuenta: r.cuenta,
+      tipo_servicio: r.tipo_servicio,
+      ciudad: r.ciudad || null,
+      proveedor: r.proveedor || null,
+      arribo_min: (r.arribo_min === null || r.arribo_min === undefined || r.arribo_min === "") ? null : Number(r.arribo_min),
+      plan_gamification: !!r.plan_gamification
+    }));
     statusLine.innerHTML = (data.updated_at ? `Corte: ${new Date(data.updated_at).toLocaleString('es-CO')}` : 'Datos cargados');
     contentEl.style.display = 'block';
     populateCuentas();
@@ -868,15 +880,14 @@ function getGroupKey(fechaStr, group){
   return fechaStr;
 }
 
-function renderPlanGamDetail(records){
+function renderPlanGamDetail(items){
   const body = document.getElementById('planGamDetailBody');
-  const items = records.filter(r => TOW_TYPES.has(r.tipo_servicio) && r.ciudad_en_gamification);
-  items.sort((a,b) => (b.fecha||'').localeCompare(a.fecha||''));
-  if(items.length === 0){
-    body.innerHTML = '<tr><td colspan="7" style="color:var(--text-dim); text-align:center; padding:14px;">Sin servicios elegibles en este filtro.</td></tr>';
+  const sorted = [...items].sort((a,b) => (b.fecha||'').localeCompare(a.fecha||''));
+  if(sorted.length === 0){
+    body.innerHTML = '<tr><td colspan="8" style="color:var(--text-dim); text-align:center; padding:14px;">Sin servicios elegibles en este filtro.</td></tr>';
     return;
   }
-  body.innerHTML = items.map(r=>{
+  body.innerHTML = sorted.map(r=>{
     const arribo = r.arribo_min !== null ? `${Math.round(r.arribo_min)} min` : '<span class="muted">—</span>';
     const rowClass = r.plan_gamification ? '' : ' class="row-dim"';
     const planMark = r.plan_gamification
@@ -885,6 +896,7 @@ function renderPlanGamDetail(records){
     return `<tr${rowClass}>
       <td>${r.fecha || '—'}</td>
       <td class="det-po"><a href="https://helios-web.connect.pr/service/${r.po_number}" target="_blank" rel="noopener" class="po-link">${r.po_number || '—'}</a></td>
+      <td>${r.agente || '<span class="muted">—</span>'}</td>
       <td>${r.tipo_servicio || '—'}</td>
       <td>${r.ciudad || '<span class="muted">—</span>'}</td>
       <td>${r.proveedor || '<span class="muted">—</span>'}</td>
@@ -899,7 +911,10 @@ function renderHistorico(){
   const records = ALL_RECORDS.filter(r => cuentaFiltro === '__ALL__' || r.cuenta === cuentaFiltro);
   const cuentaActiva = cuentaFiltro === '__ALL__';
 
-  renderPlanGamDetail(records);
+  // La tabla de grúas del plan ya NO se limita a agentes de Back: usa
+  // la colección de todos los equipos, respetando igual el filtro de cuenta.
+  const gruasPlanTodosFiltrado = ALL_GRUAS_PLAN_TODOS.filter(r => cuentaFiltro === '__ALL__' || r.cuenta === cuentaFiltro);
+  renderPlanGamDetail(gruasPlanTodosFiltrado);
 
   const byGroup = {};
   records.forEach(r=>{
