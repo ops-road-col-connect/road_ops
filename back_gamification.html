@@ -562,7 +562,7 @@ function setTeam(team){
   const sel = document.getElementById('cuentaFilter');
   sel.style.display = t.filtroCuenta ? '' : 'none';
   document.getElementById('stArriboLabel').textContent = t.mostrarCoord ? 'Min. prom. para coordinar' : 'Min. prom. de arribo';
-  document.getElementById('legendVelocidad').textContent = `Mayor % de SLA local (≤${t.metaLocal} min)`;
+  document.getElementById('legendVelocidad').textContent = t.mostrarCoord ? 'Menor tiempo promedio de coordinación' : `Mayor % de SLA local (≤${t.metaLocal} min)`;
   const fb = document.getElementById('formulaBox');
   if(!fb.dataset.back) fb.dataset.back = fb.innerHTML;
   fb.innerHTML = team === 'mv' ? FORMULA_MV_HTML : fb.dataset.back;
@@ -846,10 +846,20 @@ function computeData(){
     const maxServ = Math.max(...withServ.map(a=>a.servicios));
     data.forEach(a=>{ if(a.servicios===maxServ && maxServ>0) a.badges.push('volumen'); });
   }
-  const withSla = data.filter(a=>a.n_local>=1);
-  if(withSla.length){
-    const maxSla = Math.max(...withSla.map(a=>a.pct_meta_local));
-    data.forEach(a=>{ if(a.n_local>=1 && a.pct_meta_local===maxSla) a.badges.push('velocidad'); });
+  if(CURRENT_TEAM === 'mv'){
+    // Mundial Vial: ⚡ para el menor Tprom Coord del período
+    const conCoord = data.filter(a=>a.n_coord>0);
+    if(conCoord.length){
+      const minCoord = Math.min(...conCoord.map(a=>a.avg_coord));
+      conCoord.forEach(a=>{ if(a.avg_coord===minCoord) a.badges.push('velocidad'); });
+    }
+  } else {
+    // Back: ⚡ para el mayor % de SLA local
+    const withSla = data.filter(a=>a.n_local>=1);
+    if(withSla.length){
+      const maxSla = Math.max(...withSla.map(a=>a.pct_meta_local));
+      data.forEach(a=>{ if(a.n_local>=1 && a.pct_meta_local===maxSla) a.badges.push('velocidad'); });
+    }
   }
   data.forEach(a=>{ if(a.n_local>=1 && a.pct_meta_local===100) a.badges.push('meta_local'); });
 
