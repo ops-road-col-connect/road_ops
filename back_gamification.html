@@ -430,7 +430,7 @@ table.ranking-table tbody tr.agent-row{cursor:pointer;}
     <div class="strip">
       <div class="stat"><div class="n" id="stTotal">—</div><div class="l">Servicios en el período</div></div>
       <div class="stat"><div class="n" id="stAgentes">—</div><div class="l">Agentes activos</div></div>
-      <div class="stat"><div class="n" id="stArribo">—</div><div class="l">Min. prom. de arribo</div></div>
+      <div class="stat"><div class="n" id="stArribo">—</div><div class="l" id="stArriboLabel">Min. prom. de arribo</div></div>
     </div>
 
     <div class="card">
@@ -443,29 +443,20 @@ table.ranking-table tbody tr.agent-row{cursor:pointer;}
       <div class="card-title"><span class="dot"></span>Tabla completa</div>
       <div class="card-desc" id="rankingDesc">Ranking de los agentes de Back</div>
 
+      <div style="overflow-x:auto;">
       <table class="ranking-table">
-        <thead>
-          <tr>
-            <th>#</th>
-            <th style="text-align:left;">Agente</th>
-            <th>Servicios</th>
-            <th>Arribo prom.</th>
-            <th>% Meta local</th>
-            <th>% Plan gam.</th>
-            <th>Puntos</th>
-            <th>Insignias</th>
-          </tr>
-        </thead>
+        <thead id="rankingHead"></thead>
         <tbody id="tbody"></tbody>
       </table>
+      </div>
 
       <div class="badges-legend">
         <div class="badge-def"><span class="ic">🏁</span> Más servicios del período</div>
-        <div class="badge-def"><span class="ic">⚡</span> Mayor % de SLA local (≤60 min)</div>
+        <div class="badge-def"><span class="ic">⚡</span> <span id="legendVelocidad">Mayor % de SLA local (≤60 min)</span></div>
         <div class="badge-def"><span class="ic">🏆</span> 100% meta local cumplida</div>
       </div>
 
-      <div class="formula">
+      <div class="formula" id="formulaBox">
         <b>Puntos:</b> +2 pts base por coordinar el servicio (Finished). +20 pts si es "local urgente" (towBreakdown, jumpStart, onsite_legal_assistance, towCollision, flatTire, locksmith, fuelDelivery, batteryDiagnostic; local; no programado) y arribó en ≤60 min. +10 pts si el proveedor es Proveedor G (proveedor_plan_gamification=0). +5 pts si el proveedor es prioridad 1 (proveedor_plan_gamification=1). Estos dos últimos bonos solo aplican a los 4 tipos de servicio de grúa y con ciudad en Bogotá/Cali/Medellín.
         <br><b>% Meta local:</b> de los servicios locales, % que llegó en ≤60 min.
         <br><b>% Plan gamificación:</b> de los servicios de grúa elegibles, % con proveedor del plan (0).
@@ -525,9 +516,34 @@ let BACK_TEAM = [];        // roster BACK del mes actual (respaldo)
 let ROSTER_POR_MES = {};   // { 'YYYY-MM': [agentes del equipo activo en ese mes] }
 // Datos de cada equipo; ALL_RECORDS / BACK_TEAM / ROSTER_POR_MES apuntan al equipo activo.
 const TEAMS = {
-  back: { titulo: 'Ranking Back',         desc: 'Ranking de los agentes de Back',         records: [], agentes: [], porMes: {} },
-  mv:   { titulo: 'Ranking Mundial Vial', desc: 'Ranking de los agentes de Mundial Vial', records: [], agentes: [], porMes: {} }
+  back: { titulo: 'Ranking Back', desc: 'Ranking de los agentes de Back',
+          records: [], agentes: [], porMes: {},
+          metaLocal: 60,  metaForanea: null, mostrarArribo: true, mostrarCoord: false, mostrarProgramados: false, filtroCuenta: true },
+  mv:   { titulo: 'Ranking Mundial Vial', desc: 'Ranking de los agentes de Mundial Vial · solo cuenta Seguros Mundial Vial',
+          records: [], agentes: [], porMes: {},
+          metaLocal: 90,  metaForanea: 180, mostrarArribo: false, mostrarCoord: true, mostrarProgramados: true, filtroCuenta: false }
 };
+const FORMULA_BACK_HTML = () => document.getElementById('formulaBox').dataset.back;
+const FORMULA_MV_HTML = `
+        <b>Puntos:</b> mismas reglas de Back: +2 pts base por coordinar el servicio (Finished), +20 pts si es "local urgente" y arribó en ≤60 min, +10 pts si el proveedor es Proveedor G (proveedor_plan_gamification=0), +5 pts si es prioridad 1 (=1); estos dos bonos solo aplican a grúas en Bogotá/Cali/Medellín.
+        <br><b>Servicios:</b> solo cuenta Seguros Mundial Vial.
+        <br><b>% Programados:</b> de los servicios del agente, % marcados como programados (Programado = Si).
+        <br><b>Tprom Coord:</b> promedio de minutos entre la creación del servicio y la aceptación del proveedor (FechaViajeAceptado − FechaHoraCreacion).
+        <br><b>% Meta local:</b> de los servicios locales no programados, % con llegada en ≤90 min desde la creación.
+        <br><b>% Meta foránea:</b> de los servicios foráneos no programados, % con llegada en menos de 180 min desde la creación.
+        <br><b>% Plan gamificación:</b> de los servicios de grúa elegibles, % con proveedor del plan (0).`;
+function renderHead(){
+  const t = TEAMS[CURRENT_TEAM];
+  const cols = ['#', '<span style="display:block;text-align:left;">Agente</span>', 'Servicios'];
+  if(t.mostrarProgramados) cols.push('% Program.');
+  if(t.mostrarArribo) cols.push('Arribo prom.');
+  if(t.mostrarCoord) cols.push('Tprom Coord');
+  cols.push(t.metaForanea ? `% Meta local<br><span class="muted">≤${t.metaLocal} min</span>` : '% Meta local');
+  if(t.metaForanea) cols.push(`% Meta foránea<br><span class="muted">&lt;${t.metaForanea} min</span>`);
+  cols.push('% Plan gam.', 'Puntos', 'Insignias');
+  document.getElementById('rankingHead').innerHTML = '<tr>' + cols.map(c=>`<th>${c}</th>`).join('') + '</tr>';
+  return cols.length;
+}
 let CURRENT_TEAM = 'back';
 function setTeam(team){
   CURRENT_TEAM = team;
@@ -537,7 +553,15 @@ function setTeam(team){
   ROSTER_POR_MES = t.porMes;
   document.getElementById('pageTitle').textContent = t.titulo;
   document.getElementById('rankingDesc').textContent = t.desc;
+  const sel = document.getElementById('cuentaFilter');
+  sel.style.display = t.filtroCuenta ? '' : 'none';
+  document.getElementById('stArriboLabel').textContent = t.mostrarCoord ? 'Min. prom. para coordinar' : 'Min. prom. de arribo';
+  document.getElementById('legendVelocidad').textContent = `Mayor % de SLA local (≤${t.metaLocal} min)`;
+  const fb = document.getElementById('formulaBox');
+  if(!fb.dataset.back) fb.dataset.back = fb.innerHTML;
+  fb.innerHTML = team === 'mv' ? FORMULA_MV_HTML : fb.dataset.back;
   populateCuentas();
+  if(!t.filtroCuenta) sel.value = '__ALL__';
 }
 
 // Roster BACK del periodo: une los rosters de cada mes que toca el rango.
@@ -633,7 +657,9 @@ async function loadData(){
         programado: r.programado || null,
         arribo_min: (r.arribo_min === null || r.arribo_min === undefined || r.arribo_min === "") ? null : Number(r.arribo_min),
         plan_gamification: !!r.plan_gamification,
-        prioridad1: !!r.prioridad1
+        prioridad1: !!r.prioridad1,
+        coord_min: (r.coord_min === null || r.coord_min === undefined) ? null : Number(r.coord_min),
+        arribo_real_min: (r.arribo_real_min === null || r.arribo_real_min === undefined) ? null : Number(r.arribo_real_min)
       };
     };
     // n8n ya filtra cada equipo por su roster de cada mes
@@ -729,20 +755,29 @@ function computeData(){
   // Roster mensual: solo compiten los agentes que estaban en el bloque BACK
   // de los meses que cubre el periodo (más cualquiera con servicios, por seguridad).
   const agentesPeriodo = [...new Set([...rosterDelPeriodo(from, to), ...filtered.map(r=>r.agente)])];
-  agentesPeriodo.forEach(a=>{ byAgent[a] = {servicios:0, arribos:[], locales:[], planGam:0, prioridad1:0, towElegibles:0, puntos:0, records:[]}; });
+  agentesPeriodo.forEach(a=>{ byAgent[a] = {servicios:0, programados:0, arribos:[], locales:[], foraneos:[], coords:[], planGam:0, prioridad1:0, towElegibles:0, puntos:0, records:[]}; });
+  const team = TEAMS[CURRENT_TEAM];
 
   filtered.forEach(r=>{
     if(!byAgent[r.agente]) return;
     const ag = byAgent[r.agente];
     ag.servicios++;
+    if(r.programado === 'Si') ag.programados++;
     const pts = calcularPuntosServicio(r);
     r.puntos = pts;
     ag.records.push(r);
 
-    if(r.arribo_min !== null){
+    if(team.metaForanea){
+      // Mundial Vial: llegada real desde la creación, sin programados
+      if(r.coord_min !== null) ag.coords.push(r.coord_min);
+      if(r.arribo_real_min !== null && r.programado !== 'Si'){
+        if(r.tipo_localidad === 'local')   ag.locales.push(r.arribo_real_min <= team.metaLocal);
+        if(r.tipo_localidad === 'foreign') ag.foraneos.push(r.arribo_real_min < team.metaForanea);
+      }
+    } else if(r.arribo_min !== null){
       ag.arribos.push(r.arribo_min);
       if(r.tipo_localidad === 'local'){
-        ag.locales.push(r.arribo_min <= 60);
+        ag.locales.push(r.arribo_min <= team.metaLocal);
       }
     }
 
@@ -763,7 +798,15 @@ function computeData(){
     const n_meta_cumple = d.locales.filter(Boolean).length;
     const pct_meta_local = n_local>0 ? Math.round(100*n_meta_cumple/n_local) : null;
     const pct_plan_gam = d.towElegibles>0 ? Math.round(100*d.planGam/d.towElegibles) : null;
+    const n_foraneo = d.foraneos.length;
+    const n_foraneo_cumple = d.foraneos.filter(Boolean).length;
+    const pct_meta_foranea = n_foraneo>0 ? Math.round(100*n_foraneo_cumple/n_foraneo) : null;
+    const n_coord = d.coords.length;
+    const avg_coord = n_coord>0 ? Math.round(10*d.coords.reduce((s,v)=>s+v,0)/n_coord)/10 : null;
+    const pct_programados = d.servicios>0 ? Math.round(100*d.programados/d.servicios) : null;
     return {
+      programados: d.programados, pct_programados,
+      n_foraneo, n_foraneo_cumple, pct_meta_foranea, n_coord, avg_coord,
       nombre, servicios: d.servicios,
       avg_arribo: avg_arribo!==null ? Math.round(avg_arribo*10)/10 : null,
       n_arribo, puntos: d.puntos, pct_meta_local, n_local, n_meta_cumple,
@@ -798,7 +841,16 @@ function render(){
   const cntArribo = withArribo.reduce((s,a)=>s+a.n_arribo,0);
   document.getElementById('stTotal').textContent = totalServicios;
   document.getElementById('stAgentes').textContent = data.filter(a=>a.servicios>0).length;
-  document.getElementById('stArribo').textContent = cntArribo>0 ? (sumArribo/cntArribo).toFixed(0) : "—";
+  const teamCfg = TEAMS[CURRENT_TEAM];
+  if(teamCfg.mostrarCoord){
+    const withCoord = data.filter(a=>a.n_coord>0);
+    const nC = withCoord.reduce((s,a)=>s+a.n_coord,0);
+    const sC = withCoord.reduce((s,a)=>s+a.avg_coord*a.n_coord,0);
+    document.getElementById('stArribo').textContent = nC>0 ? (sC/nC).toFixed(0) : "—";
+  } else {
+    document.getElementById('stArribo').textContent = cntArribo>0 ? (sumArribo/cntArribo).toFixed(0) : "—";
+  }
+  const nCols = renderHead();
 
   const podiumEl = document.getElementById('podium');
   podiumEl.innerHTML = "";
@@ -834,6 +886,10 @@ function render(){
     const arriboText = a.n_arribo>0 ? `${a.avg_arribo} min` : `<span class="muted">—</span>`;
     const metaColor = a.pct_meta_local===null ? null : (a.pct_meta_local>=80 ? 'var(--pg-green)' : (a.pct_meta_local>=50 ? 'var(--pg-mustard)' : 'var(--pg-red)'));
     const metaText = a.n_local>0 ? `<span style="color:${metaColor}; font-weight:700;">${a.pct_meta_local}%</span> <span class="muted">(${a.n_meta_cumple}/${a.n_local})</span>` : `<span class="muted">—</span>`;
+    const forColor = a.pct_meta_foranea===null ? null : (a.pct_meta_foranea>=80 ? 'var(--pg-green)' : (a.pct_meta_foranea>=50 ? 'var(--pg-mustard)' : 'var(--pg-red)'));
+    const forText = a.n_foraneo>0 ? `<span style="color:${forColor}; font-weight:700;">${a.pct_meta_foranea}%</span> <span class="muted">(${a.n_foraneo_cumple}/${a.n_foraneo})</span>` : `<span class="muted">—</span>`;
+    const progText = a.servicios>0 ? `${a.pct_programados}% <span class="muted">(${a.programados}/${a.servicios})</span>` : `<span class="muted">—</span>`;
+    const coordText = a.n_coord>0 ? `${a.avg_coord} min` : `<span class="muted">—</span>`;
     const planGamColor = a.pct_plan_gam===null ? null : (a.pct_plan_gam>=50 ? 'var(--pg-green)' : (a.pct_plan_gam>=30 ? 'var(--pg-mustard)' : 'var(--pg-red)'));
     const planGamText = a.tow_elegibles>0 ? `<span style="color:${planGamColor}; font-weight:700;">${a.pct_plan_gam}%</span> <span class="muted">(${a.plan_gam}/${a.tow_elegibles})</span>` : `<span class="muted">—</span>`;
     const badgeHtml = a.badges.map(b=>`<span class="ic" title="${b}">${BADGE_ICON[b]}</span>`).join("");
@@ -854,8 +910,11 @@ function render(){
         <div class="level-tag">${lvl.icon} ${lvl.name}</div>
       </td>
       <td>${a.servicios}</td>
-      <td>${arriboText}</td>
+      ${teamCfg.mostrarProgramados ? `<td>${progText}</td>` : ''}
+      ${teamCfg.mostrarArribo ? `<td>${arriboText}</td>` : ''}
+      ${teamCfg.mostrarCoord ? `<td>${coordText}</td>` : ''}
       <td>${metaText}</td>
+      ${teamCfg.metaForanea ? `<td>${forText}</td>` : ''}
       <td>${planGamText}</td>
       <td class="bar-cell">
         <div class="pts">${a.puntos}</div>
@@ -870,7 +929,7 @@ function render(){
     detailTr.className = 'detail-row';
     detailTr.dataset.agentIndex = i;
     const td = document.createElement('td');
-    td.colSpan = 8;
+    td.colSpan = nCols;
     td.innerHTML = buildDetailHtml(a.records);
     detailTr.appendChild(td);
     tbody.appendChild(detailTr);
@@ -887,8 +946,12 @@ function buildDetailHtml(records){
     return '<div class="detail-wrap"><div class="detail-empty">Sin servicios en este período/cuenta.</div></div>';
   }
   const sorted = [...records].sort((a,b)=> (b.fecha||'').localeCompare(a.fecha||''));
+  const esMv = CURRENT_TEAM === 'mv';
   const rows = sorted.map(r=>{
-    const arribo = r.arribo_min !== null ? `${Math.round(r.arribo_min)} min` : '<span class="muted">—</span>';
+    const valArribo = esMv ? r.arribo_real_min : r.arribo_min;
+    const arribo = valArribo !== null && valArribo !== undefined ? `${Math.round(valArribo)} min` : '<span class="muted">—</span>';
+    const coord = r.coord_min !== null && r.coord_min !== undefined ? `${Math.round(r.coord_min)} min` : '<span class="muted">—</span>';
+    const prog = r.programado === 'Si' ? ' <span class="muted" title="Programado: no cuenta para la meta">(prog.)</span>' : '';
     const plan = r.plan_gamification ? '✓' : '<span class="muted">—</span>';
     const loc = r.tipo_localidad || '<span class="muted">—</span>';
     const proveedor = r.proveedor || '<span class="muted">—</span>';
@@ -901,7 +964,8 @@ function buildDetailHtml(records){
       <td>${proveedor}</td>
       <td>${r.tipo_servicio || '—'}</td>
       <td>${ciudad}</td>
-      <td>${loc}</td>
+      <td>${loc}${esMv ? prog : ''}</td>
+      ${esMv ? `<td>${coord}</td>` : ''}
       <td class="det-arribo">${arribo}</td>
       <td class="det-plan">${plan}</td>
       <td style="color:var(--yellow); font-weight:700;">${puntos}</td>
@@ -912,7 +976,7 @@ function buildDetailHtml(records){
       <div class="detail-scroll">
         <table class="detail-table">
           <thead>
-            <tr><th>Fecha</th><th>PO</th><th>Cuenta</th><th>Proveedor</th><th>Tipo servicio</th><th>Ciudad</th><th>Localidad</th><th>Arribo</th><th>Plan gam.</th><th>Puntos</th></tr>
+            <tr><th>Fecha</th><th>PO</th><th>Cuenta</th><th>Proveedor</th><th>Tipo servicio</th><th>Ciudad</th><th>Localidad</th>${esMv ? '<th>Coord</th>' : ''}<th>Arribo</th><th>Plan gam.</th><th>Puntos</th></tr>
           </thead>
           <tbody>${rows}</tbody>
         </table>
