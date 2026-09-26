@@ -518,13 +518,34 @@ table.ranking-table tbody tr.agent-row{cursor:pointer;}
 <script>
 const JSON_URL = "https://raw.githubusercontent.com/ops-road-col-connect/road_ops/main/servicios_back.json";
 
-const BACK_TEAM = [
-  "Edwin Camilo Corredor Amud", "Ingrid Dayanna Pérez Vargas", "Juan Sebastian Tinjaca Ortiz",
-  "Lady Yojanna Alfonso Casas", "Laura Camila Parada Vargas", "Laura Daniela Menjura Velásquez",
-  "Leidy Nicol Cañon Ibañez", "Lizeth Tatiana Rodriguez Peña", "Yury Alexandra Gonzalez Arias",
-  "Ana Milena Carrillo Amaya"
-];
-const NAME_ALIASES = { "Ana Milena Carrillo": "Ana Milena Carrillo Amaya" };
+// El roster de Back llega en el JSON (agentes_back), leído por n8n desde
+// la pestaña "Horarios 2026" (bloque BACK del mes actual). Ya no se hardcodea aquí.
+let BACK_TEAM = [];        // roster BACK del mes actual (respaldo)
+let ROSTER_POR_MES = {};   // { 'YYYY-MM': [agentes BACK de ese mes] }
+
+// Roster BACK del periodo: une los rosters de cada mes que toca el rango.
+// Si un mes aún no tiene bloque en "Horarios 2026", usa el bloque anterior más reciente.
+function rosterDelPeriodo(from, to){
+  const meses = Object.keys(ROSTER_POR_MES).sort();
+  if(meses.length === 0) return [...BACK_TEAM];
+  const rosterDeMes = ym => {
+    let elegido = meses[0];
+    for(const m of meses) if(m <= ym) elegido = m;
+    return ROSTER_POR_MES[elegido] || [];
+  };
+  const ymIni = (from || meses[0] + '-01').slice(0,7);
+  const ymFin = (to || toISO(new Date())).slice(0,7);
+  const set = new Set();
+  let [y, m] = ymIni.split('-').map(Number);
+  let guard = 0;
+  while(guard++ < 36){
+    const ym = y + '-' + pad(m);
+    if(ym > ymFin) break;
+    rosterDeMes(ym).forEach(a => set.add(a));
+    m++; if(m > 12){ m = 1; y++; }
+  }
+  return [...set];
+}
 const BADGE_ICON = { volumen:"🏁", velocidad:"⚡", meta_local:"🏆" };
 const TOW_TYPES = new Set(["towBreakdown", "towHeavyWeight", "tow_heavy_weight_collision", "towCollision"]);
 const URGENTE_TYPES = new Set(["towBreakdown", "jumpStart", "onsite_legal_assistance", "towCollision", "flatTire", "locksmith", "fuelDelivery", "batteryDiagnostic"]);
@@ -573,8 +594,14 @@ async function loadData(){
     const res = await fetch(`${JSON_URL}?t=${cacheBucket}`, {cache:"no-store"});
     if(!res.ok) throw new Error("HTTP " + res.status);
     const data = await res.json();
+    // Respaldo: si el JSON aún no trae agentes_back (workflow viejo),
+    // se arma el roster con los agentes presentes en records.
+    BACK_TEAM = Array.isArray(data.agentes_back) && data.agentes_back.length
+      ? data.agentes_back
+      : [...new Set((data.records || []).map(r => r.agente).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'es'));
+    ROSTER_POR_MES = (data.roster_back_por_mes && typeof data.roster_back_por_mes === 'object') ? data.roster_back_por_mes : {};
     const records = (data.records || []).map(r=>{
-      const agente = NAME_ALIASES[r.agente] || r.agente;
+      const agente = r.agente;
       return {
         po_number: r.po_number,
         fecha: r.fecha,
@@ -591,14 +618,14 @@ async function loadData(){
         plan_gamification: !!r.plan_gamification,
         prioridad1: !!r.prioridad1
       };
-    }).filter(r => BACK_TEAM.includes(r.agente) && r.estatus === 'Finished');
+    }).filter(r => r.estatus === 'Finished'); // n8n ya filtra por el roster BACK de cada mes
 
     ALL_RECORDS = records;
     ALL_TOTALES_POR_FECHA = data.totales_por_fecha || {};
     ALL_GRUAS_PLAN_TODOS = (data.gruas_plan_todos_equipos || []).map(r=>({
       po_number: r.po_number,
       fecha: r.fecha,
-      agente: NAME_ALIASES[r.agente] || r.agente, // solo por si aplica a alguien de Back
+      agente: r.agente,
       cuenta: r.cuenta,
       tipo_servicio: r.tipo_servicio,
       ciudad: r.ciudad || null,
@@ -673,7 +700,10 @@ function computeData(){
   });
 
   const byAgent = {};
-  BACK_TEAM.forEach(a=>{ byAgent[a] = {servicios:0, arribos:[], locales:[], planGam:0, prioridad1:0, towElegibles:0, puntos:0, records:[]}; });
+  // Roster mensual: solo compiten los agentes que estaban en el bloque BACK
+  // de los meses que cubre el periodo (más cualquiera con servicios, por seguridad).
+  const agentesPeriodo = [...new Set([...rosterDelPeriodo(from, to), ...filtered.map(r=>r.agente)])];
+  agentesPeriodo.forEach(a=>{ byAgent[a] = {servicios:0, arribos:[], locales:[], planGam:0, prioridad1:0, towElegibles:0, puntos:0, records:[]}; });
 
   filtered.forEach(r=>{
     if(!byAgent[r.agente]) return;
@@ -699,7 +729,7 @@ function computeData(){
     ag.puntos += pts;
   });
 
-  let data = BACK_TEAM.map(nombre=>{
+  let data = agentesPeriodo.map(nombre=>{
     const d = byAgent[nombre];
     const n_arribo = d.arribos.length;
     const avg_arribo = n_arribo>0 ? d.arribos.reduce((s,v)=>s+v,0)/n_arribo : null;
