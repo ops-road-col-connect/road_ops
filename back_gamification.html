@@ -530,7 +530,7 @@ const TEAMS = {
 };
 const FORMULA_BACK_HTML = () => document.getElementById('formulaBox').dataset.back;
 const FORMULA_MV_HTML = `
-        <b>Puntos:</b> +2 pts base por cada servicio Finished; +25 pts si es foráneo y el proveedor llegó en menos de 180 min; +10 pts si es local y llegó en ≤90 min; +5 pts si es grúa y se coordinó en menos de 20 min. Los servicios programados solo suman los 2 pts base.
+        <b>Puntos:</b> +2 pts base por cada servicio Finished; +40 pts si es foráneo y el proveedor llegó en menos de 180 min; +20 pts si es local y llegó en ≤90 min; +5 pts si es grúa y se coordinó en menos de 20 min. Los servicios programados solo suman los 2 pts base.
         <br><b>Servicios:</b> solo cuenta Seguros Mundial Vial.
         <br><b>% Programados:</b> de los servicios del agente, % marcados como programados (Programado = Si).
         <br><b>Tprom Coord:</b> promedio de minutos entre la creación del servicio y la aceptación del proveedor (FechaViajeAceptado − FechaHoraCreacion).
@@ -733,7 +733,7 @@ function getDateBounds(){
 }
 
 // Reglas de puntos de Mundial Vial
-const MV_PUNTOS = { base: 2, foraneo: 25, local: 10, coord: 5, coordMaxMin: 20 };
+const MV_PUNTOS = { base: 2, foraneo: 40, local: 20, coord: 5, coordMaxMin: 20 };
 const MV_GRUAS = new Set(["towBreakdown", "towHeavyWeight", "tow_heavy_weight_collision", "towCollision", "towExtraction"]);
 function calcularPuntosMv(r){
   let pts = MV_PUNTOS.base;
