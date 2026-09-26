@@ -393,7 +393,7 @@ table.ranking-table tbody tr.agent-row{cursor:pointer;}
 
   <header>
     <div>
-      <h1>Ranking Back</h1>
+      <h1 id="pageTitle">Ranking Back</h1>
       <div class="subtitle">🎮 Compite por el primer lugar · sube de rango · gana el podio de la semana</div>
     </div>
     <div class="controls">
@@ -404,6 +404,7 @@ table.ranking-table tbody tr.agent-row{cursor:pointer;}
 
   <nav class="views" id="pageNavBtns" style="margin-bottom:18px;">
     <button class="view-tab page-tab active" data-page="ranking">🏆 Ranking</button>
+    <button class="view-tab page-tab" data-page="mundial">🛣️ Ranking Mundial Vial</button>
     <button class="view-tab page-tab" data-page="analitica">📊 Analítica</button>
   </nav>
 
@@ -440,7 +441,7 @@ table.ranking-table tbody tr.agent-row{cursor:pointer;}
 
     <div class="card">
       <div class="card-title"><span class="dot"></span>Tabla completa</div>
-      <div class="card-desc">Ranking de los 10 agentes de Back</div>
+      <div class="card-desc" id="rankingDesc">Ranking de los agentes de Back</div>
 
       <table class="ranking-table">
         <thead>
@@ -521,7 +522,23 @@ const JSON_URL = "https://raw.githubusercontent.com/ops-road-col-connect/road_op
 // El roster de Back llega en el JSON (agentes_back), leído por n8n desde
 // la pestaña "Horarios 2026" (bloque BACK del mes actual). Ya no se hardcodea aquí.
 let BACK_TEAM = [];        // roster BACK del mes actual (respaldo)
-let ROSTER_POR_MES = {};   // { 'YYYY-MM': [agentes BACK de ese mes] }
+let ROSTER_POR_MES = {};   // { 'YYYY-MM': [agentes del equipo activo en ese mes] }
+// Datos de cada equipo; ALL_RECORDS / BACK_TEAM / ROSTER_POR_MES apuntan al equipo activo.
+const TEAMS = {
+  back: { titulo: 'Ranking Back',         desc: 'Ranking de los agentes de Back',         records: [], agentes: [], porMes: {} },
+  mv:   { titulo: 'Ranking Mundial Vial', desc: 'Ranking de los agentes de Mundial Vial', records: [], agentes: [], porMes: {} }
+};
+let CURRENT_TEAM = 'back';
+function setTeam(team){
+  CURRENT_TEAM = team;
+  const t = TEAMS[team];
+  ALL_RECORDS = t.records;
+  BACK_TEAM = t.agentes;
+  ROSTER_POR_MES = t.porMes;
+  document.getElementById('pageTitle').textContent = t.titulo;
+  document.getElementById('rankingDesc').textContent = t.desc;
+  populateCuentas();
+}
 
 // Roster BACK del periodo: une los rosters de cada mes que toca el rango.
 // Si un mes aún no tiene bloque en "Horarios 2026", usa el bloque anterior más reciente.
@@ -600,7 +617,7 @@ async function loadData(){
       ? data.agentes_back
       : [...new Set((data.records || []).map(r => r.agente).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'es'));
     ROSTER_POR_MES = (data.roster_back_por_mes && typeof data.roster_back_por_mes === 'object') ? data.roster_back_por_mes : {};
-    const records = (data.records || []).map(r=>{
+    const mapRecord = r=>{
       const agente = r.agente;
       return {
         po_number: r.po_number,
@@ -618,9 +635,15 @@ async function loadData(){
         plan_gamification: !!r.plan_gamification,
         prioridad1: !!r.prioridad1
       };
-    }).filter(r => r.estatus === 'Finished'); // n8n ya filtra por el roster BACK de cada mes
-
-    ALL_RECORDS = records;
+    };
+    // n8n ya filtra cada equipo por su roster de cada mes
+    TEAMS.back.records = (data.records || []).map(mapRecord).filter(r => r.estatus === 'Finished');
+    TEAMS.back.agentes = BACK_TEAM;
+    TEAMS.back.porMes = ROSTER_POR_MES;
+    const mv = data.mundial_vial || {};
+    TEAMS.mv.records = (mv.records || []).map(mapRecord).filter(r => r.estatus === 'Finished');
+    TEAMS.mv.agentes = Array.isArray(mv.agentes) ? mv.agentes : [];
+    TEAMS.mv.porMes = (mv.roster_por_mes && typeof mv.roster_por_mes === 'object') ? mv.roster_por_mes : {};
     ALL_TOTALES_POR_FECHA = data.totales_por_fecha || {};
     ALL_GRUAS_PLAN_TODOS = (data.gruas_plan_todos_equipos || []).map(r=>({
       po_number: r.po_number,
@@ -635,7 +658,11 @@ async function loadData(){
     }));
     statusLine.innerHTML = (data.updated_at ? `Corte: ${new Date(data.updated_at).toLocaleString('es-CO')}` : 'Datos cargados');
     contentEl.style.display = 'block';
-    populateCuentas();
+    document.getElementById('cuentaFilter').addEventListener('change', ()=>{
+      render();
+      if(document.getElementById('viewAnalitica').style.display !== 'none') renderHistorico();
+    });
+    setTeam('back');
     render();
   }catch(err){
     statusLine.classList.add('error');
@@ -647,16 +674,15 @@ async function loadData(){
 
 function populateCuentas(){
   const sel = document.getElementById('cuentaFilter');
-  const cuentas = Array.from(new Set(ALL_RECORDS.map(r=>r.cuenta))).sort();
+  const previa = sel.value;
+  sel.innerHTML = '<option value="__ALL__">Todas las cuentas</option>';
+  const cuentas = Array.from(new Set(ALL_RECORDS.map(r=>r.cuenta).filter(Boolean))).sort();
   cuentas.forEach(c=>{
     const opt = document.createElement('option');
     opt.value = c; opt.textContent = c;
     sel.appendChild(opt);
   });
-  sel.addEventListener('change', ()=>{
-    render();
-    if(document.getElementById('viewAnalitica').style.display !== 'none') renderHistorico();
-  });
+  sel.value = cuentas.includes(previa) ? previa : '__ALL__';
 }
 
 function getDateBounds(){
@@ -798,8 +824,9 @@ function render(){
 
   const tbody = document.getElementById('tbody');
   tbody.innerHTML = "";
-  const maxPts = Math.max(1, data[0].puntos);
-  const leaderPts = data[0].puntos;
+  // Si el equipo aún no tiene datos (p. ej. JSON viejo sin mundial_vial), no rompe
+  const maxPts = Math.max(1, data.length ? data[0].puntos : 0);
+  const leaderPts = data.length ? data[0].puntos : 0;
   data.forEach((a, i)=>{
     const tr = document.createElement('tr');
     tr.className = 'agent-row';
@@ -1068,9 +1095,13 @@ document.getElementById('pageNavBtns').addEventListener('click', (e)=>{
   document.querySelectorAll('#pageNavBtns button').forEach(b=>b.classList.remove('active'));
   btn.classList.add('active');
   const page = btn.dataset.page;
-  document.getElementById('viewRanking').style.display = (page === 'ranking') ? '' : 'none';
+  const esRanking = (page === 'ranking' || page === 'mundial');
+  document.getElementById('viewRanking').style.display = esRanking ? '' : 'none';
   document.getElementById('viewAnalitica').style.display = (page === 'analitica') ? '' : 'none';
-  if(page === 'analitica') renderHistorico();
+  // La Analítica sigue siendo del equipo Back
+  setTeam(page === 'mundial' ? 'mv' : 'back');
+  if(esRanking) render();
+  if(page === 'analitica'){ document.getElementById('pageTitle').textContent = 'Ranking Back'; renderHistorico(); }
 });
 
 document.getElementById('periodBtns').addEventListener('click', (e)=>{
