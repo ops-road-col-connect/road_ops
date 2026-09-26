@@ -518,10 +518,10 @@ let ROSTER_POR_MES = {};   // { 'YYYY-MM': [agentes del equipo activo en ese mes
 const TEAMS = {
   back: { titulo: 'Ranking Back', desc: 'Ranking de los agentes de Back',
           records: [], agentes: [], porMes: {},
-          metaLocal: 60,  metaForanea: null, mostrarArribo: true, mostrarCoord: false, mostrarProgramados: false, filtroCuenta: true },
+          metaLocal: 60,  metaForanea: null, mostrarArribo: true, mostrarCoord: false, mostrarProgramados: false, mostrarPlanGam: true, filtroCuenta: true },
   mv:   { titulo: 'Ranking Mundial Vial', desc: 'Ranking de los agentes de Mundial Vial · solo cuenta Seguros Mundial Vial',
           records: [], agentes: [], porMes: {},
-          metaLocal: 90,  metaForanea: 180, mostrarArribo: false, mostrarCoord: true, mostrarProgramados: true, filtroCuenta: false }
+          metaLocal: 90,  metaForanea: 180, mostrarArribo: false, mostrarCoord: true, mostrarProgramados: true, mostrarPlanGam: false, filtroCuenta: false }
 };
 const FORMULA_BACK_HTML = () => document.getElementById('formulaBox').dataset.back;
 const FORMULA_MV_HTML = `
@@ -531,7 +531,7 @@ const FORMULA_MV_HTML = `
         <br><b>Tprom Coord:</b> promedio de minutos entre la creación del servicio y la aceptación del proveedor (FechaViajeAceptado − FechaHoraCreacion).
         <br><b>% Meta local:</b> de los servicios locales no programados, % con llegada en ≤90 min desde la creación.
         <br><b>% Meta foránea:</b> de los servicios foráneos no programados, % con llegada en menos de 180 min desde la creación.
-        <br><b>% Plan gamificación:</b> de los servicios de grúa elegibles, % con proveedor del plan (0).`;
+`;
 function renderHead(){
   const t = TEAMS[CURRENT_TEAM];
   const cols = ['#', '<span style="display:block;text-align:left;">Agente</span>', 'Servicios'];
@@ -540,7 +540,8 @@ function renderHead(){
   if(t.mostrarCoord) cols.push('Tprom Coord');
   cols.push(t.metaForanea ? `% Meta local<br><span class="muted">≤${t.metaLocal} min</span>` : '% Meta local');
   if(t.metaForanea) cols.push(`% Meta foránea<br><span class="muted">&lt;${t.metaForanea} min</span>`);
-  cols.push('% Plan gam.', 'Puntos', 'Insignias');
+  if(t.mostrarPlanGam) cols.push('% Plan gam.');
+  cols.push('Puntos', 'Insignias');
   document.getElementById('rankingHead').innerHTML = '<tr>' + cols.map(c=>`<th>${c}</th>`).join('') + '</tr>';
   return cols.length;
 }
@@ -667,7 +668,8 @@ async function loadData(){
     TEAMS.back.agentes = BACK_TEAM;
     TEAMS.back.porMes = ROSTER_POR_MES;
     const mv = data.mundial_vial || {};
-    TEAMS.mv.records = (mv.records || []).map(mapRecord).filter(r => r.estatus === 'Finished');
+    TEAMS.mv.records = (mv.records || []).map(mapRecord)
+      .filter(r => r.estatus === 'Finished' && String(r.cuenta||'').trim().toLowerCase() === 'seguros mundial vial');
     TEAMS.mv.agentes = Array.isArray(mv.agentes) ? mv.agentes : [];
     TEAMS.mv.porMes = (mv.roster_por_mes && typeof mv.roster_por_mes === 'object') ? mv.roster_por_mes : {};
     ALL_TOTALES_POR_FECHA = data.totales_por_fecha || {};
@@ -915,7 +917,7 @@ function render(){
       ${teamCfg.mostrarCoord ? `<td>${coordText}</td>` : ''}
       <td>${metaText}</td>
       ${teamCfg.metaForanea ? `<td>${forText}</td>` : ''}
-      <td>${planGamText}</td>
+      ${teamCfg.mostrarPlanGam ? `<td>${planGamText}</td>` : ''}
       <td class="bar-cell">
         <div class="pts">${a.puntos}</div>
         <div class="bar-track"><div class="bar-fill" style="width:${(a.puntos/maxPts*100).toFixed(0)}%"></div></div>
@@ -967,7 +969,7 @@ function buildDetailHtml(records){
       <td>${loc}${esMv ? prog : ''}</td>
       ${esMv ? `<td>${coord}</td>` : ''}
       <td class="det-arribo">${arribo}</td>
-      <td class="det-plan">${plan}</td>
+      ${esMv ? '' : `<td class="det-plan">${plan}</td>`}
       <td style="color:var(--yellow); font-weight:700;">${puntos}</td>
     </tr>`;
   }).join('');
@@ -976,7 +978,7 @@ function buildDetailHtml(records){
       <div class="detail-scroll">
         <table class="detail-table">
           <thead>
-            <tr><th>Fecha</th><th>PO</th><th>Cuenta</th><th>Proveedor</th><th>Tipo servicio</th><th>Ciudad</th><th>Localidad</th>${esMv ? '<th>Coord</th>' : ''}<th>Arribo</th><th>Plan gam.</th><th>Puntos</th></tr>
+            <tr><th>Fecha</th><th>PO</th><th>Cuenta</th><th>Proveedor</th><th>Tipo servicio</th><th>Ciudad</th><th>Localidad</th>${esMv ? '<th>Coord</th>' : ''}<th>Arribo</th>${esMv ? '' : '<th>Plan gam.</th>'}<th>Puntos</th></tr>
           </thead>
           <tbody>${rows}</tbody>
         </table>
