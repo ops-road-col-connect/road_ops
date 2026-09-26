@@ -380,6 +380,16 @@ table.ranking-table tbody tr.agent-row{cursor:pointer;}
     font-size:11px; color:var(--text-dim); line-height:1.7;
   }
   .formula b{color:var(--text-mid);}
+  .formula-title{ font-size:10px; letter-spacing:.14em; text-transform:uppercase; color:var(--text-mid); font-weight:700; margin:14px 0 6px; }
+  .formula-title:first-child{ margin-top:0; }
+  .formula-scroll{ overflow-x:auto; }
+  table.formula-table{ width:100%; border-collapse:collapse; font-size:11px; }
+  table.formula-table th{ text-align:left; font-size:9px; letter-spacing:.12em; text-transform:uppercase; color:var(--text-dim); font-weight:600; padding:6px 10px; border-bottom:1px solid var(--border-soft); }
+  table.formula-table td{ padding:7px 10px; border-bottom:1px solid var(--border-soft); color:var(--text-dim); vertical-align:top; line-height:1.5; }
+  table.formula-table td:first-child{ color:var(--text-mid); font-weight:600; white-space:nowrap; }
+  table.formula-table td.pts{ text-align:right; white-space:nowrap; font-family:'JetBrains Mono', monospace; font-weight:700; color:var(--yellow); }
+  table.formula-table th.pts{ text-align:right; }
+  .formula-note{ margin-top:8px; font-size:10.5px; color:var(--text-dim); }
 
   footer.foot-note{
     margin-top:24px; font-size:10.5px; color:var(--text-dim); text-align:center;
@@ -462,9 +472,25 @@ table.ranking-table tbody tr.agent-row{cursor:pointer;}
       </div>
 
       <div class="formula" id="formulaBox">
-        <b>Puntos:</b> +2 pts base por coordinar el servicio (Finished). +20 pts si es "local urgente" (towBreakdown, jumpStart, onsite_legal_assistance, towCollision, flatTire, locksmith, fuelDelivery, batteryDiagnostic; local; no programado) y arribó en ≤60 min. +10 pts si el proveedor es Proveedor G (proveedor_plan_gamification=0). +5 pts si el proveedor es prioridad 1 (proveedor_plan_gamification=1). Estos dos últimos bonos solo aplican a los 4 tipos de servicio de grúa y con ciudad en Bogotá/Cali/Medellín.
-        <br><b>% Meta local:</b> de los servicios locales, % que llegó en ≤60 min.
-        <br><b>% Plan gamificación:</b> de los servicios de grúa elegibles, % con proveedor del plan (0).
+        <div class="formula-title">Puntos por servicio Finished</div>
+        <div class="formula-scroll"><table class="formula-table">
+          <thead><tr><th>Regla</th><th>Condición</th><th class="pts">Puntos</th></tr></thead>
+          <tbody>
+            <tr><td>Base</td><td>Coordinar el servicio.</td><td class="pts">+2</td></tr>
+            <tr><td>Local urgente</td><td>Servicio local, no programado, de tipo towBreakdown, jumpStart, onsite_legal_assistance, towCollision, flatTire, locksmith, fuelDelivery o batteryDiagnostic, con arribo en ≤60 min.</td><td class="pts">+20</td></tr>
+            <tr><td>Proveedor G</td><td>Grúa con proveedor del plan (proveedor_plan_gamification = 0).</td><td class="pts">+10</td></tr>
+            <tr><td>Prioridad 1</td><td>Grúa con proveedor de prioridad 1 (proveedor_plan_gamification = 1).</td><td class="pts">+5</td></tr>
+          </tbody>
+        </table></div>
+        <div class="formula-note">Los bonos de Proveedor G y Prioridad 1 solo aplican a towBreakdown, towHeavyWeight, tow_heavy_weight_collision y towCollision en Bogotá, Cali o Medellín.</div>
+        <div class="formula-title">Indicadores</div>
+        <div class="formula-scroll"><table class="formula-table">
+          <thead><tr><th>Indicador</th><th>Cómo se calcula</th></tr></thead>
+          <tbody>
+            <tr><td>% Meta local</td><td>De los servicios locales, % que llegó en ≤60 min.</td></tr>
+            <tr><td>% Plan gam.</td><td>De los servicios de grúa elegibles, % con proveedor del plan (0).</td></tr>
+          </tbody>
+        </table></div>
       </div>
     </div>
 
@@ -529,14 +555,30 @@ const TEAMS = {
           metaLocal: 90,  metaForanea: 180, mostrarArribo: false, mostrarCoord: true, mostrarProgramados: true, mostrarPlanGam: false, filtroCuenta: false }
 };
 const FORMULA_BACK_HTML = () => document.getElementById('formulaBox').dataset.back;
+// Reglas de puntos de Mundial Vial (se usan en el cálculo y en la tabla explicativa)
+const MV_PUNTOS = { base: 2, foraneo: 40, local: 20, coord: 5, coordMaxMin: 20 };
 const FORMULA_MV_HTML = `
-        <b>Puntos:</b> +2 pts base por cada servicio Finished; +40 pts si es foráneo y el proveedor llegó en menos de 180 min; +20 pts si es local y llegó en ≤90 min; +5 pts si es grúa y se coordinó en menos de 20 min. Los servicios programados solo suman los 2 pts base.
-        <br><b>Servicios:</b> solo cuenta Seguros Mundial Vial.
-        <br><b>% Programados:</b> de los servicios del agente, % marcados como programados (Programado = Si).
-        <br><b>Tprom Coord:</b> promedio de minutos entre la creación del servicio y la aceptación del proveedor (FechaViajeAceptado − FechaHoraCreacion).
-        <br><b>% Meta local:</b> de los servicios locales no programados, % con llegada en ≤90 min desde la creación.
-        <br><b>% Meta foránea:</b> de los servicios foráneos no programados, % con llegada en menos de 180 min desde la creación.
-`;
+        <div class="formula-title">Puntos por servicio Finished · cuenta Seguros Mundial Vial</div>
+        <div class="formula-scroll"><table class="formula-table">
+          <thead><tr><th>Regla</th><th>Condición</th><th class="pts">Puntos</th></tr></thead>
+          <tbody>
+            <tr><td>Base</td><td>Cada servicio, incluidos los programados.</td><td class="pts">+2</td></tr>
+            <tr><td>Cumplimiento foráneo</td><td>Servicio foráneo con llegada del proveedor en menos de 180 min.</td><td class="pts">+${MV_PUNTOS.foraneo}</td></tr>
+            <tr><td>Cumplimiento local</td><td>Servicio local con llegada del proveedor en ≤90 min.</td><td class="pts">+${MV_PUNTOS.local}</td></tr>
+            <tr><td>Coordinación rápida</td><td>Grúa (towHeavyWeight, tow_heavy_weight_collision, towBreakdown, towCollision o towExtraction) aceptada por el proveedor en menos de ${MV_PUNTOS.coordMaxMin} min.</td><td class="pts">+${MV_PUNTOS.coord}</td></tr>
+          </tbody>
+        </table></div>
+        <div class="formula-note">Los servicios programados solo suman los 2 pts base.</div>
+        <div class="formula-title">Indicadores</div>
+        <div class="formula-scroll"><table class="formula-table">
+          <thead><tr><th>Indicador</th><th>Cómo se calcula</th></tr></thead>
+          <tbody>
+            <tr><td>% Program.</td><td>De los servicios del agente, % marcados como programados.</td></tr>
+            <tr><td>Tprom Coord</td><td>Promedio de minutos entre la creación del servicio y la aceptación del proveedor (FechaViajeAceptado − FechaHoraCreacion).</td></tr>
+            <tr><td>% Meta local</td><td>De los servicios locales no programados, % con llegada en ≤90 min desde la creación.</td></tr>
+            <tr><td>% Meta foránea</td><td>De los servicios foráneos no programados, % con llegada en menos de 180 min desde la creación.</td></tr>
+          </tbody>
+        </table></div>`;
 function renderHead(){
   const t = TEAMS[CURRENT_TEAM];
   const cols = ['#', '<span style="display:block;text-align:left;">Agente</span>', 'Servicios'];
@@ -733,7 +775,6 @@ function getDateBounds(){
 }
 
 // Reglas de puntos de Mundial Vial
-const MV_PUNTOS = { base: 2, foraneo: 40, local: 20, coord: 5, coordMaxMin: 20 };
 const MV_GRUAS = new Set(["towBreakdown", "towHeavyWeight", "tow_heavy_weight_collision", "towCollision", "towExtraction"]);
 function calcularPuntosMv(r){
   let pts = MV_PUNTOS.base;
