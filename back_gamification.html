@@ -530,7 +530,7 @@ const TEAMS = {
 };
 const FORMULA_BACK_HTML = () => document.getElementById('formulaBox').dataset.back;
 const FORMULA_MV_HTML = `
-        <b>Puntos:</b> mismas reglas de Back: +2 pts base por coordinar el servicio (Finished), +20 pts si es "local urgente" y arribó en ≤60 min, +10 pts si el proveedor es Proveedor G (proveedor_plan_gamification=0), +5 pts si es prioridad 1 (=1); estos dos bonos solo aplican a grúas en Bogotá/Cali/Medellín.
+        <b>Puntos:</b> +2 pts base por cada servicio Finished; +25 pts si es foráneo y el proveedor llegó en menos de 180 min; +10 pts si es local y llegó en ≤90 min; +5 pts si es grúa y se coordinó en menos de 20 min. Los servicios programados solo suman los 2 pts base.
         <br><b>Servicios:</b> solo cuenta Seguros Mundial Vial.
         <br><b>% Programados:</b> de los servicios del agente, % marcados como programados (Programado = Si).
         <br><b>Tprom Coord:</b> promedio de minutos entre la creación del servicio y la aceptación del proveedor (FechaViajeAceptado − FechaHoraCreacion).
@@ -732,7 +732,25 @@ function getDateBounds(){
   return [null, null];
 }
 
+// Reglas de puntos de Mundial Vial
+const MV_PUNTOS = { base: 2, foraneo: 25, local: 10, coord: 5, coordMaxMin: 20 };
+const MV_GRUAS = new Set(["towBreakdown", "towHeavyWeight", "tow_heavy_weight_collision", "towCollision", "towExtraction"]);
+function calcularPuntosMv(r){
+  let pts = MV_PUNTOS.base;
+  if(r.programado === 'Si') return pts; // programados: solo puntos base
+  const t = TEAMS.mv;
+  if(r.arribo_real_min !== null && r.arribo_real_min !== undefined){
+    if(r.tipo_localidad === 'foreign' && r.arribo_real_min < t.metaForanea) pts += MV_PUNTOS.foraneo;
+    if(r.tipo_localidad === 'local'   && r.arribo_real_min <= t.metaLocal)  pts += MV_PUNTOS.local;
+  }
+  if(MV_GRUAS.has(r.tipo_servicio) && r.coord_min !== null && r.coord_min !== undefined && r.coord_min < MV_PUNTOS.coordMaxMin){
+    pts += MV_PUNTOS.coord;
+  }
+  return pts;
+}
+
 function calcularPuntosServicio(r){
+  if(CURRENT_TEAM === 'mv') return calcularPuntosMv(r);
   let pts = 2; // base por coordinar el servicio
   if(r.arribo_min !== null){
     const esUrgente = URGENTE_TYPES.has(r.tipo_servicio) && r.tipo_localidad === 'local' && r.programado === 'No';
