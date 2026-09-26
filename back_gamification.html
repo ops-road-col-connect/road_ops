@@ -287,8 +287,10 @@
     font-family:'JetBrains Mono'; font-weight:700; color:var(--text-dim); width:26px;
   }
   table.ranking-table td.name{
-    text-align:left; font-weight:600; color:var(--text-mid); white-space:nowrap;
+    text-align:left; font-weight:600; color:var(--text-mid); min-width:150px;
   }
+  /* el nivel va debajo del nombre para que la tabla no se ensanche */
+  table.ranking-table td.name .level-tag{ display:block; width:max-content; margin-top:4px; }
   table.ranking-table tbody tr:hover{ background:rgba(255,255,255,0.015); }
   td.bar-cell{width:130px;}
   .bar-track{height:8px; background:var(--grid-line); border-radius:4px; overflow:hidden;}
@@ -312,7 +314,10 @@ table.ranking-table tbody tr.agent-row{cursor:pointer;}
     padding:0; border-bottom:1px solid var(--border-soft);
     background:rgba(255,255,255,0.015);
   }
-  .detail-wrap{ padding:12px 8px 16px 30px; }
+  /* El detalle ocupa solo el ancho visible (se queda fijo a la izquierda aunque la
+     tabla principal se desplace en celular) y hace su propio scroll horizontal */
+  .detail-wrap{ padding:12px 8px 16px 30px; box-sizing:border-box;
+    position:sticky; left:0; width:var(--rank-visible-w, 100%); }
   .detail-empty{ font-size:11px; color:var(--text-dim); padding:10px 0; }
   table.detail-table{ width:100%; border-collapse:collapse; }
   table.detail-table th, table.detail-table td{
@@ -327,7 +332,7 @@ table.ranking-table tbody tr.agent-row{cursor:pointer;}
   .po-link:hover{ text-decoration:underline; }
   table.detail-table td.det-arribo{ color:var(--turquoise); font-weight:600; }
   table.detail-table td.det-plan{ text-align:center; }
-  .detail-scroll{ max-height:260px; overflow-y:auto; }
+  .detail-scroll{ max-height:260px; overflow:auto; }
   table.detail-table tr.row-dim td{ opacity:0.45; }
 
   .p1{ position:relative; }
@@ -443,7 +448,7 @@ table.ranking-table tbody tr.agent-row{cursor:pointer;}
       <div class="card-title"><span class="dot"></span>Tabla completa</div>
       <div class="card-desc" id="rankingDesc">Ranking de los agentes de Back</div>
 
-      <div style="overflow-x:auto;">
+      <div id="rankingScroll" style="overflow-x:auto;">
       <table class="ranking-table">
         <thead id="rankingHead"></thead>
         <tbody id="tbody"></tbody>
@@ -939,9 +944,18 @@ function render(){
     tr.addEventListener('click', ()=>{
       tr.classList.toggle('open');
       detailTr.classList.toggle('open');
+      syncDetailWidth();
     });
   });
+  syncDetailWidth();
 }
+
+// Ancho visible del contenedor de la tabla, para dimensionar el detalle
+function syncDetailWidth(){
+  const wrap = document.getElementById('rankingScroll');
+  if(wrap && wrap.clientWidth) wrap.style.setProperty('--rank-visible-w', wrap.clientWidth + 'px');
+}
+window.addEventListener('resize', syncDetailWidth);
 
 function buildDetailHtml(records){
   if(!records || records.length === 0){
