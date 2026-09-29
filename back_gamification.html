@@ -612,10 +612,10 @@ function setTeam(team){
   const sel = document.getElementById('cuentaFilter');
   sel.style.display = t.filtroCuenta ? '' : 'none';
   document.getElementById('stArriboLabel').textContent = t.mostrarCoord ? 'Min. prom. para coordinar' : 'Min. prom. de arribo';
-  // En Mundial Vial se reemplaza la tarjeta de "min. prom. para coordinar"
-  // por "servicios activos"; en Back se deja igual que siempre.
-  document.getElementById('stActivosBox').style.display = (team === 'mv') ? '' : 'none';
-  document.getElementById('stArriboBox').style.display = (team === 'mv') ? 'none' : '';
+  // "Servicios activos" reemplaza la tarjeta de tiempo (arribo/coordinación)
+  // en ambos equipos ahora, no solo Mundial Vial.
+  document.getElementById('stActivosBox').style.display = '';
+  document.getElementById('stArriboBox').style.display = 'none';
   document.getElementById('legendVelocidad').textContent = t.mostrarCoord ? 'Menor tiempo promedio de coordinación' : `Mayor % de SLA local (≤${t.metaLocal} min)`;
   const fb = document.getElementById('formulaBox');
   if(!fb.dataset.back) fb.dataset.back = fb.innerHTML;
@@ -653,6 +653,7 @@ const URGENTE_TYPES = new Set(["towBreakdown", "jumpStart", "onsite_legal_assist
 let ALL_TOTALES_POR_FECHA = {};
 let ALL_GRUAS_PLAN_TODOS = [];
 let ALL_MV_ACTIVE = [];
+let ALL_BACK_ACTIVE = [];
 let historicoGroup = 'day';
 let chartServiciosBackInstance = null;
 let chartPlanGamInstance = null;
@@ -750,6 +751,12 @@ async function loadData(){
       po_number: r.po_number,
       fecha: r.fecha,
       cuenta: r.cuenta
+    }));
+    // Servicios de Back aún activos (EstatusHelios = Active).
+    ALL_BACK_ACTIVE = (data.back_active_records || []).map(r=>({
+      po_number: r.po_number,
+      fecha: r.fecha,
+      agente: r.agente
     }));
     statusLine.innerHTML = (data.updated_at ? `Corte: ${new Date(data.updated_at).toLocaleString('es-CO')}` : 'Datos cargados');
     contentEl.style.display = 'block';
@@ -979,11 +986,12 @@ function render(){
   const cntArribo = withArribo.reduce((s,a)=>s+a.n_arribo,0);
   document.getElementById('stTotal').textContent = totalServicios;
   document.getElementById('stAgentes').textContent = data.filter(a=>a.servicios>0).length;
-  if(CURRENT_TEAM === 'mv'){
-    // Servicios de Mundial Vial que siguen EstatusHelios = Active,
-    // contados dentro del mismo período seleccionado (por fecha de creación).
+  {
+    // Servicios que siguen EstatusHelios = Active, dentro del período
+    // seleccionado (por fecha de creación). Aplica a ambos equipos.
+    const activeList = CURRENT_TEAM === 'mv' ? ALL_MV_ACTIVE : ALL_BACK_ACTIVE;
     const [from, to] = getDateBounds();
-    const nActivos = ALL_MV_ACTIVE.filter(r=>{
+    const nActivos = activeList.filter(r=>{
       if(from && r.fecha < from) return false;
       if(to && r.fecha > to) return false;
       return true;
