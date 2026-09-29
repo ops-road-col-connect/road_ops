@@ -485,12 +485,15 @@ table.ranking-table tbody tr.agent-row{cursor:pointer;}
           <thead><tr><th>Regla</th><th>Condición</th><th class="pts">Puntos</th></tr></thead>
           <tbody>
             <tr><td>Base</td><td>Coordinar el servicio.</td><td class="pts">+2</td></tr>
-            <tr><td>Local urgente</td><td>Servicio local, no programado, de tipo towBreakdown, jumpStart, onsite_legal_assistance, towCollision, flatTire, locksmith, fuelDelivery o batteryDiagnostic, con arribo en ≤60 min.</td><td class="pts">+20</td></tr>
+            <tr><td>Local urgente (básico)</td><td>Servicio local, no programado, de tipo jumpStart, flatTire o locksmith, con arribo en ≤60 min.</td><td class="pts">+10</td></tr>
+            <tr><td>Local urgente</td><td>Servicio local, no programado, de tipo towBreakdown, towCollision, towHeavyWeight, tow_heavy_weight_collision, onsite_legal_assistance, fuelDelivery o batteryDiagnostic, con arribo en ≤60 min.</td><td class="pts">+20</td></tr>
+            <tr><td>Foráneo urgente</td><td>Servicio foráneo, no programado, de cualquiera de los tipos anteriores (los 10 tipos), con arribo en ≤120 min.</td><td class="pts">+30</td></tr>
             <tr><td>Proveedor G</td><td>Grúa con proveedor del plan (proveedor_plan_gamification = 0).</td><td class="pts">+10</td></tr>
             <tr><td>Prioridad 1</td><td>Grúa con proveedor de prioridad 1 (proveedor_plan_gamification = 1).</td><td class="pts">+5</td></tr>
           </tbody>
         </table></div>
         <div class="formula-note">Los bonos de Proveedor G y Prioridad 1 solo aplican a towBreakdown, towHeavyWeight, tow_heavy_weight_collision y towCollision en Bogotá, Cali o Medellín.</div>
+        <div class="formula-note">Esta regla de urgencia (10/20 local, 30 foráneo) aplica a servicios con fecha desde el 28 de septiembre de 2026. Antes de esa fecha, el bono de urgencia local era fijo en +20 (sin bono foráneo, sin towHeavyWeight/tow_heavy_weight_collision en la lista).</div>
         <div class="formula-title">Indicadores</div>
         <div class="formula-scroll"><table class="formula-table">
           <thead><tr><th>Indicador</th><th>Cómo se calcula</th></tr></thead>
