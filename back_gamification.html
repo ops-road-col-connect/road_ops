@@ -649,7 +649,16 @@ function rosterDelPeriodo(from, to){
 }
 const BADGE_ICON = { volumen:"🏁", velocidad:"⚡", meta_local:"🏆" };
 const TOW_TYPES = new Set(["towBreakdown", "towHeavyWeight", "tow_heavy_weight_collision", "towCollision"]);
-const URGENTE_TYPES = new Set(["towBreakdown", "jumpStart", "onsite_legal_assistance", "towCollision", "flatTire", "locksmith", "fuelDelivery", "batteryDiagnostic"]);
+// Tipos elegibles para el bono de urgencia (local o foráneo).
+const URGENTE_TYPES = new Set(["towBreakdown", "jumpStart", "onsite_legal_assistance", "towCollision", "flatTire", "locksmith", "fuelDelivery", "batteryDiagnostic", "towHeavyWeight", "tow_heavy_weight_collision"]);
+// De ese set, estos 3 dan la MITAD en el bono LOCAL (10 en vez de 20).
+// En FORÁNEO no hay diferencia: todo el set da 30.
+const URGENTE_REDUCIDO_LOCAL = new Set(["jumpStart", "flatTire", "locksmith"]);
+// La regla nueva (10/20/30 con foráneo) solo aplica a servicios desde esta
+// fecha (inclusive). Antes de esta fecha, se sigue calculando con la regla
+// vieja (+20 local urgente, sin bono foráneo, sin towHeavyWeight en la lista).
+const URGENTE_TYPES_ANTIGUO = new Set(["towBreakdown", "jumpStart", "onsite_legal_assistance", "towCollision", "flatTire", "locksmith", "fuelDelivery", "batteryDiagnostic"]);
+const REGLA_PUNTOS_CUTOFF = '2026-09-28';
 let ALL_TOTALES_POR_FECHA = {};
 let ALL_GRUAS_PLAN_TODOS = [];
 let ALL_MV_ACTIVE = [];
@@ -828,10 +837,20 @@ function calcularPuntosMv(r){
 function calcularPuntosServicio(r){
   if(CURRENT_TEAM === 'mv') return calcularPuntosMv(r);
   let pts = 2; // base por coordinar el servicio
-  if(r.arribo_min !== null){
-    const esUrgente = URGENTE_TYPES.has(r.tipo_servicio) && r.tipo_localidad === 'local' && r.programado === 'No';
-    if(esUrgente && r.arribo_min <= 60){
-      pts += 20;
+  // Servicios de antes del cutoff: regla vieja (solo +20 local urgente,
+  // sin bono foráneo, sin towHeavyWeight/tow_heavy_weight_collision).
+  if(r.fecha && r.fecha < REGLA_PUNTOS_CUTOFF){
+    if(r.arribo_min !== null){
+      const esUrgente = URGENTE_TYPES_ANTIGUO.has(r.tipo_servicio) && r.tipo_localidad === 'local' && r.programado === 'No';
+      if(esUrgente && r.arribo_min <= 60) pts += 20;
+    }
+  } else {
+    if(r.arribo_min !== null && r.programado === 'No' && URGENTE_TYPES.has(r.tipo_servicio)){
+      if(r.tipo_localidad === 'local' && r.arribo_min <= 60){
+        pts += URGENTE_REDUCIDO_LOCAL.has(r.tipo_servicio) ? 10 : 20;
+      } else if(r.tipo_localidad === 'foreign' && r.arribo_min <= 120){
+        pts += 30;
+      }
     }
   }
   if(TOW_TYPES.has(r.tipo_servicio)){
