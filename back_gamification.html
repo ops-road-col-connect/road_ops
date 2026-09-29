@@ -680,6 +680,7 @@ function startOfWeek(d){
 }
 function startOfMonth(d){ return new Date(d.getFullYear(), d.getMonth(), 1); }
 
+let INITIAL_LOAD_DONE = false;
 async function loadData(){
   try{
     // Bucket de 5 minutos: suficiente para no depender del caché "no-store"
@@ -740,12 +741,20 @@ async function loadData(){
     }));
     statusLine.innerHTML = (data.updated_at ? `Corte: ${new Date(data.updated_at).toLocaleString('es-CO')}` : 'Datos cargados');
     contentEl.style.display = 'block';
-    document.getElementById('cuentaFilter').addEventListener('change', ()=>{
-      render();
-      if(document.getElementById('viewAnalitica').style.display !== 'none') renderHistorico();
-    });
-    setTeam('back');
+    if(!INITIAL_LOAD_DONE){
+      // Solo en la primera carga: engancha el listener del filtro de cuenta
+      // y deja la vista inicial en Ranking Back. Los refresh posteriores
+      // (auto-refresh cada hora) NO deben resetear la pestaña que la
+      // persona tenga abierta ni duplicar este listener.
+      document.getElementById('cuentaFilter').addEventListener('change', ()=>{
+        render();
+        if(document.getElementById('viewAnalitica').style.display !== 'none') renderHistorico();
+      });
+      setTeam('back');
+      INITIAL_LOAD_DONE = true;
+    }
     render();
+    if(document.getElementById('viewAnalitica').style.display !== 'none') renderHistorico();
   }catch(err){
     statusLine.classList.add('error');
     statusLine.textContent = 'Error al cargar datos';
@@ -1318,6 +1327,9 @@ document.getElementById('dateFrom').addEventListener('change', render);
 document.getElementById('dateTo').addEventListener('change', render);
 
 loadData();
+// Auto-refresh cada hora: solo vuelve a pedir el JSON ya publicado en GitHub
+// (mismo fetch de siempre), no dispara ni depende del workflow de n8n.
+setInterval(loadData, 60 * 60 * 1000);
 </script>
 </body>
 </html>
