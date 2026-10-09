@@ -565,8 +565,9 @@
       <h3>Cómo se calcula y qué no incluye</h3>
       <div class="desc" style="line-height:1.7;">
         <b>"A tiempo":</b> solo se mide en servicios <b>NO programados</b> (inmediatos): la llegada real ocurre en menos de 70 min desde la <b>aceptación</b> (FechaViajeAceptado → FechaViajeLLegada). Sin aceptación o sin llegada registrada no cuenta como a tiempo. En programados la llegada <b>no se mide</b>.<br>
-        <b>Pago por servicio:</b> $3.000 por cada PO válido = NO programados a tiempo + programados (estos cuentan por volumen, con la casilla activa). Aplica a base proveedor y a técnicos.<br>
-        <b>Base proveedor:</b> bono de $400.000 si el cumplimiento es ≥70%; entre 60% y 69% se mantiene en el plan sin bono; con &lt;60% sale del plan.<br>
+        <b>Pago por servicio:</b> $3.000 por cada PO válido = NO programados a tiempo + programados (estos últimos solo si se alcanza el mínimo de 50 PO y la casilla está activa). Aplica a base proveedor y a técnicos.<br>
+        <b>Mínimo de volumen:</b> para tener bono mensual (en ambas modalidades) el proveedor/técnico necesita al menos <b>50 PO en el mes</b> (NO programados + programados si la casilla está activa). Por debajo de 50 no hay bono mensual y solo se paga $3.000 por cada servicio <b>NO programado que llegó a tiempo</b>; los programados no pagan.<br>
+        <b>Base proveedor:</b> bono de $400.000 si tiene ≥50 PO y cumplimiento ≥70%; con 60%–69% se mantiene en el plan sin bono; con &lt;60% sale del plan.<br>
         <b>Técnico:</b> el nivel se define por el <b>total de PO del mes, sin importar el tiempo</b> (NO programados + programados si la casilla está activa): Nivel 1 (50–80 PO) $200.000 · Nivel 2 (81–100) $250.000 · Nivel 3 (101+) $400.000.<br>
         <b>% de cumplimiento:</b> se calcula solo sobre servicios NO programados.<br>
         <b>Período:</b> mes calendario según fecha de creación del servicio, y solo servicios dentro de la vigencia de priorización del proveedor (FechaDesde / FechaHasta).<br>
@@ -1419,7 +1420,8 @@ function renderBrandeadasView(){
 const PAGO = {
   porPO: 3000,
   umbralMin: 70,            // "a tiempo": < 70 min desde la aceptación hasta la llegada
-  bonoBase: 400000,         // base proveedor: cumplimiento >= 70%
+  bonoBase: 400000,         // base proveedor: cumplimiento >= 70% Y volumen >= minPO
+  minPO: 50,                // volumen mínimo del mes (ambas modalidades) para bono mensual y para que los programados paguen
   pctGana: 70, pctSale: 60, // 60-69 se mantiene, <60 sale del plan
   niveles: [                // técnico, según el TOTAL de PO del mes, sin importar el tiempo (programados si la casilla está activa)
     { min:101, bono:400000, nombre:'Nivel 3', rango:'101+ PO' },
@@ -1471,9 +1473,11 @@ function pagosCalcFila(row, mes, incluirProg, parcial){
     return { p, min, aTiempo, esProg };
   }).sort((a,b) => a.p.FechaCreacion.localeCompare(b.p.FechaCreacion));
 
-  const progValidos = incluirProg ? prog : 0;
+  const volumenNivel = noProg + (incluirProg ? prog : 0); // total de PO del mes (rango mínimo / nivel)
+  const alcanzaMin = volumenNivel >= PAGO.minPO;
+  // Bajo el mínimo de 50 PO: solo se paga cada NO programado a tiempo (los programados no pagan).
+  const progValidos = (incluirProg && alcanzaMin) ? prog : 0;
   const poAtiempo = aTiempoNoProg + progValidos;          // PO que se pagan a $3.000
-  const volumenNivel = noProg + progValidos;              // total de PO del mes para el nivel del técnico
   const pct = noProg > 0 ? (aTiempoNoProg / noProg) * 100 : null;
   const pagoServ = poAtiempo * PAGO.porPO;
 
@@ -1492,7 +1496,10 @@ function pagosCalcFila(row, mes, incluirProg, parcial){
       estado = `Sin nivel (&lt;${n1.min} PO)${suf}<div style="font-size:11px; color:var(--text-muted); font-weight:400;">Faltan ${n1.min - volumenNivel} PO para ${n1.nombre}</div>`;
     }
   } else {
+    const faltanMin = `<div style="font-size:11px; color:var(--text-muted); font-weight:400;">${volumenNivel} PO · faltan ${PAGO.minPO - volumenNivel} para el mínimo de ${PAGO.minPO}</div>`;
     if(pct === null){ estado = 'Sin servicios'; }
+    else if(pct < PAGO.pctSale){ estado = 'Sale del plan' + suf; color = 'var(--connect-red)'; }
+    else if(!alcanzaMin){ estado = `Sin bono (&lt;${PAGO.minPO} PO)${suf}` + faltanMin; color = 'var(--connect-orange)'; }
     else if(pct >= PAGO.pctGana){ bono = PAGO.bonoBase; estado = 'Gana bono' + suf; color = 'var(--connect-green)'; }
     else if(pct >= PAGO.pctSale){ estado = 'Se mantiene' + suf; color = 'var(--connect-orange)'; }
     else { estado = 'Sale del plan' + suf; color = 'var(--connect-red)'; }
@@ -1506,7 +1513,7 @@ function pagosCalcFila(row, mes, incluirProg, parcial){
     condHint = Array.from(cnt.entries()).sort((a,b)=>b[1]-a[1]).slice(0,8);
   }
 
-  return { row, svcs: svcs.length, noProg, prog, progValidos, poAtiempo, volumenNivel, aTiempoNoProg, incluirProg, pct, pagoServ, bono, total: pagoServ + bono, estado, color, detalle, condHint };
+  return { row, svcs: svcs.length, noProg, prog, progValidos, alcanzaMin, poAtiempo, volumenNivel, aTiempoNoProg, incluirProg, pct, pagoServ, bono, total: pagoServ + bono, estado, color, detalle, condHint };
 }
 
 function pagosMesesDisponibles(){
@@ -1613,7 +1620,7 @@ function renderPagosView(){
         <td class="num-cell">${f.svcs}</td>
         <td class="num-cell">${f.noProg}</td>
         <td class="num-cell">${f.prog}</td>
-        <td class="num-cell"><b>${f.poAtiempo}</b><div style="font-size:11px; color:var(--text-muted); white-space:nowrap;">${f.aTiempoNoProg} a tiempo (no prog.) + ${f.incluirProg ? f.prog + ' prog.' : '<s>' + f.prog + ' prog.</s>'}</div></td>
+        <td class="num-cell"><b>${f.poAtiempo}</b><div style="font-size:11px; color:var(--text-muted); white-space:nowrap;">${f.aTiempoNoProg} a tiempo (no prog.) + ${f.progValidos === f.prog && f.incluirProg ? f.prog + ' prog.' : '<s>' + f.prog + ' prog.</s>'}${f.incluirProg && !f.alcanzaMin && f.prog > 0 ? '<br><span style="color:var(--connect-orange);">prog. no pagan (&lt;' + PAGO.minPO + ' PO)</span>' : ''}</div></td>
         <td class="num-cell">${f.pct === null ? '—' : f.pct.toFixed(1) + '%'}</td>
         <td style="color:${f.color}; font-weight:600;">${f.estado}</td>
         <td class="num-cell">${pagosMoney(f.pagoServ)}</td>
