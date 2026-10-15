@@ -1,0 +1,605 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>NPS Zurich · Connect Colombia</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📊</text></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --navy:#001D3D;--orange:#F15A2B;--turq:#279bb0;--yellow:#ffb000;--green:#9fd1a4;
+  --bg:#F3F6F9;--surface:#FFFFFF;--ink:#0d2238;--muted:#5b6b7c;--line:#dbe3ea;
+  --head-bg:#001D3D;--head-ink:#FFFFFF;--head-muted:#a9bdd1;
+  --g-ink:#2c7a3a;--t-ink:#1a7385;--y-ink:#8f6200;--o-ink:#c23f15;
+  --g-bg:#e2f2e4;--t-bg:#dcf0f4;--y-bg:#fff0cc;--o-bg:#fde3da;
+  --refc:#001D3D;
+  box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);
+  color-scheme:light;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#06121f;--surface:#0c1d31;--ink:#e6eef6;--muted:#93a6b9;--line:#1f3550;
+    --head-bg:#001428;--head-ink:#FFFFFF;--head-muted:#8fa7bf;
+    --g-ink:#9fd1a4;--t-ink:#6fcfe0;--y-ink:#ffc94d;--o-ink:#ff8a63;
+    --g-bg:#1c3a26;--t-bg:#123a45;--y-bg:#3d3010;--o-bg:#4a2014;
+    --refc:#e6eef6;color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#06121f;--surface:#0c1d31;--ink:#e6eef6;--muted:#93a6b9;--line:#1f3550;
+  --head-bg:#001428;--head-ink:#FFFFFF;--head-muted:#8fa7bf;
+  --g-ink:#9fd1a4;--t-ink:#6fcfe0;--y-ink:#ffc94d;--o-ink:#ff8a63;
+  --g-bg:#1c3a26;--t-bg:#123a45;--y-bg:#3d3010;--o-bg:#4a2014;
+  --refc:#e6eef6;color-scheme:dark;
+}
+*,*::before,*::after{box-sizing:inherit}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:Prompt,"Segoe UI",system-ui,sans-serif;font-weight:400;line-height:1.55;font-size:16px}
+.wrap{max-width:1040px;margin:0 auto;padding:0 20px}
+header{background:var(--head-bg);color:var(--head-ink);position:relative;overflow:hidden}
+header .wrap{padding-top:44px;padding-bottom:36px}
+header::after{content:"";position:absolute;left:0;right:0;bottom:0;height:6px;background:linear-gradient(90deg,var(--orange) 0 25%,var(--yellow) 25% 50%,var(--turq) 50% 75%,var(--green) 75% 100%)}
+.brand{font-weight:600;letter-spacing:.02em;color:var(--orange);font-size:15px;margin:0 0 18px}
+h1{font-weight:600;font-size:clamp(28px,4.4vw,44px);line-height:1.1;margin:0 0 12px;max-width:22ch}
+.lede{color:var(--head-muted);max-width:62ch;margin:0;font-weight:300;font-size:17px}
+.stats{display:flex;flex-wrap:wrap;gap:12px 40px;margin-top:30px}
+.stat{display:flex;flex-direction:column}
+.stat .v{font-family:"JetBrains Mono",ui-monospace,monospace;font-size:30px;font-weight:600;line-height:1.1}
+.stat .v.big{font-size:46px;color:var(--head-ink)}
+.stat .l{color:var(--head-muted);font-size:14px}
+.stat .arrow{color:var(--green)}
+main.wrap{padding-top:44px;padding-bottom:60px}
+section{margin:0 0 44px}
+h2{font-weight:600;font-size:24px;margin:0 0 6px;line-height:1.2}
+h3{font-weight:500;font-size:18px;margin:28px 0 8px}
+.sub{color:var(--muted);margin:0 0 18px;max-width:70ch}
+.findings{display:grid;gap:14px;grid-template-columns:repeat(auto-fit,minmax(260px,1fr))}
+.finding{background:var(--surface);border:1px solid var(--line);border-left:6px solid var(--orange);padding:18px 18px 16px;border-radius:4px}
+.finding.y{border-left-color:var(--yellow)}
+.finding.t{border-left-color:var(--turq)}
+.finding .k{font-family:"JetBrains Mono",ui-monospace,monospace;font-size:28px;font-weight:600;line-height:1.1;margin:0 0 6px}
+.finding p{margin:0;font-size:15px}
+.finding .k small{font-size:14px;color:var(--muted);font-family:Prompt,sans-serif;font-weight:400}
+.actions{display:grid;gap:16px;grid-template-columns:repeat(auto-fit,minmax(280px,1fr))}
+.action{background:var(--surface);border:1px solid var(--line);border-top:6px solid var(--navy);border-radius:4px;padding:18px 20px 16px;position:relative}
+:root[data-theme="dark"] .action{border-top-color:var(--turq)}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .action{border-top-color:var(--turq)}}
+.action .rank{position:absolute;top:10px;right:16px;margin:0;font-family:"JetBrains Mono",ui-monospace,monospace;font-size:44px;font-weight:600;line-height:1;color:var(--line)}
+.action .imp{font-family:"JetBrains Mono",ui-monospace,monospace;font-size:34px;font-weight:600;line-height:1.1;margin:0;color:var(--g-ink)}
+.action .imp small{font-family:Prompt,sans-serif;font-size:14px;font-weight:400;color:var(--muted)}
+.action h3{margin:10px 0 6px;font-size:19px;line-height:1.25}
+.action .why{margin:0 0 10px;font-size:15px;color:var(--muted)}
+.action ul{margin:0;padding-left:18px;font-size:15px}
+.action li{margin:5px 0}
+.filters{display:flex;flex-wrap:wrap;gap:12px 18px;align-items:flex-end;margin:0 0 12px}
+.filters label{display:flex;flex-direction:column;gap:4px;font-size:13px;color:var(--muted)}
+.filters select,.filters button{font:inherit;font-size:15px;color:var(--ink);background:var(--surface);border:1px solid var(--line);border-radius:4px;padding:7px 10px;min-height:38px}
+.filters select{min-width:200px}
+.filters button{cursor:pointer;color:var(--t-ink);font-weight:500}
+.filters select:focus-visible,.filters button:focus-visible,#p-table thead button:focus-visible{outline:2px solid var(--turq);outline-offset:2px}
+.psum{margin:0 0 10px;font-size:15px}
+#p-table thead button{all:unset;cursor:pointer;color:inherit;font:inherit}
+#p-table thead button[aria-sort]::after{content:" ↓"}
+#p-table thead button[aria-sort="ascending"]::after{content:" ↑"}
+#p-table td.barc{width:16%;min-width:100px}
+#p-table tbody th{white-space:normal;min-width:170px}
+#p-table th,#p-table td{padding-left:9px;padding-right:9px}
+#p-table tbody tr.empty td{text-align:center;color:var(--muted);padding:22px}
+.tw{overflow-x:auto;background:var(--surface);border:1px solid var(--line);border-radius:4px}
+table{border-collapse:collapse;width:100%;font-size:15px}
+th,td{padding:9px 12px;text-align:left;border-bottom:1px solid var(--line);white-space:nowrap}
+thead th{font-weight:500;color:var(--muted);font-size:13px;background:var(--surface);vertical-align:bottom}
+tbody tr:last-child th,tbody tr:last-child td{border-bottom:none}
+tbody th{font-weight:500}
+td.num,th.num{text-align:right;font-family:"JetBrains Mono",ui-monospace,monospace;font-size:14px}
+td.nps{font-weight:600}
+.gt{color:var(--g-ink)}.tt{color:var(--t-ink)}.yt{color:var(--y-ink)}.ot{color:var(--o-ink)}
+td.barc{width:32%;min-width:160px}
+.bar{position:relative;height:12px;background:var(--bg);border-radius:2px}
+.bar b{position:absolute;left:0;top:0;bottom:0;border-radius:2px}
+.bar b.g{background:var(--green)}.bar b.t{background:var(--turq)}.bar b.y{background:var(--yellow)}.bar b.o{background:var(--orange)}
+.bar .ref{position:absolute;top:-4px;bottom:-4px;width:2px;background:var(--refc);opacity:.7}
+td.hc{text-align:center;font-family:"JetBrains Mono",ui-monospace,monospace;min-width:76px}
+td.hc b{font-weight:600;font-size:14px}
+td.hc span{display:block;font-size:11px;color:var(--muted);line-height:1.1}
+td.hc.g{background:var(--g-bg);color:var(--g-ink)}
+td.hc.t{background:var(--t-bg);color:var(--t-ink)}
+td.hc.y{background:var(--y-bg);color:var(--y-ink)}
+td.hc.o{background:var(--o-bg);color:var(--o-ink)}
+td.hc.small{background-image:repeating-linear-gradient(135deg,transparent 0 5px,color-mix(in srgb,var(--surface) 55%,transparent) 5px 8px)}
+td.na{text-align:center;color:var(--muted)}
+tr.rest th{font-weight:400;color:var(--muted)}
+tr.smallrow th,tr.smallrow td.num:not(.nps){color:var(--muted)}
+.legend{display:flex;flex-wrap:wrap;gap:8px 18px;font-size:13px;color:var(--muted);margin:10px 0 0}
+.legend span{display:inline-flex;align-items:center;gap:6px}
+.sw{width:14px;height:14px;border-radius:2px;display:inline-block}
+.sw.g{background:var(--g-bg);border:2px solid var(--green)}.sw.t{background:var(--t-bg);border:2px solid var(--turq)}
+.sw.y{background:var(--y-bg);border:2px solid var(--yellow)}.sw.o{background:var(--o-bg);border:2px solid var(--orange)}
+.sw.small{background:repeating-linear-gradient(135deg,var(--line) 0 3px,transparent 3px 6px);border:1px solid var(--line)}
+.sw.ref{width:2px;height:16px;background:var(--refc);border-radius:0}
+.cols{display:grid;gap:4px 22px;grid-template-columns:1fr}
+.cols>div{min-width:0}
+details{margin-top:14px;background:var(--surface);border:1px solid var(--line);border-radius:4px;padding:0 14px}
+summary{cursor:pointer;padding:12px 0;font-weight:500}
+summary:focus-visible{outline:2px solid var(--turq);outline-offset:3px}
+details .tw{border:none;margin-bottom:14px}
+.note{font-size:15px;max-width:72ch}
+.themes{display:grid;gap:10px;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));margin-top:10px}
+.theme{background:var(--surface);border:1px solid var(--line);padding:14px;border-radius:4px;font-size:15px}
+.theme strong{display:block;font-weight:600;margin-bottom:2px}
+footer{border-top:1px solid var(--line);padding:22px 0 40px;color:var(--muted);font-size:14px}
+footer ul{margin:6px 0 0;padding-left:18px}
+footer li{margin:3px 0;max-width:80ch}
+@media (max-width:640px){th,td{padding:8px 9px}.stat .v.big{font-size:38px}}
+.tabbar{position:sticky;top:env(safe-area-inset-top,0px);z-index:20;background:var(--surface);border-bottom:1px solid var(--line)}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:21;background:var(--surface)}
+.tabbar .wrap{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:8px 16px;padding-top:8px;padding-bottom:8px}
+.tabs{display:flex;gap:4px}
+.tab{font:inherit;font-size:16px;font-weight:500;color:var(--muted);background:transparent;border:0;border-bottom:3px solid transparent;padding:10px 14px;cursor:pointer}
+.tab[aria-selected="true"]{color:var(--ink);border-bottom-color:var(--orange)}
+.tab:focus-visible{outline:2px solid var(--turq);outline-offset:2px}
+.period{display:flex;align-items:center;gap:8px;font-size:14px;color:var(--muted)}
+.period select{font:inherit;font-size:15px;color:var(--ink);background:var(--surface);border:1px solid var(--line);border-radius:4px;padding:6px 10px;min-height:36px}
+.state{padding:60px 0;text-align:center;color:var(--muted)}
+.state.err{color:var(--o-ink)}
+[hidden]{display:none!important}
+.small-note{font-size:13px;color:var(--muted)}
+</style>
+</head>
+<body>
+<header>
+  <div class="wrap">
+    <p class="brand">Connect Colombia · División Road</p>
+    <h1>NPS de Zurich</h1>
+    <p class="lede" id="lede">Cargando datos…</p>
+    <div class="stats" id="stats"></div>
+  </div>
+</header>
+
+<div class="tabbar">
+  <div class="wrap">
+    <div class="tabs" role="tablist" aria-label="Páginas del reporte">
+      <button class="tab" role="tab" id="t-prov" aria-controls="p-prov" aria-selected="true" data-tab="proveedores">Proveedores</button>
+      <button class="tab" role="tab" id="t-ana" aria-controls="p-ana" aria-selected="false" data-tab="analisis" tabindex="-1">Análisis general</button>
+    </div>
+    <label class="period">Periodo <select id="f-mes"></select></label>
+  </div>
+</div>
+
+<main class="wrap">
+  <p class="state" id="state">Cargando datos…</p>
+
+  <!-- ===== Página 1: Proveedores ===== -->
+  <div id="p-prov" role="tabpanel" aria-labelledby="t-prov" hidden>
+    <section>
+      <h2>Proveedores</h2>
+      <p class="sub">Vista global de todos los proveedores. Filtra por tipo de servicio o ciudad para ver quién atiende y cómo califica cada uno. Haz clic en los encabezados para ordenar.</p>
+      <div class="filters" role="group" aria-label="Filtros de proveedores">
+        <label>Tipo de servicio<select id="f-svc"></select></label>
+        <label>Ciudad<select id="f-city"></select></label>
+        <label>Mínimo de encuestas<select id="f-min"><option value="1">1</option><option value="5">5</option><option value="10" selected>10</option><option value="15">15</option><option value="20">20</option></select></label>
+        <button type="button" id="f-reset">Ver todo</button>
+      </div>
+      <p class="psum" id="p-sum" aria-live="polite"></p>
+      <div class="tw"><table id="p-table">
+        <thead><tr id="p-head"></tr></thead>
+        <tbody id="p-body"></tbody>
+      </table></div>
+      <p class="legend">La línea vertical marca el NPS del filtro activo. La mediana de llegada se calcula sobre servicios inmediatos con 5 registros o más. Celdas rayadas: menos de 10 encuestas.</p>
+
+      <h3>Orientación legal telefónica: interno frente a externo</h3>
+      <div class="tw"><table>
+        <thead><tr class="mhead" data-first="Atendido por" data-tail="n,% Det,NPS"></tr></thead>
+        <tbody id="t-tel"></tbody>
+      </table></div>
+    </section>
+  </div>
+
+  <!-- ===== Página 2: Análisis general ===== -->
+  <div id="p-ana" role="tabpanel" aria-labelledby="t-ana" hidden>
+    <section>
+      <h2>Lo principal</h2>
+      <p class="sub">Los focos que más separan a los detractores del resto.</p>
+      <div class="findings" id="findings"></div>
+    </section>
+
+    <section>
+      <h2>Tres acciones con mayor impacto en el NPS</h2>
+      <p class="sub" id="act-sub"></p>
+      <div class="actions" id="actions"></div>
+      <p class="legend">El impacto es un techo estimado, no una promesa: supone que el grupo afectado pasaría a calificar igual que su referencia (grúas que llegan en 90 minutos o menos, programados puntuales, Legal Interno y el mejor mes del abogado en sitio).</p>
+    </section>
+
+    <section>
+      <h2>Por tipo de servicio</h2>
+      <p class="sub">Servicios con 15 encuestas o más, ordenados por NPS. La línea vertical marca el NPS del periodo.</p>
+      <div class="tw"><table><thead><tr class="dhead" data-first="Servicio"></tr></thead><tbody id="t-svc"></tbody></table></div>
+      <div class="legend">
+        <span><i class="sw g"></i>80 o más</span><span><i class="sw t"></i>65 a 79</span><span><i class="sw y"></i>45 a 64</span><span><i class="sw o"></i>Menos de 45</span>
+        <span><i class="sw small"></i>Menos de 10 encuestas</span><span><i class="sw ref"></i>NPS del periodo</span>
+      </div>
+    </section>
+
+    <section>
+      <h2>Por ciudad</h2>
+      <p class="sub">Ciudades de inicio del servicio con 15 encuestas o más.</p>
+      <div class="tw"><table><thead><tr class="dhead" data-first="Ciudad"></tr></thead><tbody id="t-city"></tbody></table></div>
+      <h3>Tiempo de llegada en las tres ciudades principales</h3>
+      <div class="tw"><table>
+        <thead><tr><th>Ciudad</th><th class="num">Encuestas</th><th class="num">NPS</th><th class="num">% Det</th><th class="num">Mediana de llegada</th><th class="num">Llegadas &gt; 90 min</th></tr></thead>
+        <tbody id="t-c3"></tbody>
+      </table></div>
+      <p class="legend">Servicios viales inmediatos: grúas, paso de corriente, cambio de llanta y cerrajería.</p>
+    </section>
+
+    <section>
+      <h2>Por día de la semana</h2>
+      <p class="sub">Según el día de creación del servicio.</p>
+      <div class="tw"><table><thead><tr class="dhead" data-first="Día"></tr></thead><tbody id="t-dow"></tbody></table></div>
+      <div class="cols">
+        <div>
+          <h3>Por franja horaria de creación</h3>
+          <div class="tw"><table><thead><tr class="shead" data-first="Franja"></tr></thead><tbody id="t-hora"></tbody></table></div>
+        </div>
+        <div>
+          <h3>Local frente a foráneo</h3>
+          <div class="tw"><table><thead><tr class="shead" data-first="Tipo de localidad"></tr></thead><tbody id="t-loc"></tbody></table></div>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <h2>Tiempo de llegada</h2>
+      <p class="sub">El tiempo es la palanca operativa más clara, sobre todo en grúas.</p>
+      <h3>Grúas inmediatas, por tiempo de llegada</h3>
+      <div class="tw"><table><thead><tr class="shead" data-first="Llegada desde la creación"></tr></thead><tbody id="t-tow"></tbody></table></div>
+      <h3>Paso de corriente, llanta y cerrajería</h3>
+      <div class="tw"><table><thead><tr class="shead" data-first="Llegada desde la creación"></tr></thead><tbody id="t-oth"></tbody></table></div>
+    </section>
+
+    <section>
+      <h2>Servicios legales</h2>
+      <p class="sub">Evolución mensual. El detalle por firma está en la página Proveedores, filtrando por el servicio legal.</p>
+      <div class="tw"><table><thead><tr class="mhead" data-first="Servicio" data-tail="Encuestas,% Det,NPS"></tr></thead><tbody id="t-leg"></tbody></table></div>
+      <p class="legend">En cada celda de mes: NPS arriba y número de encuestas abajo. Las celdas rayadas tienen menos de 10 encuestas; un solo detractor mueve el NPS hasta 100 puntos.</p>
+    </section>
+  </div>
+</main>
+
+<footer>
+  <div class="wrap">
+    <strong>Cómo se calcula</strong>
+    <ul>
+      <li>NPS = % de promotores (9 y 10) menos % de detractores (0 a 6), sobre la pregunta Q1 de la encuesta.</li>
+      <li>Las encuestas de "BBDD Qualtrics" se cruzan por número de PO (columna Cod) con la hoja "Cube Servicios Colombia", pestaña servicios_road_col. Cuando un PO tiene varias respuestas se cuenta la primera.</li>
+      <li>El mes, el día y la franja horaria corresponden a la fecha de creación del servicio. El último mes puede estar incompleto: depende de hasta dónde llegue la base de encuestas.</li>
+      <li>Tiempo de llegada: en servicios inmediatos, desde la creación hasta el registro de llegada; en programados, frente a la hora pactada. Se excluye la orientación telefónica.</li>
+      <li>Quedan fuera las encuestas sin PO y las que no cruzan con el sistema de Connect.</li>
+    </ul>
+    <p id="meta"></p>
+  </div>
+</footer>
+
+<script id="nps-data" type="application/json"></script>
+<script>
+(function () {
+  'use strict';
+  var DATA_URL = 'data/nps.json';
+
+  // ---------- etiquetas ----------
+  var SVC = { towBreakdown: 'Grúa por avería', jumpStart: 'Paso de corriente', conductor_designado: 'Conductor designado', onsite_legal_assistance: 'Abogado en sitio', towCollision: 'Grúa por colisión', flatTire: 'Cambio de llanta', desplazamiento: 'Desplazamiento', orientacion_legal_telefonica: 'Orientación legal telefónica', conductor_elegido: 'Conductor elegido', locksmith: 'Cerrajería', custodia_del_vehiculo_asegurado: 'Custodia del vehículo', towExtraction: 'Grúa por extracción', towTire: 'Grúa por llanta', towHeavyWeight: 'Grúa pesada', servicio_acompanante: 'Servicio acompañante', fono_taller: 'Fono taller', traslado_familiar: 'Traslado familiar' };
+  var MES_N = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
+  var MES_C = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
+  var DIAS = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'];
+  var LEGAL_INT = 'Legal Interno Colombia';
+  var TEL = 'orientacion_legal_telefonica', ONS = 'onsite_legal_assistance';
+  var CORE = ['towBreakdown', 'towCollision', 'towExtraction', 'towTire', 'jumpStart', 'flatTire', 'locksmith'];
+
+  // ---------- estado ----------
+  var D, ALL = [], ROWS = [], MESES = [], MVIS = [], TOT, mesLabel = {};
+  var sortK = 'n', asc = false;
+
+  // ---------- utilidades ----------
+  function $(id) { return document.getElementById(id); }
+  function f1(v, d) { return (d === undefined ? v.toFixed(1) : v.toFixed(d)).replace('.', ','); }
+  function miles(n) { return String(n).replace(/\B(?=(\d{3})+(?!\d))/g, '.'); }
+  function cls(v) { return v >= 80 ? 'g' : (v >= 65 ? 't' : (v >= 45 ? 'y' : 'o')); }
+  function esc(s) { return String(s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
+  function st(a) { var n = a.length, p = 0, d = 0; for (var i = 0; i < n; i++) { if (a[i].q1 >= 9) p++; else if (a[i].q1 <= 6) d++; } return { n: n, p: p, d: d, prom: n ? p / n * 100 : 0, det: n ? d / n * 100 : 0, nps: n ? (p - d) / n * 100 : 0 }; }
+  function median(a) { if (a.length < 5) return null; a = a.slice().sort(function (x, y) { return x - y; }); var m = Math.floor(a.length / 2); return a.length % 2 ? a[m] : (a[m - 1] + a[m]) / 2; }
+  function svcName(c) { return SVC[c] || c.replace(/_/g, ' ').replace(/^./, function (x) { return x.toUpperCase(); }); }
+  function fecha(iso) { if (!iso) return ''; var p = iso.slice(0, 10).split('-'); return (+p[2]) + ' de ' + MES_N[+p[1] - 1] + ' de ' + p[0]; }
+  function groupBy(a, fn) { var g = {}; a.forEach(function (r) { var k = fn(r); (g[k] = g[k] || []).push(r); }); return g; }
+  function bar(v, ref) { var w = Math.max(0, Math.min(100, v)), r = Math.max(0, Math.min(100, ref)); return '<div class="bar" aria-hidden="true"><b class="' + cls(v) + '" style="width:' + w.toFixed(1) + '%"></b><i class="ref" style="left:' + r.toFixed(1) + '%"></i></div>'; }
+  function cell(a) { if (!a.length) return '<td class="na">–</td>'; var s = st(a); return '<td class="hc ' + cls(s.nps) + (s.n < 10 ? ' small' : '') + '"><b>' + f1(s.nps, 0) + '</b><span>' + s.n + '</span></td>'; }
+  function mcells(a) { var g = groupBy(a, function (r) { return r.mes; }); return MVIS.map(function (m) { return cell(g[m] || []); }).join(''); }
+  function mheads(short) { return MVIS.map(function (m) { return '<th class="num">' + (short ? mesLabel[m].c : mesLabel[m].l) + '</th>'; }).join(''); }
+
+  // ---------- carga ----------
+  function load() {
+    var inline = document.getElementById('nps-data');
+    if (inline && inline.textContent.trim()) {
+      try { init(JSON.parse(inline.textContent)); return; } catch (e) { /* sigue con fetch */ }
+    }
+    fetch(DATA_URL + '?v=' + Date.now(), { cache: 'no-store' })
+      .then(function (r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
+      .then(init)
+      .catch(function (e) {
+        var s = $('state'); s.className = 'state err';
+        s.textContent = 'No se pudo cargar ' + DATA_URL + ' (' + e.message + '). Revisa que el flujo de n8n haya publicado el archivo en el repositorio.';
+        $('lede').textContent = 'Sin datos.';
+      });
+  }
+
+  function init(d) {
+    D = d;
+    var C = d.cols;
+    ALL = d.rows.map(function (r) {
+      var o = {}; for (var i = 0; i < C.length; i++) o[C[i]] = r[i];
+      o.prov = d.dic.prov[o.prov]; o.svc = d.dic.svc[o.svc]; o.city = d.dic.city[o.city]; o.mes = d.meses[o.mes];
+      return o;
+    });
+    MESES = d.meses.slice().sort();
+    var ult = d.ultimoServicio;
+    MESES.forEach(function (m, i) {
+      var y = +m.slice(0, 4), mo = +m.slice(5, 7), dim = new Date(Date.UTC(y, mo, 0)).getUTCDate();
+      var l = MES_N[mo - 1].replace(/^./, function (x) { return x.toUpperCase(); }), c = MES_C[mo - 1];
+      if (i === MESES.length - 1 && ult && ult.slice(0, 7) === m) {
+        var dd = +ult.slice(8, 10);
+        if (dd < dim) { l = MES_C[mo - 1] + ' (1 a ' + dd + ')'; c = MES_C[mo - 1] + '*'; }
+      }
+      mesLabel[m] = { l: l, c: c, full: MES_N[mo - 1] + ' ' + y };
+    });
+    var fm = $('f-mes');
+    fm.innerHTML = '<option value="">Todos los meses</option>' + MESES.slice().reverse().map(function (m) { return '<option value="' + m + '">' + mesLabel[m].full.replace(/^./, function (x) { return x.toUpperCase(); }) + (mesLabel[m].c.slice(-1) === '*' ? ' (parcial)' : '') + '</option>'; }).join('');
+    fm.addEventListener('change', applyPeriod);
+    setupProvFilters();
+    $('state').hidden = true;
+    $('meta').textContent = 'Datos generados el ' + fecha(d.generado) + '. Encuestas cruzadas: ' + miles(ALL.length) + '.';
+    applyPeriod();
+    route();
+  }
+
+  function applyPeriod() {
+    var m = $('f-mes').value;
+    ROWS = m ? ALL.filter(function (r) { return r.mes === m; }) : ALL;
+    var ms = m ? [m] : MESES;
+    MVIS = ms.slice(-4);
+    TOT = st(ROWS);
+    renderHeader(m);
+    fillHeads();
+    renderProv();
+    renderTel();
+    renderAnalisis();
+  }
+
+  // ---------- encabezado ----------
+  function renderHeader(m) {
+    var desde = m ? m + '-01' : D.primerServicio, hasta = D.ultimoServicio;
+    if (m && hasta && hasta.slice(0, 7) !== m) { var y = +m.slice(0, 4), mo = +m.slice(5, 7); hasta = m + '-' + new Date(Date.UTC(y, mo, 0)).getUTCDate(); }
+    $('lede').textContent = miles(TOT.n) + ' encuestas de Qualtrics cruzadas por número de PO con los servicios de Connect creados entre el ' + fecha(desde) + ' y el ' + fecha(hasta) + '. Actualizado el ' + fecha(D.generado) + '.';
+    var g = groupBy(ALL, function (r) { return r.mes; });
+    var last = MESES.slice(-3);
+    var trend = last.map(function (x) { return f1(st(g[x] || []).nps); }).join(' <span class="arrow">→</span> ');
+    var tl = last.map(function (x) { return mesLabel[x].full.split(' ')[0] + ' (' + (g[x] || []).length + ')'; }).join(', ');
+    $('stats').innerHTML =
+      '<div class="stat"><span class="v big">' + f1(TOT.nps) + '</span><span class="l">NPS ' + (m ? 'de ' + mesLabel[m].full : 'del periodo') + '</span></div>' +
+      '<div class="stat"><span class="v">' + trend + '</span><span class="l">' + tl.replace(/^./, function (x) { return x.toUpperCase(); }) + '</span></div>' +
+      '<div class="stat"><span class="v">' + f1(TOT.prom) + '%</span><span class="l">Promotores</span></div>' +
+      '<div class="stat"><span class="v">' + f1(TOT.det) + '%</span><span class="l">Detractores</span></div>';
+  }
+
+  function fillHeads() {
+    document.querySelectorAll('tr.dhead').forEach(function (tr) {
+      tr.innerHTML = '<th>' + tr.getAttribute('data-first') + '</th><th class="num">Encuestas</th><th class="num">% Det</th><th class="num">NPS</th><th>NPS (0 a 100)</th>' + mheads(false);
+    });
+    document.querySelectorAll('tr.shead').forEach(function (tr) {
+      tr.innerHTML = '<th>' + tr.getAttribute('data-first') + '</th><th class="num">Encuestas</th><th class="num">% Det</th><th class="num">NPS</th><th>NPS (0 a 100)</th>';
+    });
+    document.querySelectorAll('tr.mhead').forEach(function (tr) {
+      tr.innerHTML = '<th>' + tr.getAttribute('data-first') + '</th>' + mheads(true) + tr.getAttribute('data-tail').split(',').map(function (t) { return '<th class="num">' + t + '</th>'; }).join('');
+    });
+    $('p-head').innerHTML =
+      '<th><button type="button" data-k="name">Proveedor</button></th>' +
+      '<th class="num"><button type="button" data-k="n">Encuestas</button></th>' +
+      '<th class="num"><button type="button" data-k="det">% Det</button></th>' +
+      '<th class="num"><button type="button" data-k="nps">NPS</button></th>' +
+      '<th>NPS (0 a 100)</th>' +
+      '<th class="num"><button type="button" data-k="med">Mediana de llegada</button></th>' + mheads(true);
+    $('p-head').querySelectorAll('button').forEach(function (b) {
+      if (b.getAttribute('data-k') === sortK) b.setAttribute('aria-sort', asc ? 'ascending' : 'descending');
+      b.addEventListener('click', function () {
+        var k = b.getAttribute('data-k');
+        if (sortK === k) asc = !asc; else { sortK = k; asc = (k === 'name' || k === 'med' || k === 'det'); }
+        fillHeads(); renderProv();
+      });
+    });
+  }
+
+  // ---------- página Proveedores ----------
+  function setupProvFilters() {
+    function opts(sel, all, key, label, min) {
+      var c = {}; ALL.forEach(function (r) { c[r[key]] = (c[r[key]] || 0) + 1; });
+      sel.innerHTML = '<option value="">' + all + '</option>' + Object.keys(c).filter(function (k) { return c[k] >= min; }).sort(function (a, b) { return c[b] - c[a]; })
+        .map(function (k) { return '<option value="' + esc(k) + '">' + esc(label(k)) + ' (' + c[k] + ')</option>'; }).join('');
+    }
+    opts($('f-svc'), 'Todos los servicios', 'svc', svcName, 1);
+    opts($('f-city'), 'Todas las ciudades', 'city', function (x) { return x; }, 5);
+    ['f-svc', 'f-city', 'f-min'].forEach(function (i) { $(i).addEventListener('change', renderProv); });
+    $('f-reset').addEventListener('click', function () { $('f-svc').value = ''; $('f-city').value = ''; $('f-min').value = '10'; renderProv(); });
+  }
+
+  function renderProv() {
+    var sv = $('f-svc').value, ct = $('f-city').value, mn = +$('f-min').value;
+    var rows = ROWS.filter(function (r) { return (!sv || r.svc === sv) && (!ct || r.city === ct); });
+    var tot = st(rows), g = groupBy(rows, function (r) { return r.prov; });
+    var list = Object.keys(g).map(function (k) {
+      var a = g[k], s = st(a); s.name = k; s.rows = a;
+      s.med = median(a.filter(function (r) { return r.lleg !== null; }).map(function (r) { return r.lleg; }));
+      return s;
+    });
+    var shown = list.filter(function (s) { return s.n >= mn; });
+    shown.sort(function (a, b) {
+      var x = a[sortK], y = b[sortK];
+      if (sortK === 'name') return asc ? x.localeCompare(y, 'es') : y.localeCompare(x, 'es');
+      if (x === null) x = asc ? 1e9 : -1e9; if (y === null) y = asc ? 1e9 : -1e9;
+      return asc ? x - y : y - x;
+    });
+    $('p-sum').innerHTML = tot.n
+      ? '<b>' + shown.length + '</b> de ' + list.length + ' proveedores con ' + mn + ' encuestas o más. El filtro reúne <b>' + miles(tot.n) + '</b> encuestas con NPS <b>' + f1(tot.nps) + '</b>.'
+      : 'No hay encuestas para esta combinación de filtros.';
+    var ncol = 6 + MVIS.length;
+    if (!shown.length) { $('p-body').innerHTML = '<tr class="empty"><td colspan="' + ncol + '">Ningún proveedor llega al mínimo de encuestas. Baja el mínimo o cambia el filtro.</td></tr>'; return; }
+    $('p-body').innerHTML = shown.map(function (s) {
+      return '<tr><th scope="row">' + esc(s.name) + '</th><td class="num">' + s.n + '</td><td class="num">' + f1(s.det) + '%</td><td class="num nps ' + cls(s.nps) + 't">' + f1(s.nps) + '</td><td class="barc">' + bar(s.nps, tot.nps) + '</td><td class="num">' + (s.med === null ? '–' : Math.round(s.med) + ' min') + '</td>' + mcells(s.rows) + '</tr>';
+    }).join('');
+  }
+
+  function renderTel() {
+    var t = ROWS.filter(function (r) { return r.svc === TEL; });
+    var groups = [['Firmas externas', t.filter(function (r) { return r.prov !== LEGAL_INT; })], [LEGAL_INT, t.filter(function (r) { return r.prov === LEGAL_INT; })]];
+    $('t-tel').innerHTML = groups.map(function (g) { var s = st(g[1]); return '<tr><th scope="row">' + g[0] + '</th>' + mcells(g[1]) + '<td class="num">' + s.n + '</td><td class="num">' + f1(s.det, 0) + '%</td><td class="num nps ' + cls(s.nps) + 't">' + (s.n ? f1(s.nps, 0) : '–') + '</td></tr>'; }).join('');
+  }
+
+  // ---------- página Análisis ----------
+  function dimRows(rows, keyFn, labelFn, minN, order, withMonths) {
+    var g = groupBy(rows, keyFn), keys = order || Object.keys(g);
+    var items = keys.filter(function (k) { return g[k] && g[k].length >= minN; }).map(function (k) { return { k: k, a: g[k], s: st(g[k]) }; });
+    if (!order) items.sort(function (a, b) { return b.s.nps - a.s.nps; });
+    return items.map(function (it) {
+      var s = it.s, small = s.n < 20 ? ' class="smallrow"' : '';
+      return '<tr' + small + '><th scope="row">' + esc(labelFn(it.k)) + '</th><td class="num">' + s.n + '</td><td class="num">' + f1(s.det) + '%</td><td class="num nps ' + cls(s.nps) + 't">' + f1(s.nps) + '</td><td class="barc">' + bar(s.nps, TOT.nps) + '</td>' + (withMonths ? mcells(it.a) : '') + '</tr>';
+    }).join('') || '<tr class="empty"><td colspan="' + (5 + (withMonths ? MVIS.length : 0)) + '">Sin datos suficientes en este periodo.</td></tr>';
+  }
+
+  function impact(group, target) { var s = st(group); return TOT.n ? (s.n * target / 100 - (s.p - s.d)) / TOT.n * 100 : 0; }
+  function topCount(rows, fn, k) { var c = {}; rows.forEach(function (r) { var x = fn(r); c[x] = (c[x] || 0) + 1; }); return Object.keys(c).sort(function (a, b) { return c[b] - c[a]; }).slice(0, k).map(function (x) { return [x, c[x]]; }); }
+
+  function renderAnalisis() {
+    var R = ROWS;
+    // tablas por dimensión
+    $('t-svc').innerHTML = dimRows(R, function (r) { return r.svc; }, svcName, 15, null, true);
+    $('t-city').innerHTML = dimRows(R, function (r) { return r.city; }, function (x) { return x; }, 15, null, true);
+    $('t-dow').innerHTML = dimRows(R, function (r) { return r.dow; }, function (x) { return DIAS[x]; }, 1, ['0', '1', '2', '3', '4', '5', '6'], true);
+    var hb = function (r) { var h = r.hora; return h < 6 ? 0 : h < 12 ? 1 : h < 18 ? 2 : h < 22 ? 3 : 4; };
+    $('t-hora').innerHTML = dimRows(R, hb, function (x) { return ['0 a 6 h', '6 a 12 h', '12 a 18 h', '18 a 22 h', '22 a 24 h'][x]; }, 1, ['0', '1', '2', '3', '4'], false);
+    $('t-loc').innerHTML = dimRows(R.filter(function (r) { return r.loc !== null; }), function (r) { return r.loc; }, function (x) { return +x ? 'Foráneo' : 'Local'; }, 1, ['0', '1'], false);
+
+    // tiempos
+    var tows = R.filter(function (r) { return r.svc.indexOf('tow') === 0 && r.prog === 0 && r.lleg !== null; });
+    $('t-tow').innerHTML = dimRows(tows, function (r) { return r.lleg <= 60 ? 0 : r.lleg <= 90 ? 1 : r.lleg <= 120 ? 2 : 3; }, function (x) { return ['Hasta 60 min', '61 a 90 min', '91 a 120 min', 'Más de 120 min'][x]; }, 1, ['0', '1', '2', '3'], false);
+    var oth = R.filter(function (r) { return ['jumpStart', 'flatTire', 'locksmith'].indexOf(r.svc) >= 0 && r.prog === 0 && r.lleg !== null; });
+    $('t-oth').innerHTML = dimRows(oth, function (r) { return r.lleg <= 30 ? 0 : r.lleg <= 60 ? 1 : 2; }, function (x) { return ['Hasta 30 min', '31 a 60 min', 'Más de 60 min'][x]; }, 1, ['0', '1', '2'], false);
+
+    // tres ciudades principales
+    var top3 = topCount(R, function (r) { return r.city; }, 3);
+    $('t-c3').innerHTML = top3.map(function (c) {
+      var a = R.filter(function (r) { return r.city === c[0]; }), s = st(a);
+      var l = a.filter(function (r) { return CORE.indexOf(r.svc) >= 0 && r.prog === 0 && r.lleg !== null; }).map(function (r) { return r.lleg; });
+      var md = median(l), p90 = l.length ? l.filter(function (x) { return x > 90; }).length / l.length * 100 : null;
+      return '<tr><th scope="row">' + esc(c[0]) + '</th><td class="num">' + s.n + '</td><td class="num nps ' + cls(s.nps) + 't">' + f1(s.nps) + '</td><td class="num">' + f1(s.det) + '%</td><td class="num">' + (md === null ? '–' : Math.round(md) + ' min') + '</td><td class="num">' + (p90 === null ? '–' : f1(p90, 0) + '%') + '</td></tr>';
+    }).join('');
+
+    // legal por mes
+    $('t-leg').innerHTML = [ONS, TEL].map(function (k) { var a = R.filter(function (r) { return r.svc === k; }), s = st(a); return '<tr><th scope="row">' + svcName(k) + '</th>' + mcells(a) + '<td class="num">' + s.n + '</td><td class="num">' + f1(s.det) + '%</td><td class="num nps ' + cls(s.nps) + 't">' + (s.n ? f1(s.nps) : '–') + '</td></tr>'; }).join('');
+
+    renderFindings(R);
+    renderActions(R, tows);
+  }
+
+  function renderFindings(R) {
+    var cards = [];
+    var leg = R.filter(function (r) { return r.svc === TEL || r.svc === ONS; }), rest = R.filter(function (r) { return r.svc !== TEL && r.svc !== ONS; });
+    var sl = st(leg), sr = st(rest);
+    if (sl.n) {
+      var ts = st(R.filter(function (r) { return r.svc === TEL; }));
+      cards.push(['', f1(sl.nps), 'vs ' + f1(sr.nps) + ' del resto', 'Los servicios legales (' + sl.n + ' encuestas) tienen ' + f1(sl.det) + '% de detractores frente a ' + f1(sr.det) + '% del resto. La orientación telefónica está en NPS ' + f1(ts.nps) + ' con ' + ts.n + ' encuestas.']);
+    }
+    var cg = groupBy(R, function (r) { return r.city; });
+    var cand = Object.keys(cg).filter(function (k) { return cg[k].length >= 30; }).map(function (k) { return [k, st(cg[k])]; }).sort(function (a, b) { return b[1].det - a[1].det; });
+    if (cand.length) {
+      var w = cand[0], best = cand.slice().sort(function (a, b) { return a[1].det - b[1].det; })[0];
+      cards.push(['y', f1(w[1].nps), w[0], w[0] + ' (' + w[1].n + ' encuestas) es la ciudad con más detractores: ' + f1(w[1].det) + '%, frente a ' + f1(TOT.det) + '% del total y ' + f1(best[1].det) + '% de ' + best[0] + '.']);
+    }
+    var t = R.filter(function (r) { return r.svc === TEL; }), te = st(t.filter(function (r) { return r.prov !== LEGAL_INT; })), ti = st(t.filter(function (r) { return r.prov === LEGAL_INT; }));
+    if (te.n && ti.n) cards.push(['t', f1(te.nps, 0), 'vs ' + f1(ti.nps, 0) + ' de Legal Interno', 'Las orientaciones telefónicas derivadas a firmas externas (' + te.n + ' casos) tienen NPS ' + f1(te.nps, 0) + '. Las que atendió Legal Interno (' + ti.n + ' casos) tienen ' + f1(ti.nps, 0) + '.']);
+    $('findings').innerHTML = cards.map(function (c) { return '<div class="finding ' + c[0] + '"><p class="k">' + c[1] + ' <small>' + esc(c[2]) + '</small></p><p>' + esc(c[3]) + '</p></div>'; }).join('') || '<p class="small-note">Sin datos suficientes en este periodo.</p>';
+  }
+
+  function renderActions(R, tows) {
+    var acts = [];
+    // 1. grúas > 90 min
+    var late = tows.filter(function (r) { return r.lleg > 90; }), ok = tows.filter(function (r) { return r.lleg <= 90; });
+    if (late.length && ok.length >= 10) {
+      var sl = st(late), so = st(ok);
+      var pv = topCount(late, function (r) { return r.prov; }, 4).map(function (x) { return esc(x[0]) + ' (' + x[1] + ')'; }).join(', ');
+      acts.push({ imp: impact(late, so.nps), det: sl.d, title: 'Que ninguna grúa inmediata pase de 90 minutos',
+        why: 'El ' + f1(late.length / tows.length * 100, 0) + '% de las grúas inmediatas llegó después de 90 minutos. Esas ' + sl.n + ' encuestas tienen NPS ' + f1(sl.nps) + ' frente a ' + f1(so.nps) + ' de las que llegaron antes, y suman ' + sl.d + ' detractores.',
+        todo: ['Alerta en Torre de Control a los 60 minutos sin llegada, con decisión de reasignar o reforzar seguimiento.', 'Llamada proactiva al cliente con hora estimada real cuando el servicio pase de 60 minutos.', 'Plan de trabajo con los proveedores que más concentran llegadas tardías: ' + pv + '.'] });
+    }
+    // 2. legal
+    var tel = R.filter(function (r) { return r.svc === TEL; }), ons = R.filter(function (r) { return r.svc === ONS; });
+    var telExt = tel.filter(function (r) { return r.prov !== LEGAL_INT; }), telInt = tel.filter(function (r) { return r.prov === LEGAL_INT; });
+    var i1 = telInt.length >= 5 ? impact(telExt, st(telInt).nps) : 0;
+    var og = groupBy(ons, function (r) { return r.mes; }), bestM = null;
+    Object.keys(og).forEach(function (m) { if (og[m].length >= 10) { var s = st(og[m]); if (!bestM || s.nps > bestM[1]) bestM = [m, s.nps]; } });
+    var i2 = bestM ? impact(ons, bestM[1]) : 0;
+    var legDet = st(tel.concat(ons)).d;
+    if (tel.length + ons.length) {
+      var detProv = topCount(ons.filter(function (r) { return r.q1 <= 6; }), function (r) { return r.prov; }, 2).map(function (x) { return esc(x[0]) + ' (' + x[1] + ')'; }).join(' y ');
+      acts.push({ imp: i1 + i2, det: legDet, title: 'Ordenar la atención legal',
+        why: 'Los servicios legales suman ' + legDet + ' detractores en ' + (tel.length + ons.length) + ' encuestas. La orientación telefónica está en NPS ' + f1(st(tel).nps) + ' y el abogado en sitio en ' + f1(st(ons).nps) + '.',
+        todo: ['Mantener la orientación telefónica en Legal Interno y derivar a firma externa solo cuando sea necesario (+' + f1(i1) + ').',
+          bestM ? 'Llevar el abogado en sitio al nivel de su mejor mes (' + mesLabel[bestM[0]].full + ', NPS ' + f1(bestM[1]) + ')' + (detProv ? ', empezando por los proveedores con más detractores: ' + detProv : '') + ' (+' + f1(i2) + ').' : 'Revisar los casos del abogado en sitio con detractores' + (detProv ? ': ' + detProv : '') + '.',
+          'Explicar desde la primera llamada qué cubre y qué no cubre la asistencia legal, y fijar un tiempo máximo para devolver la llamada.'] });
+    }
+    // 3. programados
+    var pr = R.filter(function (r) { return r.prog === 1 && r.retraso !== null; });
+    var p30 = pr.filter(function (r) { return r.retraso > 30; }), pok = pr.filter(function (r) { return r.retraso <= 15; });
+    if (p30.length && pok.length >= 10) {
+      var s30 = st(p30), sok = st(pok);
+      var mix = topCount(p30, function (r) { return r.svc; }, 2).map(function (x) { return svcName(x[0]).toLowerCase(); }).join(' y ');
+      acts.push({ imp: impact(p30, sok.nps), det: s30.d, title: 'Cumplir la hora pactada en servicios programados',
+        why: s30.n + ' servicios programados llegaron más de 30 minutos tarde, con NPS ' + f1(s30.nps) + ' frente a ' + f1(sok.nps) + ' de los puntuales. Son sobre todo ' + mix + '.',
+        todo: ['Confirmar con el proveedor entre 30 y 60 minutos antes de la hora pactada.', 'Alerta en Torre de Control si el conductor no está en camino 15 minutos antes.', 'Avisar al cliente antes de la hora si habrá retraso, en lugar de que se entere esperando.'] });
+    }
+    acts.sort(function (a, b) { return b.imp - a.imp; });
+    var total = acts.reduce(function (s, a) { return s + a.imp; }, 0), dets = acts.reduce(function (s, a) { return s + a.det; }, 0);
+    $('act-sub').innerHTML = 'Ordenadas por el aumento estimado del NPS total si cada grupo afectado calificara como su mejor referencia interna. Los grupos no se cruzan entre sí, así que el efecto se suma: hasta <b>+' + f1(total) + ' puntos</b> (' + f1(TOT.nps) + ' → ' + f1(TOT.nps + total) + '), atacando ' + dets + ' de los ' + TOT.d + ' detractores del periodo.';
+    $('actions').innerHTML = acts.map(function (a, i) {
+      return '<article class="action"><p class="rank">' + (i + 1) + '</p><p class="imp">+' + f1(a.imp) + '<small> puntos de NPS</small></p><h3>' + a.title + '</h3><p class="why">' + a.why + '</p><ul>' + a.todo.map(function (t) { return '<li>' + t + '</li>'; }).join('') + '</ul></article>';
+    }).join('');
+  }
+
+  // ---------- pestañas ----------
+  function route() {
+    var tab = location.hash === '#analisis' ? 'analisis' : 'proveedores';
+    document.querySelectorAll('.tab').forEach(function (b) {
+      var on = b.getAttribute('data-tab') === tab;
+      b.setAttribute('aria-selected', on ? 'true' : 'false'); b.tabIndex = on ? 0 : -1;
+    });
+    $('p-prov').hidden = tab !== 'proveedores' || !D;
+    $('p-ana').hidden = tab !== 'analisis' || !D;
+  }
+  document.querySelectorAll('.tab').forEach(function (b) {
+    b.addEventListener('click', function () {
+      var t = b.getAttribute('data-tab');
+      if (history.replaceState) history.replaceState(null, '', '#' + t); else location.hash = t;
+      route(); window.scrollTo(0, 0);
+    });
+    b.addEventListener('keydown', function (e) {
+      if (e.key !== 'ArrowRight' && e.key !== 'ArrowLeft') return;
+      var tabs = Array.prototype.slice.call(document.querySelectorAll('.tab')), i = tabs.indexOf(b);
+      var n = tabs[(i + (e.key === 'ArrowRight' ? 1 : tabs.length - 1)) % tabs.length]; n.focus(); n.click();
+    });
+  });
+  window.addEventListener('hashchange', route);
+  load();
+})();
+
+</script>
+</body>
+</html>
