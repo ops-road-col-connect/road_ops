@@ -147,6 +147,38 @@ body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset
 .state.err{color:var(--o-ink)}
 [hidden]{display:none!important}
 .small-note{font-size:13px;color:var(--muted)}
+
+.kpis{display:grid;gap:14px;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));margin:0 0 40px}
+@media (min-width:900px){.kpis{grid-template-columns:1fr 1.6fr 1fr}}
+.kcard{background:var(--surface);border:1px solid var(--line);border-radius:4px;padding:14px 16px 12px;min-width:0}
+.kcard.wf{margin:0 0 16px}
+.ktitle{margin:0 0 6px;font-size:14px;font-weight:500;color:var(--muted)}
+.kcard svg{display:block;width:100%;height:auto}
+.gauge{max-width:280px;margin:0 auto}
+.g-bg{fill:none;stroke:var(--line);stroke-width:18;stroke-linecap:round}
+.g-val{fill:none;stroke-width:18;stroke-linecap:round}
+.g-tick{stroke:var(--muted);stroke-width:2}
+.g-num{font-family:"JetBrains Mono",ui-monospace,monospace;font-size:38px;font-weight:600;fill:var(--ink);text-anchor:middle}
+.g-sub{font-size:12px;fill:var(--muted);text-anchor:middle}
+.g-lim{font-family:"JetBrains Mono",ui-monospace,monospace;font-size:11px;fill:var(--muted);text-anchor:middle}
+.m-axis{stroke:var(--line);stroke-width:1}
+.m-val{font-family:"JetBrains Mono",ui-monospace,monospace;font-size:13px;font-weight:600;fill:var(--ink);text-anchor:middle}
+.m-lab{font-size:12px;fill:var(--ink);text-anchor:middle}
+.m-n{font-family:"JetBrains Mono",ui-monospace,monospace;font-size:10px;fill:var(--muted);text-anchor:middle}
+.m-bar.dim{opacity:.3}
+.wf-link{stroke:var(--muted);stroke-width:1;stroke-dasharray:3 3}
+.cbar{display:flex;height:26px;border-radius:4px;overflow:hidden;margin:10px 0 14px;background:var(--line)}
+.cseg{display:block;height:100%}
+.cp{background:var(--green)}.cs{background:var(--yellow)}.cd{background:var(--orange)}
+.clist{list-style:none;margin:0 0 8px;padding:0;font-size:15px}
+.clist li{display:flex;align-items:center;gap:8px;margin:6px 0}
+.clist li b{font-family:"JetBrains Mono",ui-monospace,monospace;font-weight:600;min-width:58px}
+.clist li span{margin-left:auto;font-family:"JetBrains Mono",ui-monospace,monospace;font-size:13px;color:var(--muted)}
+.clist .sw{width:12px;height:12px;border-radius:2px}
+:root{--navy-bar:#001D3D}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--navy-bar:#4f7aa6}}
+:root[data-theme="dark"]{--navy-bar:#4f7aa6}
+.action .imp.none{font-size:24px;color:var(--muted)}
 </style>
 </head>
 <body>
@@ -155,15 +187,15 @@ body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset
     <p class="brand">Connect Colombia · División Road</p>
     <h1>NPS de Zurich</h1>
     <p class="lede" id="lede">Cargando datos…</p>
-    <div class="stats" id="stats"></div>
   </div>
 </header>
 
 <div class="tabbar">
   <div class="wrap">
     <div class="tabs" role="tablist" aria-label="Páginas del reporte">
-      <button class="tab" role="tab" id="t-prov" aria-controls="p-prov" aria-selected="true" data-tab="proveedores">Proveedores</button>
-      <button class="tab" role="tab" id="t-ana" aria-controls="p-ana" aria-selected="false" data-tab="analisis" tabindex="-1">Análisis general</button>
+      <button class="tab" role="tab" id="t-ana" aria-controls="p-ana" aria-selected="true" data-tab="analisis">Análisis general</button>
+      <button class="tab" role="tab" id="t-prov" aria-controls="p-prov" aria-selected="false" data-tab="proveedores" tabindex="-1">Proveedores</button>
+      <button class="tab" role="tab" id="t-plan" aria-controls="p-plan" aria-selected="false" data-tab="plan" tabindex="-1">Plan de acciones</button>
     </div>
     <label class="period">Periodo <select id="f-mes"></select></label>
   </div>
@@ -171,6 +203,21 @@ body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset
 
 <main class="wrap">
   <p class="state" id="state">Cargando datos…</p>
+
+  <section class="kpis" id="kpis" aria-label="Resultado del periodo" hidden>
+    <div class="kcard">
+      <p class="ktitle" id="k-title">NPS del periodo</p>
+      <div id="k-gauge"></div>
+    </div>
+    <div class="kcard">
+      <p class="ktitle">NPS por mes</p>
+      <div id="k-months"></div>
+    </div>
+    <div class="kcard">
+      <p class="ktitle">Composición de las respuestas</p>
+      <div id="k-comp"></div>
+    </div>
+  </section>
 
   <!-- ===== Página 1: Proveedores ===== -->
   <div id="p-prov" role="tabpanel" aria-labelledby="t-prov" hidden>
@@ -204,13 +251,6 @@ body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset
       <h2>Lo principal</h2>
       <p class="sub">Los focos que más separan a los detractores del resto.</p>
       <div class="findings" id="findings"></div>
-    </section>
-
-    <section>
-      <h2>Tres acciones con mayor impacto en el NPS</h2>
-      <p class="sub" id="act-sub"></p>
-      <div class="actions" id="actions"></div>
-      <p class="legend">El impacto es un techo estimado, no una promesa: supone que el grupo afectado pasaría a calificar igual que su referencia (grúas que llegan en 90 minutos o menos, programados puntuales, Legal Interno y el mejor mes del abogado en sitio).</p>
     </section>
 
     <section>
@@ -265,6 +305,17 @@ body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset
       <p class="sub">Evolución mensual. El detalle por firma está en la página Proveedores, filtrando por el servicio legal.</p>
       <div class="tw"><table><thead><tr class="mhead" data-first="Servicio" data-tail="Encuestas,% Det,NPS"></tr></thead><tbody id="t-leg"></tbody></table></div>
       <p class="legend">En cada celda de mes: NPS arriba y número de encuestas abajo. Las celdas rayadas tienen menos de 10 encuestas; un solo detractor mueve el NPS hasta 100 puntos.</p>
+    </section>
+  </div>
+
+  <!-- ===== Página 3: Plan de acciones ===== -->
+  <div id="p-plan" role="tabpanel" aria-labelledby="t-plan" hidden>
+    <section>
+      <h2>Tres acciones con mayor impacto en el NPS</h2>
+      <p class="sub" id="act-sub"></p>
+      <div class="kcard wf" id="act-chart"></div>
+      <div class="actions" id="actions"></div>
+      <p class="legend">El impacto es un techo estimado, no una promesa: supone que el grupo afectado pasaría a calificar igual que su referencia (grúas que llegan en 90 minutos o menos, programados puntuales, Legal Interno y el mejor mes del abogado en sitio).</p>
     </section>
   </div>
 </main>
@@ -376,20 +427,54 @@ body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset
     renderAnalisis();
   }
 
-  // ---------- encabezado ----------
+  // ---------- encabezado y resultado del periodo ----------
   function renderHeader(m) {
     var desde = m ? m + '-01' : D.primerServicio, hasta = D.ultimoServicio;
     if (m && hasta && hasta.slice(0, 7) !== m) { var y = +m.slice(0, 4), mo = +m.slice(5, 7); hasta = m + '-' + new Date(Date.UTC(y, mo, 0)).getUTCDate(); }
     $('lede').textContent = miles(TOT.n) + ' encuestas de Qualtrics cruzadas por número de PO con los servicios de Connect creados entre el ' + fecha(desde) + ' y el ' + fecha(hasta) + '. Actualizado el ' + fecha(D.generado) + '.';
-    var g = groupBy(ALL, function (r) { return r.mes; });
-    var last = MESES.slice(-3);
-    var trend = last.map(function (x) { return f1(st(g[x] || []).nps); }).join(' <span class="arrow">→</span> ');
-    var tl = last.map(function (x) { return mesLabel[x].full.split(' ')[0] + ' (' + (g[x] || []).length + ')'; }).join(', ');
-    $('stats').innerHTML =
-      '<div class="stat"><span class="v big">' + f1(TOT.nps) + '</span><span class="l">NPS ' + (m ? 'de ' + mesLabel[m].full : 'del periodo') + '</span></div>' +
-      '<div class="stat"><span class="v">' + trend + '</span><span class="l">' + tl.replace(/^./, function (x) { return x.toUpperCase(); }) + '</span></div>' +
-      '<div class="stat"><span class="v">' + f1(TOT.prom) + '%</span><span class="l">Promotores</span></div>' +
-      '<div class="stat"><span class="v">' + f1(TOT.det) + '%</span><span class="l">Detractores</span></div>';
+    renderKPIs(m);
+  }
+
+  var COLV = { g: 'var(--green)', t: 'var(--turq)', y: 'var(--yellow)', o: 'var(--orange)' };
+  function arc(cx, cy, r, a0, a1) {
+    var p = function (a) { return [cx + r * Math.cos(a), cy - r * Math.sin(a)]; }, s = p(a0), e = p(a1);
+    return 'M' + s[0].toFixed(2) + ' ' + s[1].toFixed(2) + ' A' + r + ' ' + r + ' 0 ' + (a0 - a1 > Math.PI ? 1 : 0) + ' 1 ' + e[0].toFixed(2) + ' ' + e[1].toFixed(2);
+  }
+  function renderKPIs(m) {
+    $('k-title').textContent = 'NPS ' + (m ? 'de ' + mesLabel[m].full : 'del periodo');
+    // medidor de -100 a 100
+    var v = Math.max(-100, Math.min(100, TOT.nps)), frac = (v + 100) / 200, a1 = Math.PI * (1 - frac);
+    $('k-gauge').innerHTML = '<svg viewBox="0 0 220 132" class="gauge" role="img" aria-label="NPS ' + f1(TOT.nps) + ' en una escala de menos 100 a 100">' +
+      '<path d="' + arc(110, 112, 88, Math.PI, 0) + '" class="g-bg"/>' +
+      (frac > 0.002 ? '<path d="' + arc(110, 112, 88, Math.PI, a1) + '" style="stroke:' + COLV[cls(TOT.nps)] + '" class="g-val"/>' : '') +
+      '<line x1="110" y1="16" x2="110" y2="30" class="g-tick"/>' +
+      '<text x="110" y="100" class="g-num">' + f1(TOT.nps) + '</text>' +
+      '<text x="110" y="124" class="g-sub">' + miles(TOT.n) + ' encuestas</text>' +
+      '<text x="22" y="128" class="g-lim">-100</text><text x="198" y="128" class="g-lim">100</text></svg>';
+    // barras por mes
+    var g = groupBy(ALL, function (r) { return r.mes; }), ms = MESES.slice(-6);
+    var W = 360, H = 158, top = 22, base = 118, bw = Math.min(46, (W - 20) / ms.length - 14), step = (W - 20) / ms.length;
+    var svg = '<svg viewBox="0 0 ' + W + ' ' + H + '" class="months" role="img" aria-label="NPS por mes">';
+    svg += '<line x1="10" y1="' + base + '" x2="' + (W - 10) + '" y2="' + base + '" class="m-axis"/>';
+    ms.forEach(function (x, i) {
+      var s = st(g[x] || []), h = Math.max(0, Math.min(100, s.nps)) / 100 * (base - top), cx = 10 + step * i + step / 2;
+      var dim = m && m !== x ? ' dim' : '';
+      svg += '<g class="m-bar' + dim + '"><rect x="' + (cx - bw / 2).toFixed(1) + '" y="' + (base - h).toFixed(1) + '" width="' + bw.toFixed(1) + '" height="' + h.toFixed(1) + '" rx="3" style="fill:' + COLV[cls(s.nps)] + '"/>' +
+        '<text x="' + cx.toFixed(1) + '" y="' + (base - h - 6).toFixed(1) + '" class="m-val">' + f1(s.nps) + '</text>' +
+        '<text x="' + cx.toFixed(1) + '" y="' + (base + 17) + '" class="m-lab">' + mesLabel[x].c + '</text>' +
+        '<text x="' + cx.toFixed(1) + '" y="' + (base + 32) + '" class="m-n">' + s.n + '</text></g>';
+    });
+    $('k-months').innerHTML = svg + '</svg>' + (MESES[MESES.length - 1] && mesLabel[MESES[MESES.length - 1]].c.slice(-1) === '*' ? '<p class="small-note">* Mes en curso, incompleto.</p>' : '');
+    // composición
+    var pas = TOT.n - TOT.p - TOT.d, pp = TOT.n ? pas / TOT.n * 100 : 0;
+    var seg = function (c, w, l) { return w > 0 ? '<span class="cseg ' + c + '" style="width:' + w.toFixed(2) + '%" title="' + l + '"></span>' : ''; };
+    $('k-comp').innerHTML = '<div class="cbar" role="img" aria-label="' + f1(TOT.prom) + '% promotores, ' + f1(pp) + '% pasivos, ' + f1(TOT.det) + '% detractores">' +
+      seg('cp', TOT.prom, 'Promotores') + seg('cs', pp, 'Pasivos') + seg('cd', TOT.det, 'Detractores') + '</div>' +
+      '<ul class="clist">' +
+      '<li><i class="sw cp"></i><b>' + f1(TOT.prom) + '%</b> promotores <span>' + miles(TOT.p) + '</span></li>' +
+      '<li><i class="sw cs"></i><b>' + f1(pp) + '%</b> pasivos <span>' + miles(pas) + '</span></li>' +
+      '<li><i class="sw cd"></i><b>' + f1(TOT.det) + '%</b> detractores <span>' + miles(TOT.d) + '</span></li></ul>' +
+      '<p class="small-note">NPS = ' + f1(TOT.prom) + ' − ' + f1(TOT.det) + ' = ' + f1(TOT.nps) + '</p>';
   }
 
   function fillHeads() {
@@ -475,7 +560,7 @@ body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset
     }).join('') || '<tr class="empty"><td colspan="' + (5 + (withMonths ? MVIS.length : 0)) + '">Sin datos suficientes en este periodo.</td></tr>';
   }
 
-  function impact(group, target) { var s = st(group); return TOT.n ? (s.n * target / 100 - (s.p - s.d)) / TOT.n * 100 : 0; }
+  function impact(group, target) { var s = st(group); return TOT.n ? Math.max(0, (s.n * target / 100 - (s.p - s.d)) / TOT.n * 100) : 0; }
   function topCount(rows, fn, k) { var c = {}; rows.forEach(function (r) { var x = fn(r); c[x] = (c[x] || 0) + 1; }); return Object.keys(c).sort(function (a, b) { return c[b] - c[a]; }).slice(0, k).map(function (x) { return [x, c[x]]; }); }
 
   function renderAnalisis() {
@@ -567,22 +652,38 @@ body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset
         todo: ['Confirmar con el proveedor entre 30 y 60 minutos antes de la hora pactada.', 'Alerta en Torre de Control si el conductor no está en camino 15 minutos antes.', 'Avisar al cliente antes de la hora si habrá retraso, en lugar de que se entere esperando.'] });
     }
     acts.sort(function (a, b) { return b.imp - a.imp; });
-    var total = acts.reduce(function (s, a) { return s + a.imp; }, 0), dets = acts.reduce(function (s, a) { return s + a.det; }, 0);
+    var total = acts.reduce(function (s, a) { return s + a.imp; }, 0), dets = acts.reduce(function (s, a) { return s + (a.imp >= 0.05 ? a.det : 0); }, 0);
     $('act-sub').innerHTML = 'Ordenadas por el aumento estimado del NPS total si cada grupo afectado calificara como su mejor referencia interna. Los grupos no se cruzan entre sí, así que el efecto se suma: hasta <b>+' + f1(total) + ' puntos</b> (' + f1(TOT.nps) + ' → ' + f1(TOT.nps + total) + '), atacando ' + dets + ' de los ' + TOT.d + ' detractores del periodo.';
+    var W = 640, H = 190, base = 150, top = 26, x0 = 20, n = acts.length + 2, step = (W - 40) / n, bw = Math.min(70, step - 26);
+    var lo = Math.max(0, Math.floor((TOT.nps - 10) / 10) * 10), hi = Math.min(100, Math.ceil((TOT.nps + total + 3) / 10) * 10);
+    var y = function (v) { return base - (v - lo) / (hi - lo) * (base - top); };
+    var wsvg = '<svg viewBox="0 0 ' + W + ' ' + H + '" class="months" role="img" aria-label="NPS actual y potencial con las tres acciones"><line x1="10" y1="' + base + '" x2="' + (W - 10) + '" y2="' + base + '" class="m-axis"/>';
+    var acc = TOT.nps;
+    var bars = [{ l: 'NPS actual', a: lo, b: TOT.nps, c: 'var(--turq)', v: f1(TOT.nps) }].concat(acts.map(function (a, i) { var r = { l: 'Acción ' + (i + 1), a: acc, b: acc + a.imp, c: 'var(--green)', v: '+' + f1(a.imp) }; acc += a.imp; return r; })).concat([{ l: 'Potencial', a: lo, b: acc, c: 'var(--navy-bar)', v: f1(acc) }]);
+    bars.forEach(function (bb, i) {
+      var cx = x0 + step * i + step / 2, y1 = y(bb.b), y0 = y(bb.a);
+      wsvg += '<rect x="' + (cx - bw / 2).toFixed(1) + '" y="' + y1.toFixed(1) + '" width="' + bw.toFixed(1) + '" height="' + Math.max(1, y0 - y1).toFixed(1) + '" rx="3" style="fill:' + bb.c + '"/>' +
+        '<text x="' + cx.toFixed(1) + '" y="' + (y1 - 7).toFixed(1) + '" class="m-val">' + bb.v + '</text>' +
+        '<text x="' + cx.toFixed(1) + '" y="' + (base + 18) + '" class="m-lab">' + bb.l + '</text>';
+      if (i < bars.length - 1) { var nx = x0 + step * (i + 1) + step / 2 - bw / 2; wsvg += '<line x1="' + (cx + bw / 2).toFixed(1) + '" y1="' + y1.toFixed(1) + '" x2="' + nx.toFixed(1) + '" y2="' + y1.toFixed(1) + '" class="wf-link"/>'; }
+    });
+    $('act-chart').innerHTML = '<p class="ktitle">De ' + f1(TOT.nps) + ' a ' + f1(TOT.nps + total) + ' si se cierran las tres brechas</p>' + wsvg + '</svg>' + '<p class="small-note">Eje desde ' + lo + ' para que se vea el aporte de cada acción.</p>';
     $('actions').innerHTML = acts.map(function (a, i) {
-      return '<article class="action"><p class="rank">' + (i + 1) + '</p><p class="imp">+' + f1(a.imp) + '<small> puntos de NPS</small></p><h3>' + a.title + '</h3><p class="why">' + a.why + '</p><ul>' + a.todo.map(function (t) { return '<li>' + t + '</li>'; }).join('') + '</ul></article>';
+      return '<article class="action"><p class="rank">' + (i + 1) + '</p>' + (a.imp >= 0.05 ? '<p class="imp">+' + f1(a.imp) + '<small> puntos de NPS</small></p>' : '<p class="imp none">Sin brecha<small> en este periodo</small></p>') + '<h3>' + a.title + '</h3><p class="why">' + a.why + '</p><ul>' + a.todo.map(function (t) { return '<li>' + t + '</li>'; }).join('') + '</ul></article>';
     }).join('');
   }
 
   // ---------- pestañas ----------
   function route() {
-    var tab = location.hash === '#analisis' ? 'analisis' : 'proveedores';
+    var h = location.hash.replace('#', ''), tab = ['analisis', 'proveedores', 'plan'].indexOf(h) >= 0 ? h : 'analisis';
     document.querySelectorAll('.tab').forEach(function (b) {
       var on = b.getAttribute('data-tab') === tab;
       b.setAttribute('aria-selected', on ? 'true' : 'false'); b.tabIndex = on ? 0 : -1;
     });
-    $('p-prov').hidden = tab !== 'proveedores' || !D;
     $('p-ana').hidden = tab !== 'analisis' || !D;
+    $('p-prov').hidden = tab !== 'proveedores' || !D;
+    $('p-plan').hidden = tab !== 'plan' || !D;
+    $('kpis').hidden = !D;
   }
   document.querySelectorAll('.tab').forEach(function (b) {
     b.addEventListener('click', function () {
