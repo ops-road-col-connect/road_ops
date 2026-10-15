@@ -195,7 +195,6 @@ body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset
     <div class="tabs" role="tablist" aria-label="Páginas del reporte">
       <button class="tab" role="tab" id="t-ana" aria-controls="p-ana" aria-selected="true" data-tab="analisis">Análisis general</button>
       <button class="tab" role="tab" id="t-prov" aria-controls="p-prov" aria-selected="false" data-tab="proveedores" tabindex="-1">Proveedores</button>
-      <button class="tab" role="tab" id="t-plan" aria-controls="p-plan" aria-selected="false" data-tab="plan" tabindex="-1">Plan de acciones</button>
     </div>
     <label class="period">Periodo <select id="f-mes"></select></label>
   </div>
@@ -227,7 +226,7 @@ body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset
       <div class="filters" role="group" aria-label="Filtros de proveedores">
         <label>Tipo de servicio<select id="f-svc"></select></label>
         <label>Ciudad<select id="f-city"></select></label>
-        <label>Mínimo de encuestas<select id="f-min"><option value="1">1</option><option value="5">5</option><option value="10" selected>10</option><option value="15">15</option><option value="20">20</option></select></label>
+        <label>Mínimo de encuestas<select id="f-min"><option value="1" selected>1</option><option value="5">5</option><option value="10">10</option><option value="15">15</option><option value="20">20</option></select></label>
         <button type="button" id="f-reset">Ver todo</button>
       </div>
       <p class="psum" id="p-sum" aria-live="polite"></p>
@@ -265,7 +264,7 @@ body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset
 
     <section>
       <h2>Por ciudad</h2>
-      <p class="sub">Ciudades de inicio del servicio con 15 encuestas o más.</p>
+      <p class="sub">Todas las ciudades de inicio del servicio, ordenadas por número de encuestas. Las filas en gris tienen menos de 20 encuestas: tómalas como referencia, no como resultado firme.</p>
       <div class="tw"><table><thead><tr class="dhead" data-first="Ciudad"></tr></thead><tbody id="t-city"></tbody></table></div>
       <h3>Tiempo de llegada en las tres ciudades principales</h3>
       <div class="tw"><table>
@@ -308,16 +307,6 @@ body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset
     </section>
   </div>
 
-  <!-- ===== Página 3: Plan de acciones ===== -->
-  <div id="p-plan" role="tabpanel" aria-labelledby="t-plan" hidden>
-    <section>
-      <h2>Tres acciones con mayor impacto en el NPS</h2>
-      <p class="sub" id="act-sub"></p>
-      <div class="kcard wf" id="act-chart"></div>
-      <div class="actions" id="actions"></div>
-      <p class="legend">El impacto es un techo estimado, no una promesa: supone que el grupo afectado pasaría a calificar igual que su referencia (grúas que llegan en 90 minutos o menos, programados puntuales, Legal Interno y el mejor mes del abogado en sitio).</p>
-    </section>
-  </div>
 </main>
 
 <footer>
@@ -514,7 +503,7 @@ body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset
     opts($('f-svc'), 'Todos los servicios', 'svc', svcName, 1);
     opts($('f-city'), 'Todas las ciudades', 'city', function (x) { return x; }, 5);
     ['f-svc', 'f-city', 'f-min'].forEach(function (i) { $(i).addEventListener('change', renderProv); });
-    $('f-reset').addEventListener('click', function () { $('f-svc').value = ''; $('f-city').value = ''; $('f-min').value = '10'; renderProv(); });
+    $('f-reset').addEventListener('click', function () { $('f-svc').value = ''; $('f-city').value = ''; $('f-min').value = '1'; renderProv(); });
   }
 
   function renderProv() {
@@ -534,7 +523,7 @@ body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset
       return asc ? x - y : y - x;
     });
     $('p-sum').innerHTML = tot.n
-      ? '<b>' + shown.length + '</b> de ' + list.length + ' proveedores con ' + mn + ' encuestas o más. El filtro reúne <b>' + miles(tot.n) + '</b> encuestas con NPS <b>' + f1(tot.nps) + '</b>.'
+      ? '<b>' + shown.length + '</b> de ' + list.length + ' proveedores ' + (mn === 1 ? 'con al menos una encuesta' : 'con ' + mn + ' encuestas o más') + '. El filtro reúne <b>' + miles(tot.n) + '</b> encuestas con NPS <b>' + f1(tot.nps) + '</b>.'
       : 'No hay encuestas para esta combinación de filtros.';
     var ncol = 6 + MVIS.length;
     if (!shown.length) { $('p-body').innerHTML = '<tr class="empty"><td colspan="' + ncol + '">Ningún proveedor llega al mínimo de encuestas. Baja el mínimo o cambia el filtro.</td></tr>'; return; }
@@ -560,14 +549,13 @@ body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset
     }).join('') || '<tr class="empty"><td colspan="' + (5 + (withMonths ? MVIS.length : 0)) + '">Sin datos suficientes en este periodo.</td></tr>';
   }
 
-  function impact(group, target) { var s = st(group); return TOT.n ? Math.max(0, (s.n * target / 100 - (s.p - s.d)) / TOT.n * 100) : 0; }
   function topCount(rows, fn, k) { var c = {}; rows.forEach(function (r) { var x = fn(r); c[x] = (c[x] || 0) + 1; }); return Object.keys(c).sort(function (a, b) { return c[b] - c[a]; }).slice(0, k).map(function (x) { return [x, c[x]]; }); }
 
   function renderAnalisis() {
     var R = ROWS;
     // tablas por dimensión
     $('t-svc').innerHTML = dimRows(R, function (r) { return r.svc; }, svcName, 15, null, true);
-    $('t-city').innerHTML = dimRows(R, function (r) { return r.city; }, function (x) { return x; }, 15, null, true);
+    $('t-city').innerHTML = dimRows(R, function (r) { return r.city; }, function (x) { return x; }, 1, topCount(R, function (r) { return r.city; }, 1e6).map(function (c) { return c[0]; }), true);
     $('t-dow').innerHTML = dimRows(R, function (r) { return r.dow; }, function (x) { return DIAS[x]; }, 1, ['0', '1', '2', '3', '4', '5', '6'], true);
     var hb = function (r) { var h = r.hora; return h < 6 ? 0 : h < 12 ? 1 : h < 18 ? 2 : h < 22 ? 3 : 4; };
     $('t-hora').innerHTML = dimRows(R, hb, function (x) { return ['0 a 6 h', '6 a 12 h', '12 a 18 h', '18 a 22 h', '22 a 24 h'][x]; }, 1, ['0', '1', '2', '3', '4'], false);
@@ -592,7 +580,6 @@ body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset
     $('t-leg').innerHTML = [ONS, TEL].map(function (k) { var a = R.filter(function (r) { return r.svc === k; }), s = st(a); return '<tr><th scope="row">' + svcName(k) + '</th>' + mcells(a) + '<td class="num">' + s.n + '</td><td class="num">' + f1(s.det) + '%</td><td class="num nps ' + cls(s.nps) + 't">' + (s.n ? f1(s.nps) : '–') + '</td></tr>'; }).join('');
 
     renderFindings(R);
-    renderActions(R, tows);
   }
 
   function renderFindings(R) {
@@ -614,75 +601,15 @@ body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset
     $('findings').innerHTML = cards.map(function (c) { return '<div class="finding ' + c[0] + '"><p class="k">' + c[1] + ' <small>' + esc(c[2]) + '</small></p><p>' + esc(c[3]) + '</p></div>'; }).join('') || '<p class="small-note">Sin datos suficientes en este periodo.</p>';
   }
 
-  function renderActions(R, tows) {
-    var acts = [];
-    // 1. grúas > 90 min
-    var late = tows.filter(function (r) { return r.lleg > 90; }), ok = tows.filter(function (r) { return r.lleg <= 90; });
-    if (late.length && ok.length >= 10) {
-      var sl = st(late), so = st(ok);
-      var pv = topCount(late, function (r) { return r.prov; }, 4).map(function (x) { return esc(x[0]) + ' (' + x[1] + ')'; }).join(', ');
-      acts.push({ imp: impact(late, so.nps), det: sl.d, title: 'Que ninguna grúa inmediata pase de 90 minutos',
-        why: 'El ' + f1(late.length / tows.length * 100, 0) + '% de las grúas inmediatas llegó después de 90 minutos. Esas ' + sl.n + ' encuestas tienen NPS ' + f1(sl.nps) + ' frente a ' + f1(so.nps) + ' de las que llegaron antes, y suman ' + sl.d + ' detractores.',
-        todo: ['Alerta en Torre de Control a los 60 minutos sin llegada, con decisión de reasignar o reforzar seguimiento.', 'Llamada proactiva al cliente con hora estimada real cuando el servicio pase de 60 minutos.', 'Plan de trabajo con los proveedores que más concentran llegadas tardías: ' + pv + '.'] });
-    }
-    // 2. legal
-    var tel = R.filter(function (r) { return r.svc === TEL; }), ons = R.filter(function (r) { return r.svc === ONS; });
-    var telExt = tel.filter(function (r) { return r.prov !== LEGAL_INT; }), telInt = tel.filter(function (r) { return r.prov === LEGAL_INT; });
-    var i1 = telInt.length >= 5 ? impact(telExt, st(telInt).nps) : 0;
-    var og = groupBy(ons, function (r) { return r.mes; }), bestM = null;
-    Object.keys(og).forEach(function (m) { if (og[m].length >= 10) { var s = st(og[m]); if (!bestM || s.nps > bestM[1]) bestM = [m, s.nps]; } });
-    var i2 = bestM ? impact(ons, bestM[1]) : 0;
-    var legDet = st(tel.concat(ons)).d;
-    if (tel.length + ons.length) {
-      var detProv = topCount(ons.filter(function (r) { return r.q1 <= 6; }), function (r) { return r.prov; }, 2).map(function (x) { return esc(x[0]) + ' (' + x[1] + ')'; }).join(' y ');
-      acts.push({ imp: i1 + i2, det: legDet, title: 'Ordenar la atención legal',
-        why: 'Los servicios legales suman ' + legDet + ' detractores en ' + (tel.length + ons.length) + ' encuestas. La orientación telefónica está en NPS ' + f1(st(tel).nps) + ' y el abogado en sitio en ' + f1(st(ons).nps) + '.',
-        todo: ['Mantener la orientación telefónica en Legal Interno y derivar a firma externa solo cuando sea necesario (+' + f1(i1) + ').',
-          bestM ? 'Llevar el abogado en sitio al nivel de su mejor mes (' + mesLabel[bestM[0]].full + ', NPS ' + f1(bestM[1]) + ')' + (detProv ? ', empezando por los proveedores con más detractores: ' + detProv : '') + ' (+' + f1(i2) + ').' : 'Revisar los casos del abogado en sitio con detractores' + (detProv ? ': ' + detProv : '') + '.',
-          'Explicar desde la primera llamada qué cubre y qué no cubre la asistencia legal, y fijar un tiempo máximo para devolver la llamada.'] });
-    }
-    // 3. programados
-    var pr = R.filter(function (r) { return r.prog === 1 && r.retraso !== null; });
-    var p30 = pr.filter(function (r) { return r.retraso > 30; }), pok = pr.filter(function (r) { return r.retraso <= 15; });
-    if (p30.length && pok.length >= 10) {
-      var s30 = st(p30), sok = st(pok);
-      var mix = topCount(p30, function (r) { return r.svc; }, 2).map(function (x) { return svcName(x[0]).toLowerCase(); }).join(' y ');
-      acts.push({ imp: impact(p30, sok.nps), det: s30.d, title: 'Cumplir la hora pactada en servicios programados',
-        why: s30.n + ' servicios programados llegaron más de 30 minutos tarde, con NPS ' + f1(s30.nps) + ' frente a ' + f1(sok.nps) + ' de los puntuales. Son sobre todo ' + mix + '.',
-        todo: ['Confirmar con el proveedor entre 30 y 60 minutos antes de la hora pactada.', 'Alerta en Torre de Control si el conductor no está en camino 15 minutos antes.', 'Avisar al cliente antes de la hora si habrá retraso, en lugar de que se entere esperando.'] });
-    }
-    acts.sort(function (a, b) { return b.imp - a.imp; });
-    var total = acts.reduce(function (s, a) { return s + a.imp; }, 0), dets = acts.reduce(function (s, a) { return s + (a.imp >= 0.05 ? a.det : 0); }, 0);
-    $('act-sub').innerHTML = 'Ordenadas por el aumento estimado del NPS total si cada grupo afectado calificara como su mejor referencia interna. Los grupos no se cruzan entre sí, así que el efecto se suma: hasta <b>+' + f1(total) + ' puntos</b> (' + f1(TOT.nps) + ' → ' + f1(TOT.nps + total) + '), atacando ' + dets + ' de los ' + TOT.d + ' detractores del periodo.';
-    var W = 640, H = 190, base = 150, top = 26, x0 = 20, n = acts.length + 2, step = (W - 40) / n, bw = Math.min(70, step - 26);
-    var lo = Math.max(0, Math.floor((TOT.nps - 10) / 10) * 10), hi = Math.min(100, Math.ceil((TOT.nps + total + 3) / 10) * 10);
-    var y = function (v) { return base - (v - lo) / (hi - lo) * (base - top); };
-    var wsvg = '<svg viewBox="0 0 ' + W + ' ' + H + '" class="months" role="img" aria-label="NPS actual y potencial con las tres acciones"><line x1="10" y1="' + base + '" x2="' + (W - 10) + '" y2="' + base + '" class="m-axis"/>';
-    var acc = TOT.nps;
-    var bars = [{ l: 'NPS actual', a: lo, b: TOT.nps, c: 'var(--turq)', v: f1(TOT.nps) }].concat(acts.map(function (a, i) { var r = { l: 'Acción ' + (i + 1), a: acc, b: acc + a.imp, c: 'var(--green)', v: '+' + f1(a.imp) }; acc += a.imp; return r; })).concat([{ l: 'Potencial', a: lo, b: acc, c: 'var(--navy-bar)', v: f1(acc) }]);
-    bars.forEach(function (bb, i) {
-      var cx = x0 + step * i + step / 2, y1 = y(bb.b), y0 = y(bb.a);
-      wsvg += '<rect x="' + (cx - bw / 2).toFixed(1) + '" y="' + y1.toFixed(1) + '" width="' + bw.toFixed(1) + '" height="' + Math.max(1, y0 - y1).toFixed(1) + '" rx="3" style="fill:' + bb.c + '"/>' +
-        '<text x="' + cx.toFixed(1) + '" y="' + (y1 - 7).toFixed(1) + '" class="m-val">' + bb.v + '</text>' +
-        '<text x="' + cx.toFixed(1) + '" y="' + (base + 18) + '" class="m-lab">' + bb.l + '</text>';
-      if (i < bars.length - 1) { var nx = x0 + step * (i + 1) + step / 2 - bw / 2; wsvg += '<line x1="' + (cx + bw / 2).toFixed(1) + '" y1="' + y1.toFixed(1) + '" x2="' + nx.toFixed(1) + '" y2="' + y1.toFixed(1) + '" class="wf-link"/>'; }
-    });
-    $('act-chart').innerHTML = '<p class="ktitle">De ' + f1(TOT.nps) + ' a ' + f1(TOT.nps + total) + ' si se cierran las tres brechas</p>' + wsvg + '</svg>' + '<p class="small-note">Eje desde ' + lo + ' para que se vea el aporte de cada acción.</p>';
-    $('actions').innerHTML = acts.map(function (a, i) {
-      return '<article class="action"><p class="rank">' + (i + 1) + '</p>' + (a.imp >= 0.05 ? '<p class="imp">+' + f1(a.imp) + '<small> puntos de NPS</small></p>' : '<p class="imp none">Sin brecha<small> en este periodo</small></p>') + '<h3>' + a.title + '</h3><p class="why">' + a.why + '</p><ul>' + a.todo.map(function (t) { return '<li>' + t + '</li>'; }).join('') + '</ul></article>';
-    }).join('');
-  }
-
   // ---------- pestañas ----------
   function route() {
-    var h = location.hash.replace('#', ''), tab = ['analisis', 'proveedores', 'plan'].indexOf(h) >= 0 ? h : 'analisis';
+    var h = location.hash.replace('#', ''), tab = ['analisis', 'proveedores'].indexOf(h) >= 0 ? h : 'analisis';
     document.querySelectorAll('.tab').forEach(function (b) {
       var on = b.getAttribute('data-tab') === tab;
       b.setAttribute('aria-selected', on ? 'true' : 'false'); b.tabIndex = on ? 0 : -1;
     });
     $('p-ana').hidden = tab !== 'analisis' || !D;
     $('p-prov').hidden = tab !== 'proveedores' || !D;
-    $('p-plan').hidden = tab !== 'plan' || !D;
     $('kpis').hidden = !D;
   }
   document.querySelectorAll('.tab').forEach(function (b) {
