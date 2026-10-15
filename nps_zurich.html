@@ -179,6 +179,9 @@ body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset
 @media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--navy-bar:#4f7aa6}}
 :root[data-theme="dark"]{--navy-bar:#4f7aa6}
 .action .imp.none{font-size:24px;color:var(--muted)}
+.more{display:block;width:100%;margin-top:8px;font:inherit;font-size:15px;font-weight:500;color:var(--t-ink);background:var(--surface);border:1px dashed var(--line);border-radius:4px;padding:10px;cursor:pointer}
+.more:hover{border-style:solid}
+.more:focus-visible{outline:2px solid var(--turq);outline-offset:2px}
 </style>
 </head>
 <body>
@@ -234,7 +237,7 @@ body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset
         <thead><tr id="p-head"></tr></thead>
         <tbody id="p-body"></tbody>
       </table></div>
-      <p class="legend">La línea vertical marca el NPS del filtro activo. La mediana de llegada se calcula sobre servicios inmediatos con 5 registros o más. Celdas rayadas: menos de 10 encuestas.</p>
+      <p class="legend">La línea vertical marca el NPS del filtro activo. Celdas rayadas: menos de 10 encuestas.</p>
 
       <h3>Orientación legal telefónica: interno frente a externo</h3>
       <div class="tw"><table>
@@ -264,14 +267,9 @@ body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset
 
     <section>
       <h2>Por ciudad</h2>
-      <p class="sub">Todas las ciudades de inicio del servicio, ordenadas por número de encuestas. Las filas en gris tienen menos de 20 encuestas: tómalas como referencia, no como resultado firme.</p>
+      <p class="sub">Las cinco ciudades con más encuestas. Usa el botón debajo de la tabla para ver el resto. Las filas en gris tienen menos de 20 encuestas: tómalas como referencia, no como resultado firme.</p>
       <div class="tw"><table><thead><tr class="dhead" data-first="Ciudad"></tr></thead><tbody id="t-city"></tbody></table></div>
-      <h3>Tiempo de llegada en las tres ciudades principales</h3>
-      <div class="tw"><table>
-        <thead><tr><th>Ciudad</th><th class="num">Encuestas</th><th class="num">NPS</th><th class="num">% Det</th><th class="num">Mediana de llegada</th><th class="num">Llegadas &gt; 90 min</th></tr></thead>
-        <tbody id="t-c3"></tbody>
-      </table></div>
-      <p class="legend">Servicios viales inmediatos: grúas, paso de corriente, cambio de llanta y cerrajería.</p>
+      <button type="button" class="more" id="city-more" aria-expanded="false" aria-controls="t-city" hidden></button>
     </section>
 
     <section>
@@ -291,15 +289,6 @@ body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset
     </section>
 
     <section>
-      <h2>Tiempo de llegada</h2>
-      <p class="sub">El tiempo es la palanca operativa más clara, sobre todo en grúas.</p>
-      <h3>Grúas inmediatas, por tiempo de llegada</h3>
-      <div class="tw"><table><thead><tr class="shead" data-first="Llegada desde la creación"></tr></thead><tbody id="t-tow"></tbody></table></div>
-      <h3>Paso de corriente, llanta y cerrajería</h3>
-      <div class="tw"><table><thead><tr class="shead" data-first="Llegada desde la creación"></tr></thead><tbody id="t-oth"></tbody></table></div>
-    </section>
-
-    <section>
       <h2>Servicios legales</h2>
       <p class="sub">Evolución mensual. El detalle por firma está en la página Proveedores, filtrando por el servicio legal.</p>
       <div class="tw"><table><thead><tr class="mhead" data-first="Servicio" data-tail="Encuestas,% Det,NPS"></tr></thead><tbody id="t-leg"></tbody></table></div>
@@ -316,7 +305,6 @@ body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset
       <li>NPS = % de promotores (9 y 10) menos % de detractores (0 a 6), sobre la pregunta Q1 de la encuesta.</li>
       <li>Las encuestas de "BBDD Qualtrics" se cruzan por número de PO (columna Cod) con la hoja "Cube Servicios Colombia", pestaña servicios_road_col. Cuando un PO tiene varias respuestas se cuenta la primera.</li>
       <li>El mes, el día y la franja horaria corresponden a la fecha de creación del servicio. El último mes puede estar incompleto: depende de hasta dónde llegue la base de encuestas.</li>
-      <li>Tiempo de llegada: en servicios inmediatos, desde la creación hasta el registro de llegada; en programados, frente a la hora pactada. Se excluye la orientación telefónica.</li>
       <li>Quedan fuera las encuestas sin PO y las que no cruzan con el sistema de Connect.</li>
     </ul>
     <p id="meta"></p>
@@ -349,7 +337,6 @@ body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset
   function cls(v) { return v >= 80 ? 'g' : (v >= 65 ? 't' : (v >= 45 ? 'y' : 'o')); }
   function esc(s) { return String(s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
   function st(a) { var n = a.length, p = 0, d = 0; for (var i = 0; i < n; i++) { if (a[i].q1 >= 9) p++; else if (a[i].q1 <= 6) d++; } return { n: n, p: p, d: d, prom: n ? p / n * 100 : 0, det: n ? d / n * 100 : 0, nps: n ? (p - d) / n * 100 : 0 }; }
-  function median(a) { if (a.length < 5) return null; a = a.slice().sort(function (x, y) { return x - y; }); var m = Math.floor(a.length / 2); return a.length % 2 ? a[m] : (a[m - 1] + a[m]) / 2; }
   function svcName(c) { return SVC[c] || c.replace(/_/g, ' ').replace(/^./, function (x) { return x.toUpperCase(); }); }
   function fecha(iso) { if (!iso) return ''; var p = iso.slice(0, 10).split('-'); return (+p[2]) + ' de ' + MES_N[+p[1] - 1] + ' de ' + p[0]; }
   function groupBy(a, fn) { var g = {}; a.forEach(function (r) { var k = fn(r); (g[k] = g[k] || []).push(r); }); return g; }
@@ -482,12 +469,12 @@ body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset
       '<th class="num"><button type="button" data-k="det">% Det</button></th>' +
       '<th class="num"><button type="button" data-k="nps">NPS</button></th>' +
       '<th>NPS (0 a 100)</th>' +
-      '<th class="num"><button type="button" data-k="med">Mediana de llegada</button></th>' + mheads(true);
+      mheads(true);
     $('p-head').querySelectorAll('button').forEach(function (b) {
       if (b.getAttribute('data-k') === sortK) b.setAttribute('aria-sort', asc ? 'ascending' : 'descending');
       b.addEventListener('click', function () {
         var k = b.getAttribute('data-k');
-        if (sortK === k) asc = !asc; else { sortK = k; asc = (k === 'name' || k === 'med' || k === 'det'); }
+        if (sortK === k) asc = !asc; else { sortK = k; asc = (k === 'name' || k === 'det'); }
         fillHeads(); renderProv();
       });
     });
@@ -512,7 +499,6 @@ body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset
     var tot = st(rows), g = groupBy(rows, function (r) { return r.prov; });
     var list = Object.keys(g).map(function (k) {
       var a = g[k], s = st(a); s.name = k; s.rows = a;
-      s.med = median(a.filter(function (r) { return r.lleg !== null; }).map(function (r) { return r.lleg; }));
       return s;
     });
     var shown = list.filter(function (s) { return s.n >= mn; });
@@ -525,10 +511,10 @@ body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset
     $('p-sum').innerHTML = tot.n
       ? '<b>' + shown.length + '</b> de ' + list.length + ' proveedores ' + (mn === 1 ? 'con al menos una encuesta' : 'con ' + mn + ' encuestas o más') + '. El filtro reúne <b>' + miles(tot.n) + '</b> encuestas con NPS <b>' + f1(tot.nps) + '</b>.'
       : 'No hay encuestas para esta combinación de filtros.';
-    var ncol = 6 + MVIS.length;
+    var ncol = 5 + MVIS.length;
     if (!shown.length) { $('p-body').innerHTML = '<tr class="empty"><td colspan="' + ncol + '">Ningún proveedor llega al mínimo de encuestas. Baja el mínimo o cambia el filtro.</td></tr>'; return; }
     $('p-body').innerHTML = shown.map(function (s) {
-      return '<tr><th scope="row">' + esc(s.name) + '</th><td class="num">' + s.n + '</td><td class="num">' + f1(s.det) + '%</td><td class="num nps ' + cls(s.nps) + 't">' + f1(s.nps) + '</td><td class="barc">' + bar(s.nps, tot.nps) + '</td><td class="num">' + (s.med === null ? '–' : Math.round(s.med) + ' min') + '</td>' + mcells(s.rows) + '</tr>';
+      return '<tr><th scope="row">' + esc(s.name) + '</th><td class="num">' + s.n + '</td><td class="num">' + f1(s.det) + '%</td><td class="num nps ' + cls(s.nps) + 't">' + f1(s.nps) + '</td><td class="barc">' + bar(s.nps, tot.nps) + '</td>' + mcells(s.rows) + '</tr>';
     }).join('');
   }
 
@@ -556,31 +542,27 @@ body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset
     // tablas por dimensión
     $('t-svc').innerHTML = dimRows(R, function (r) { return r.svc; }, svcName, 15, null, true);
     $('t-city').innerHTML = dimRows(R, function (r) { return r.city; }, function (x) { return x; }, 1, topCount(R, function (r) { return r.city; }, 1e6).map(function (c) { return c[0]; }), true);
+    applyCityCollapse();
     $('t-dow').innerHTML = dimRows(R, function (r) { return r.dow; }, function (x) { return DIAS[x]; }, 1, ['0', '1', '2', '3', '4', '5', '6'], true);
     var hb = function (r) { var h = r.hora; return h < 6 ? 0 : h < 12 ? 1 : h < 18 ? 2 : h < 22 ? 3 : 4; };
     $('t-hora').innerHTML = dimRows(R, hb, function (x) { return ['0 a 6 h', '6 a 12 h', '12 a 18 h', '18 a 22 h', '22 a 24 h'][x]; }, 1, ['0', '1', '2', '3', '4'], false);
     $('t-loc').innerHTML = dimRows(R.filter(function (r) { return r.loc !== null; }), function (r) { return r.loc; }, function (x) { return +x ? 'Foráneo' : 'Local'; }, 1, ['0', '1'], false);
-
-    // tiempos
-    var tows = R.filter(function (r) { return r.svc.indexOf('tow') === 0 && r.prog === 0 && r.lleg !== null; });
-    $('t-tow').innerHTML = dimRows(tows, function (r) { return r.lleg <= 60 ? 0 : r.lleg <= 90 ? 1 : r.lleg <= 120 ? 2 : 3; }, function (x) { return ['Hasta 60 min', '61 a 90 min', '91 a 120 min', 'Más de 120 min'][x]; }, 1, ['0', '1', '2', '3'], false);
-    var oth = R.filter(function (r) { return ['jumpStart', 'flatTire', 'locksmith'].indexOf(r.svc) >= 0 && r.prog === 0 && r.lleg !== null; });
-    $('t-oth').innerHTML = dimRows(oth, function (r) { return r.lleg <= 30 ? 0 : r.lleg <= 60 ? 1 : 2; }, function (x) { return ['Hasta 30 min', '31 a 60 min', 'Más de 60 min'][x]; }, 1, ['0', '1', '2'], false);
-
-    // tres ciudades principales
-    var top3 = topCount(R, function (r) { return r.city; }, 3);
-    $('t-c3').innerHTML = top3.map(function (c) {
-      var a = R.filter(function (r) { return r.city === c[0]; }), s = st(a);
-      var l = a.filter(function (r) { return CORE.indexOf(r.svc) >= 0 && r.prog === 0 && r.lleg !== null; }).map(function (r) { return r.lleg; });
-      var md = median(l), p90 = l.length ? l.filter(function (x) { return x > 90; }).length / l.length * 100 : null;
-      return '<tr><th scope="row">' + esc(c[0]) + '</th><td class="num">' + s.n + '</td><td class="num nps ' + cls(s.nps) + 't">' + f1(s.nps) + '</td><td class="num">' + f1(s.det) + '%</td><td class="num">' + (md === null ? '–' : Math.round(md) + ' min') + '</td><td class="num">' + (p90 === null ? '–' : f1(p90, 0) + '%') + '</td></tr>';
-    }).join('');
 
     // legal por mes
     $('t-leg').innerHTML = [ONS, TEL].map(function (k) { var a = R.filter(function (r) { return r.svc === k; }), s = st(a); return '<tr><th scope="row">' + svcName(k) + '</th>' + mcells(a) + '<td class="num">' + s.n + '</td><td class="num">' + f1(s.det) + '%</td><td class="num nps ' + cls(s.nps) + 't">' + (s.n ? f1(s.nps) : '–') + '</td></tr>'; }).join('');
 
     renderFindings(R);
   }
+
+  var cityOpen = false, CITY_TOP = 5;
+  function applyCityCollapse() {
+    var rows = $('t-city').rows, n = rows.length, btn = $('city-more');
+    for (var i = CITY_TOP; i < n; i++) rows[i].hidden = !cityOpen;
+    btn.hidden = n <= CITY_TOP;
+    btn.setAttribute('aria-expanded', cityOpen ? 'true' : 'false');
+    btn.textContent = cityOpen ? 'Mostrar solo las 5 principales' : 'Ver las ' + (n - CITY_TOP) + ' ciudades restantes';
+  }
+  $('city-more').addEventListener('click', function () { cityOpen = !cityOpen; applyCityCollapse(); });
 
   function renderFindings(R) {
     var cards = [];
