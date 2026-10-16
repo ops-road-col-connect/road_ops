@@ -326,7 +326,7 @@
   /* Accounts list */
   .account-row {
     display: grid;
-    grid-template-columns: 220px 1fr 50px;
+    grid-template-columns: 220px 1fr 64px;
     align-items: center;
     gap: 10px;
     padding: 7px 0;
@@ -350,6 +350,15 @@
     background: linear-gradient(90deg, var(--turquoise-dim), var(--turquoise));
     border-radius: 5px;
   }
+  .account-row.account-total {
+    border-bottom: 0;
+    border-top: 1px solid var(--orange);
+    margin-top: 4px;
+    padding-top: 10px;
+  }
+  .account-row.account-total .account-name { color: var(--text); font-weight: 700; }
+  .account-row.account-total .account-count { font-size: 13px; font-weight: 700; }
+  .account-total-note { font-size: 11px; color: var(--text-dim); }
   .account-row .account-count {
     font-family: 'JetBrains Mono', monospace;
     font-size: 12px;
@@ -701,8 +710,8 @@
       <div class="card-title"><span class="dot"></span>Forecast</div>
       <div class="card-desc">Servicios esperados por día, equipo seleccionado</div>
       <div class="forecast-note">
-        Se calcula con base en el histórico, usando el percentil 80 (P80) de la cantidad de servicios, y asumiendo que un agente de Back gestiona cada servicio en <span id="forecast-min-back">6</span> minutos, mientras que un agente de TC lo hace en <span id="forecast-min-tc">10</span> minutos. Back carga cada servicio en la hora de creación del PO; Torre de Control carga los no programados al crearse y los programados una hora antes de la hora programada.<br>
-        Hay tres perfiles de día: <b>normal</b> (por día de semana, sin festivos ni martes post-festivo), <b>festivo</b> (festivos reales del histórico + domingos, porque un festivo se comporta como domingo) y <b>martes después de lunes festivo</b> (martes post-festivo reales + lunes normales, porque es el primer día hábil después del descanso). Solo disponible para Back y Torre de Control por ahora.
+        Se calcula con base en el histórico: primero se toma el percentil 80 (P80) del <b>total de servicios del día</b> (el volumen que no se superó en 8 de cada 10 días) y luego se reparte por hora según la forma promedio de ese día. Se asume que un agente de Back gestiona cada servicio en <span id="forecast-min-back">6</span> minutos, mientras que un agente de TC lo hace en <span id="forecast-min-tc">10</span> minutos. Back carga cada servicio en la hora de creación del PO; Torre de Control carga los no programados al crearse y los programados una hora antes de la hora programada.<br>
+        Hay tres perfiles de día: <b>normal</b> (por día de semana, sin festivos ni martes post-festivo), <b>festivo</b> (festivos reales del histórico + domingos, porque un festivo se comporta como domingo) y <b>martes después de lunes festivo</b> (martes post-festivo reales + lunes normales, porque es el primer día hábil después del descanso). <span id="forecast-segmentos"></span> Solo disponible para Back y Torre de Control por ahora.
       </div>
       <div class="forecast-scroll"><div id="forecast-content"><div class="state-msg">Cargando datos&hellip;</div></div></div>
     </div>
@@ -717,7 +726,7 @@
     </div>
     <div class="card">
       <div class="card-title"><span class="dot"></span>Servicios por cuenta</div>
-      <div class="card-desc">Cantidad total de servicios por cuenta</div>
+      <div class="card-desc">Promedio semanal de servicios por cuenta (últimas 10 semanas completas)</div>
       <div id="accounts-content"><div class="state-msg">Cargando datos&hellip;</div></div>
     </div>
   </div>
@@ -1433,15 +1442,24 @@
       if (minBackEl) minBackEl.textContent = rawData.capacidad.minutosPorServicio.Back;
       if (minTcEl) minTcEl.textContent = rawData.capacidad.minutosPorServicio.TC;
     }
+    const segEl = document.getElementById('forecast-segmentos');
+    if (segEl) {
+      const seg = rawData.capacidad && rawData.capacidad.segmentos;
+      segEl.innerHTML = seg && seg.length ? `Solo se cuentan servicios <b>${seg.join(', ')}</b> según la columna Segmento_ajustado.` : '';
+    }
 
     const todayDow = new Date().getDay();
     const loadArr = rawData.expectedLoad[currentTeam] || [];
 
     const totalsByDay = {};
+    const promedioByDay = {};
     for (const d of WEEK_ORDER) totalsByDay[d] = 0;
     for (const item of loadArr) {
       if (totalsByDay[item.day] !== undefined) totalsByDay[item.day] += item.load;
+      if (item.promedioDia != null) promedioByDay[item.day] = item.promedioDia;
     }
+    const hayPromedio = Object.keys(promedioByDay).length > 0;
+    const grandProm = WEEK_ORDER.reduce((sum, d) => sum + (promedioByDay[d] || 0), 0);
 
     const grandTotal = WEEK_ORDER.reduce((sum, d) => sum + totalsByDay[d], 0);
 
@@ -1450,33 +1468,37 @@
       rows += `<tr>
         <td class="day-cell">${DAY_NAMES[d]}${d === todayDow ? ' · hoy' : ''}</td>
         <td class="load-cell">${Math.round(totalsByDay[d])}</td>
+        ${hayPromedio ? `<td class="load-cell" style="color:var(--text-mid);">${promedioByDay[d] ?? '–'}</td>` : ''}
       </tr>`;
     }
 
     const perfilesF = rawData.expectedLoad.perfiles || {};
     const totalPerfil = arr => Math.round((arr || []).reduce((s, x) => s + x.load, 0));
     const especialesHtml = (perfilesF.festivo && perfilesF.postFestivo) ? `
-      <table class="forecast-table" style="margin-top:14px;table-layout:fixed;"><colgroup><col style="width:60%"><col></colgroup>
+      <table class="forecast-table" style="margin-top:14px;table-layout:fixed;"><colgroup><col style="width:${hayPromedio ? 40 : 60}%"><col>${hayPromedio ? '<col>' : ''}</colgroup>
         <thead><tr>
           <th style="text-align:left;">Días especiales</th>
-          <th>Servicios esperados</th>
+          <th>Servicios esperados (P80)</th>
+          ${hayPromedio ? '<th>Promedio</th>' : ''}
         </tr></thead>
         <tbody>
-          <tr><td class="day-cell">Festivo</td><td class="load-cell">${totalPerfil(perfilesF.festivo[currentTeam])}</td></tr>
-          <tr><td class="day-cell">Martes después de lunes festivo</td><td class="load-cell">${totalPerfil(perfilesF.postFestivo[currentTeam])}</td></tr>
+          <tr><td class="day-cell">Festivo</td><td class="load-cell">${totalPerfil(perfilesF.festivo[currentTeam])}</td>${hayPromedio ? `<td class="load-cell" style="color:var(--text-mid);">${((perfilesF.festivo[currentTeam] || [])[0] || {}).promedioDia ?? '–'}</td>` : ''}</tr>
+          <tr><td class="day-cell">Martes después de lunes festivo</td><td class="load-cell">${totalPerfil(perfilesF.postFestivo[currentTeam])}</td>${hayPromedio ? `<td class="load-cell" style="color:var(--text-mid);">${((perfilesF.postFestivo[currentTeam] || [])[0] || {}).promedioDia ?? '–'}</td>` : ''}</tr>
         </tbody>
       </table>` : '';
 
     forecastContent.innerHTML = `
-      <table class="forecast-table" style="table-layout:fixed;"><colgroup><col style="width:60%"><col></colgroup>
+      <table class="forecast-table" style="table-layout:fixed;"><colgroup><col style="width:${hayPromedio ? 40 : 60}%"><col>${hayPromedio ? '<col>' : ''}</colgroup>
         <thead><tr>
           <th style="text-align:left;">Día</th>
-          <th>Servicios esperados</th>
+          <th>Servicios esperados (P80)</th>
+          ${hayPromedio ? '<th>Promedio</th>' : ''}
         </tr></thead>
         <tbody>${rows}</tbody>
         <tfoot><tr>
           <td style="text-align:left;">Total semana</td>
           <td>${Math.round(grandTotal)}</td>
+          ${hayPromedio ? `<td>${grandProm}</td>` : ''}
         </tr></tfoot>
       </table>${especialesHtml}`;
   }
@@ -1551,11 +1573,17 @@
         ? `Requeridos incluye <b>${pct(shr.total)}</b> de pausas y ausentismo (estándar de contact center): ${pct(shr.pausas)} pausas activas, descansos y tiempo no productivo dentro del turno + ${pct(shr.ausentismo)} ausentismo no planificado (incapacidades, faltas, permisos). No incluye vacaciones, porque quien está de vacaciones no aparece programado. Se ajusta en el nodo <i>Parsear Histórico</i> (SHRINKAGE).`
         : 'Requeridos todavía no incluye pausas ni ausentismo: el flujo de n8n no envió el parámetro de shrinkage.';
       const perfilTxt = {
-        normal: `Perfil <b>${perfilDia.etiqueta}</b>: P80 de los ${DAY_NAMES[dayOfWeek].toLowerCase()} de las últimas semanas, sin festivos ni martes post-festivo`,
-        festivo: 'Perfil <b>festivo</b>: P80 de festivos reales del histórico + domingos',
-        postFestivo: 'Perfil <b>martes después de lunes festivo</b>: P80 de martes post-festivo reales + lunes normales'
+        normal: `Perfil <b>${perfilDia.etiqueta}</b>: P80 del total diario de los ${DAY_NAMES[dayOfWeek].toLowerCase()} de las últimas semanas (sin festivos ni martes post-festivo), repartido por hora con la forma promedio del día`,
+        festivo: 'Perfil <b>festivo</b>: P80 del total diario de festivos reales del histórico + domingos, repartido por hora con su forma promedio',
+        postFestivo: 'Perfil <b>martes después de lunes festivo</b>: P80 del total diario de martes post-festivo reales + lunes normales, repartido por hora con su forma promedio'
       }[perfilDia.clave];
-      notesEl.innerHTML = `${perfilTxt}${muestrasPerfil != null ? ` (${muestrasPerfil} días de muestra)` : ''}.<br>${shrTxt}`;
+      const seg = rawData.capacidad && rawData.capacidad.segmentos;
+      const segTxt = seg && seg.length
+        ? `Servicios considerados: solo <b>${seg.join(', ')}</b> según Segmento_ajustado (Cube Servicios Colombia). Los "Sin clasificar" no entran.`
+        : 'Servicios considerados: todos los segmentos.';
+      const minimo = rawData.capacidad && rawData.capacidad.minimoPorHora;
+      const minTxt = minimo ? `<br>Operación 24/7: Requeridos nunca baja de <b>${minimo}</b> agente${minimo > 1 ? 's' : ''} por hora, aunque la data no pida.` : '';
+      notesEl.innerHTML = `${perfilTxt}${muestrasPerfil != null ? ` (${muestrasPerfil} días de muestra)` : ''}.<br>${segTxt}<br>${shrTxt}${minTxt}`;
       notesEl.style.display = '';
     }
 
@@ -1665,9 +1693,15 @@
       html += `<div class="account-row">
         <div class="account-name" title="${c.cuenta}">${c.cuenta}</div>
         <div class="account-bar-track"><div class="account-bar-fill" style="width:${pct}%;"></div></div>
-        <div class="account-count">${c.count}</div>
+        <div class="account-count">${Number(c.count).toLocaleString('es-CO')}</div>
       </div>`;
     }
+    const total = Math.round(porCuenta.reduce((sum, c) => sum + c.count, 0) * 10) / 10;
+    html += `<div class="account-row account-total">
+        <div class="account-name">Total</div>
+        <div class="account-total-note">${porCuenta.length} cuentas · ≈ ${Math.round(total / 7)} servicios por día</div>
+        <div class="account-count">${total.toLocaleString('es-CO')}</div>
+      </div>`;
     accountsContent.innerHTML = html;
   }
 
