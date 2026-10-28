@@ -88,16 +88,34 @@
   .bar.linked{ cursor:pointer; opacity:0.6;
     background-image:repeating-linear-gradient(45deg, rgba(255,255,255,0.18) 0 6px, transparent 6px 12px); }
   .bar.linked:hover{ opacity:0.85; }
-  .bar .handle{ position:absolute; top:0; bottom:0; width:9px; cursor:ew-resize; }
+  .bar .handle{ position:absolute; top:0; bottom:0; width:9px; cursor:ew-resize; z-index:4; }
   .bar .handle.l{ left:0; border-radius:5px 0 0 5px; }
   .bar .handle.r{ right:0; border-radius:0 5px 5px 0; }
-  .bar .lbl{ pointer-events:none; white-space:nowrap; }
+  .bar .lbl{ position:absolute; top:0; bottom:0; display:flex; align-items:center; justify-content:center;
+    pointer-events:none; white-space:nowrap; z-index:2; }
   .bar .lbl .dur{ margin-left:5px; opacity:0.75; font-weight:800; }
   .bar .del{ position:absolute; top:-8px; right:-6px; width:16px; height:16px; border-radius:50%; background:var(--red);
     color:#fff; font-size:10px; line-height:16px; text-align:center; cursor:pointer; opacity:0; transition:opacity .12s; z-index:6; }
   .bar.flex:hover .del{ opacity:1; }
   .bar.continues::after{ content:'→'; position:absolute; right:2px; }
   .bar.fromprev::before{ content:'←'; position:absolute; left:2px; }
+
+  /* ---- Descanso dentro del turno ---- */
+  .bar .brk{ position:absolute; top:0; bottom:0; z-index:3; cursor:grab; display:flex; align-items:center; justify-content:center;
+    background:repeating-linear-gradient(135deg, rgba(0,29,61,0.88) 0 4px, rgba(0,29,61,0.62) 4px 8px);
+    border-left:1px solid rgba(255,255,255,0.45); border-right:1px solid rgba(255,255,255,0.45); }
+  .bar .brk:active{ cursor:grabbing; }
+  .bar .brk .blbl{ pointer-events:none; color:var(--text); font-size:9.5px; font-weight:600; }
+  .bar .brk .bh{ position:absolute; top:0; bottom:0; width:6px; cursor:ew-resize; }
+  .bar .brk .bh.l{ left:-1px; }
+  .bar .brk .bh.r{ right:-1px; }
+  .bar .brk .bdel{ position:absolute; top:-9px; left:50%; transform:translateX(-50%); width:15px; height:15px; border-radius:50%;
+    background:var(--red); color:#fff; font-size:9.5px; line-height:15px; text-align:center; cursor:pointer; opacity:0; transition:opacity .12s; }
+  .bar .brk:hover .bdel{ opacity:1; }
+  .bar .addbrk{ position:absolute; top:-8px; left:-6px; width:17px; height:17px; border-radius:50%; background:var(--navy-panel-2);
+    border:1px solid rgba(255,255,255,0.35); font-size:9.5px; line-height:15px; text-align:center; cursor:pointer;
+    opacity:0; transition:opacity .12s; z-index:6; }
+  .bar.flex:hover .addbrk{ opacity:1; }
 
   .hour-axis{ display:flex; margin-left:100px; border-top:1px solid var(--border); padding-top:6px; margin-top:8px; }
   .hour-axis span{ flex:1; font-family:'JetBrains Mono',monospace; font-size:10px; color:var(--text-dim); }
@@ -120,7 +138,7 @@
 <header>
   <div>
     <h1>Editor de Malla de Turnos</h1>
-    <div class="subtitle">Arrastra para probar distribuciones · máx 42h/semana · mín 1 día libre · sin turno obligatorio en la madrugada</div>
+    <div class="subtitle">Arrastra para probar distribuciones · máx 42h/semana sin contar descansos · mín 1 día libre · sin turno obligatorio en la madrugada</div>
   </div>
   <div class="status-pill" id="statusPill">Validando…</div>
 </header>
@@ -157,6 +175,9 @@
     en este archivo o en otra copia del mismo. <b>↺ Restablecer</b> vuelve a la distribución original validada.<br>
     <b>Cómo usar:</b> arrastra el <b>centro</b> de una barra para moverla en el tiempo · arrastra el <b>borde</b> izq/der para cambiar su duración ·
     clic en un espacio vacío para crear un turno nuevo (7h por defecto) · usa la <b>×</b> para eliminarlo · los turnos se ajustan en pasos de 30 min.<br>
+    <b>Descansos:</b> pasa el cursor sobre un turno y usa <b>☕</b> para agregarle un descanso (1h, o 30 min en turnos de menos de 4h).
+    Arrástralo dentro del turno para moverlo, estira sus bordes para cambiar la duración y usa su <b>×</b> para quitarlo.
+    Las horas de descanso se restan del total semanal (incluido el tope de 42h), y la cobertura no cuenta al agente en las horas completas que está en descanso.<br>
     <b>Turnos que cruzan medianoche:</b> arrastra una barra hasta que su fin pase de 24:00 (ej. 20:00→04:00) — automáticamente aparece
     un segmento rayado "←" al inicio del día siguiente mostrando esa continuación. Ese segmento rayado no se arrastra directamente
     (representa el mismo turno); clic en él te lleva al día de origen para editarlo. Puedes tener <b>varios turnos el mismo día</b> para el mismo agente.<br>
@@ -293,8 +314,34 @@ function minRequired(hour){
 }
 
 // ---------- Derived calculations ----------
+// Descanso: s.brkOff = horas desde el inicio del turno, s.brkDur = duración (pasos de 30 min). Se mueve con el turno.
+function hasBreak(s){ return s.brkDur != null && s.brkDur > 0; }
+function netDur(s){ return (s.end - s.start) - (hasBreak(s) ? s.brkDur : 0); }
+function workPieces(s){
+  if(!hasBreak(s)) return [[s.start, s.end]];
+  const bs = s.start + s.brkOff, be = bs + s.brkDur;
+  return [[s.start, bs], [be, s.end]].filter(p=>p[1] > p[0]);
+}
+function fitBreak(s){
+  if(!hasBreak(s)) return;
+  const dur = s.end - s.start;
+  if(dur < 1){ delete s.brkOff; delete s.brkDur; return; }
+  if(s.brkDur > dur - 0.5) s.brkDur = Math.max(0.5, snap(dur - 0.5));
+  s.brkOff = clamp(snap(s.brkOff), 0, dur - s.brkDur);
+}
+function addBreak(s){
+  const dur = s.end - s.start;
+  if(dur < 1) return false;
+  s.brkDur = dur >= 4 ? 1 : 0.5;
+  s.brkOff = snap((dur - s.brkDur) / 2);
+  fitBreak(s);
+  return true;
+}
 function hoursForAgent(agent){
-  return schedule[agent].reduce((sum,s)=>sum+(s.end-s.start), 0);
+  return schedule[agent].reduce((sum,s)=>sum+netDur(s), 0);
+}
+function breakHoursForAgent(agent){
+  return schedule[agent].reduce((sum,s)=>sum+(hasBreak(s) ? s.brkDur : 0), 0);
 }
 function workDaysForAgent(agent){
   return new Set(schedule[agent].map(s=>s.day)).size;
@@ -306,10 +353,10 @@ function blocksForAgentDay(agent, dayIdx){
   const blocks = [];
   schedule[agent].forEach(s=>{
     if(s.day === dayIdx){
-      blocks.push({ id:s.id, start:s.start, end:Math.min(s.end,24), isOwn:true, continues: s.end>24 });
+      blocks.push({ id:s.id, shift:s, start:s.start, end:Math.min(s.end,24), isOwn:true, continues: s.end>24 });
     }
     if(s.end > 24 && (s.day+1)%7 === dayIdx){
-      blocks.push({ id:s.id, start:0, end:s.end-24, isOwn:false, fromPrev:true, originDay:s.day });
+      blocks.push({ id:s.id, shift:s, start:0, end:s.end-24, isOwn:false, fromPrev:true, originDay:s.day });
     }
   });
   return blocks;
@@ -318,11 +365,16 @@ function blocksForAgentDay(agent, dayIdx){
 function coverageForDay(dayIdx){
   const counts = new Array(24).fill(0);
   agents.forEach(agent=>{
-    blocksForAgentDay(agent, dayIdx).forEach(b=>{
-      for(let h=Math.floor(b.start); h<Math.ceil(b.end); h++){
-        if(h>=0 && h<24) counts[h]++;
-      }
+    // Horas en que el agente está trabajando (sin contar su descanso); cada agente cuenta una vez por hora
+    const on = new Array(24).fill(false);
+    const mark = (a,b)=>{ for(let h=Math.floor(a); h<Math.ceil(b); h++){ if(h>=0 && h<24) on[h] = true; } };
+    schedule[agent].forEach(s=>{
+      workPieces(s).forEach(([a,b])=>{
+        if(s.day === dayIdx && a < 24) mark(a, Math.min(b,24));
+        if(b > 24 && (s.day+1)%7 === dayIdx) mark(Math.max(a,24)-24, b-24);
+      });
     });
+    on.forEach((v,h)=>{ if(v) counts[h]++; });
   });
   return counts;
 }
@@ -364,14 +416,16 @@ function renderSummary(){
   const grid = document.getElementById('summaryGrid');
   grid.innerHTML = agents.map(agent=>{
     const hrs = hoursForAgent(agent);
+    const brk = breakHoursForAgent(agent);
     const wd = workDaysForAgent(agent);
     const over = hrs > 42;
     const noRest = wd >= 7;
     const warn = over || noRest;
     return `<div class="agent-card ${warn?'warn':''}">
       <div class="name"><span class="dot" style="background:${AGENT_COLOR[agent]}"></span>${agent}</div>
-      <div class="hrs ${over?'over':''}">${hrs}h<span style="font-size:10px;color:var(--text-dim);font-weight:400">/42h</span></div>
-      <div class="meta ${noRest?'warn':''}">${wd} días trabajados ${noRest?'⚠ sin descanso':''}</div>
+      <div class="hrs ${over?'over':''}">${fmtDur(hrs)}<span style="font-size:10px;color:var(--text-dim);font-weight:400">/42h</span></div>
+      <div class="meta">${brk>0 ? '−'+fmtDur(brk)+' de descanso' : 'Sin descansos'}</div>
+      <div class="meta ${noRest?'warn':''}">${wd} días trabajados ${noRest?'⚠ sin día libre':''}</div>
     </div>`;
   }).join('');
 }
@@ -400,19 +454,13 @@ function renderGantt(){
     blocks.forEach(b=>{
       const left = b.start/24*100, width=(b.end-b.start)/24*100;
       const color = AGENT_COLOR[agent];
+      const s = b.shift;
       if(b.isOwn){
         inner += `<div class="bar flex ${b.continues?'continues':''}" data-agent="${agent}" data-id="${b.id}"
-            style="left:${left}%;width:${width}%;background:${color}">
-          <div class="handle l"></div>
-          <span class="lbl">${fmt(b.start)}–${fmt(b.end>24?b.end-24:b.end)} <b class="dur">${fmtDur(b.end-b.start)}</b></span>
-          <div class="handle r"></div>
-          <div class="del">×</div>
-        </div>`;
+            style="left:${left}%;width:${width}%;background:${color}">${barInner(agent, s, s.start, Math.min(s.end,24), true)}</div>`;
       } else {
         inner += `<div class="bar linked fromprev" data-origin="${b.originDay}"
-            style="left:${left}%;width:${width}%;background:${color}" title="Continúa desde ${days[b.originDay]} — clic para editar ahí">
-          <span class="lbl">${fmtDur(b.end-b.start)}</span>
-        </div>`;
+            style="left:${left}%;width:${width}%;background:${color}" title="Continúa desde ${days[b.originDay]} — clic para editar ahí">${barInner(agent, s, 24, s.end, false)}</div>`;
       }
     });
     html += `<div class="gantt-row"><div class="row-label"><span class="dot" style="background:${AGENT_COLOR[agent]}"></span>${agent}</div>
@@ -422,6 +470,50 @@ function renderGantt(){
   renderHourAxis();
   renderCoverage();
   attachInteractions();
+}
+
+// Contenido de una barra que muestra el tramo [vs, ve] del turno s (horas medidas desde el día en que arranca el turno)
+function barInner(agent, s, vs, ve, isOwn){
+  const w = ve - vs;
+  const pct = h => (h - vs) / w * 100;
+  // La etiqueta va en el tramo trabajado más largo, para que el descanso no la tape
+  let best = null;
+  workPieces(s).forEach(([a,b])=>{
+    const a2 = Math.max(a,vs), b2 = Math.min(b,ve);
+    if(b2 > a2 && (!best || b2-a2 > best[1]-best[0])) best = [a2,b2];
+  });
+  if(!best) best = [vs,ve];
+  let text;
+  if(isOwn){
+    const endShown = s.end>24 ? s.end-24 : s.end;
+    const f = hasBreak(s) ? fmtShort : fmt;
+    text = `${f(s.start)}–${f(endShown)} <b class="dur">${fmtDur(netDur(s))}</b>`;
+  } else {
+    const worked = workPieces(s).reduce((t,[a,b])=>t+Math.max(0, Math.min(b,ve)-Math.max(a,vs)), 0);
+    text = fmtDur(worked);
+  }
+  let html = `<span class="lbl" style="left:${pct(best[0])}%;width:${pct(best[1])-pct(best[0])}%">${text}</span>`;
+  if(hasBreak(s)){
+    const bs = s.start + s.brkOff, be = bs + s.brkDur;
+    const a = Math.max(bs,vs), b = Math.min(be,ve);
+    if(b > a){
+      html += `<div class="brk" data-agent="${agent}" data-id="${s.id}" style="left:${pct(a)}%;width:${pct(b)-pct(a)}%"
+          title="Descanso ${fmt(bs)}–${fmt(be)} (${fmtDur(s.brkDur)}) · arrastra para moverlo, estira los bordes para cambiar la duración">
+        <div class="bh l"></div>${(b-a)>=1 ? `<span class="blbl">${fmtDur(s.brkDur)}</span>` : ''}<div class="bh r"></div>
+        <div class="bdel" title="Quitar descanso">×</div>
+      </div>`;
+    }
+  }
+  if(isOwn){
+    html = `<div class="handle l"></div>` + html + `<div class="handle r"></div><div class="del" title="Eliminar turno">×</div>` +
+      (hasBreak(s) ? '' : `<div class="addbrk" title="Agregar descanso">☕</div>`);
+  }
+  return html;
+}
+
+function fmtShort(h){
+  const hh = Math.floor(h) % 24;
+  return String(hh).padStart(2,'0') + ((h % 1) === 0.5 ? ':30' : '');
 }
 
 function fmt(h){
@@ -455,7 +547,7 @@ function renderCoverage(){
   }
   strip.innerHTML = html;
   document.getElementById('covLabel').textContent =
-    'Agentes activos por hora · 06–18 requiere mínimo 2 · 18–24 requiere mínimo 1 · 00–06 (madrugada) sin mínimo obligatorio · en rojo = por debajo del mínimo aplicable';
+    'Agentes activos por hora · 06–18 requiere mínimo 2 · 18–24 requiere mínimo 1 · 00–06 (madrugada) sin mínimo obligatorio · en rojo = por debajo del mínimo aplicable · los descansos de hora completa restan cobertura en esa hora';
 }
 
 function fullRerender(){
@@ -493,14 +585,22 @@ function attachInteractions(){
       fullRerender();
     });
 
+    const addBtn = bar.querySelector('.addbrk');
+    if(addBtn) addBtn.addEventListener('click', (e)=>{
+      e.stopPropagation();
+      if(addBreak(findShift(agent, shiftId))) fullRerender();
+    });
+
     let mode = null; // 'move' | 'resize-l' | 'resize-r'
-    let startX = 0, origStart=0, origEnd=0, trackWidth=0;
+    let startX = 0, origStart=0, origEnd=0, trackWidth=0, origBrkOff=null, origBrkDur=null;
 
     function beginDrag(e, m){
       mode = m;
       startX = e.clientX;
       const s = findShift(agent, shiftId);
       origStart = s.start; origEnd = s.end;
+      origBrkOff = hasBreak(s) ? s.brkOff : null;
+      origBrkDur = hasBreak(s) ? s.brkDur : null;
       const track = bar.parentElement;
       const rect = track.getBoundingClientRect();
       trackWidth = rect.width;
@@ -526,13 +626,18 @@ function attachInteractions(){
         let newEnd = clamp(snap(origEnd + deltaH), origStart + 0.5, origStart + 16);
         s.end = newEnd;
       }
+      // El descanso conserva su hora real al recortar el inicio; siempre se mantiene dentro del turno
+      if(origBrkDur != null){
+        s.brkDur = origBrkDur;
+        s.brkOff = mode === 'resize-l' ? origBrkOff - (s.start - origStart) : origBrkOff;
+        fitBreak(s);
+      }
       // Actualización liviana solo de esta barra (sin reconstruir todo el Gantt)
       const clippedEnd = Math.min(s.end, 24);
       const left = s.start/24*100, width = (clippedEnd - s.start)/24*100;
       bar.style.left = left+'%'; bar.style.width = width+'%';
       bar.classList.toggle('continues', s.end > 24);
-      const lbl = bar.querySelector('.lbl');
-      if(lbl) lbl.innerHTML = fmt(s.start)+'–'+fmt(s.end>24?s.end-24:s.end)+' <b class="dur">'+fmtDur(s.end-s.start)+'</b>';
+      bar.innerHTML = barInner(agent, s, s.start, clippedEnd, true);
       renderCoverage();
       renderStatus();
       renderSummary();
@@ -549,8 +654,52 @@ function attachInteractions(){
     bar.addEventListener('pointerdown', (e)=>{
       if(e.target.classList.contains('handle') && e.target.classList.contains('l')) beginDrag(e,'resize-l');
       else if(e.target.classList.contains('handle') && e.target.classList.contains('r')) beginDrag(e,'resize-r');
-      else if(e.target.classList.contains('del')) { /* manejado aparte */ }
+      else if(e.target.classList.contains('del') || e.target.classList.contains('addbrk') || e.target.closest('.brk')) { /* manejado aparte */ }
       else beginDrag(e,'move');
+    });
+  });
+
+  // Descansos: mover, estirar o quitar (también desde el tramo que continúa al día siguiente)
+  document.querySelectorAll('.brk').forEach(el=>{
+    const agent = el.dataset.agent;
+    const shiftId = parseInt(el.dataset.id,10);
+    el.addEventListener('click', (e)=>e.stopPropagation());
+    el.querySelector('.bdel').addEventListener('click', (e)=>{
+      e.stopPropagation();
+      const s = findShift(agent, shiftId);
+      delete s.brkOff; delete s.brkDur;
+      fullRerender();
+    });
+    el.addEventListener('pointerdown', (e)=>{
+      e.stopPropagation();
+      if(e.target.classList.contains('bdel')) return;
+      e.preventDefault();
+      const bmode = e.target.classList.contains('bh') ? (e.target.classList.contains('l') ? 'l' : 'r') : 'move';
+      const s = findShift(agent, shiftId);
+      const startX = e.clientX;
+      const trackWidth = el.closest('.row-track').getBoundingClientRect().width;
+      const o0 = s.brkOff, d0 = s.brkDur, dur = s.end - s.start;
+      const onMove = (ev)=>{
+        const dh = (ev.clientX - startX) / trackWidth * 24;
+        if(bmode === 'move'){
+          s.brkOff = clamp(snap(o0 + dh), 0, dur - d0);
+        } else if(bmode === 'l'){
+          const no = clamp(snap(o0 + dh), 0, o0 + d0 - 0.5);
+          s.brkOff = no; s.brkDur = o0 + d0 - no;
+        } else {
+          s.brkDur = clamp(snap(d0 + dh), 0.5, dur - o0);
+        }
+        fitBreak(s);
+        renderGantt(); renderSummary(); renderStatus();
+      };
+      const onUp = ()=>{
+        document.removeEventListener('pointermove', onMove);
+        document.removeEventListener('pointerup', onUp);
+        fitBreak(s);
+        fullRerender();
+      };
+      document.addEventListener('pointermove', onMove);
+      document.addEventListener('pointerup', onUp);
     });
   });
 }
