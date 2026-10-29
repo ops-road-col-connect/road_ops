@@ -530,6 +530,7 @@ table.ranking-table tbody tr.agent-row{cursor:pointer;}
       <div class="chart-grid">
         <div class="chart-box"><canvas id="chartServiciosBack"></canvas></div>
         <div class="chart-box"><canvas id="chartPlanGam"></canvas></div>
+        <div class="chart-box"><canvas id="chartAsignacion"></canvas></div>
         <div class="section-divider"></div>
         <div>
           <div class="section-note">No depende del agrupamiento día/semana/mes de arriba</div>
@@ -683,6 +684,8 @@ let ALL_BACK_ACTIVE = [];
 let historicoGroup = 'day';
 let chartServiciosBackInstance = null;
 let chartPlanGamInstance = null;
+let chartAsignacionInstance = null;
+let ALL_ASIGNACION_POR_FECHA = {};
 
 const LEVELS = [
   { min: 0,   name: "Novato",     icon: "🔹" },
@@ -770,6 +773,7 @@ async function loadData(){
     TEAMS.mv.agentes = Array.isArray(mv.agentes) ? mv.agentes : [];
     TEAMS.mv.porMes = (mv.roster_por_mes && typeof mv.roster_por_mes === 'object') ? mv.roster_por_mes : {};
     ALL_TOTALES_POR_FECHA = data.totales_por_fecha || {};
+    ALL_ASIGNACION_POR_FECHA = data.asignacion_por_fecha || {};
     ALL_GRUAS_PLAN_TODOS = (data.gruas_plan_todos_equipos || []).map(r=>({
       po_number: r.po_number,
       fecha: r.fecha,
@@ -1378,6 +1382,53 @@ function renderHistorico(){
       scales: {
         x: { grid: { color: gridColor }, ticks: { font:{size:9.5} } },
         y: { grid: { color: gridColor }, beginAtZero: true, max: 100, ticks: { font:{size:9.5}, callback:v=>v+'%' } }
+      }
+    }
+  });
+  // ---- Asignación global: driver recomendado vs. manual (Back / otros) ----
+  // Toda la operación, sin filtro de cuenta (el desglose viene por fecha).
+  const asig = {};
+  Object.entries(ALL_ASIGNACION_POR_FECHA).forEach(([fecha, v])=>{
+    const key = getGroupKey(fecha, historicoGroup);
+    const g = asig[key] || (asig[key] = { auto:0, back:0, otros:0 });
+    g.auto += v.auto || 0; g.back += v.back || 0; g.otros += v.otros || 0;
+  });
+  const clavesAsig = Object.keys(asig).sort();
+  const pctAuto = clavesAsig.map(k=>{
+    const g = asig[k]; const t = g.auto + g.back + g.otros;
+    return t>0 ? Math.round(1000*g.auto/t)/10 : null;
+  });
+  const pctDe = (k, campo)=>{ const g = asig[k]; const t = g.auto+g.back+g.otros; return t>0 ? Math.round(100*g[campo]/t) : 0; };
+  if(chartAsignacionInstance) chartAsignacionInstance.destroy();
+  chartAsignacionInstance = new Chart(document.getElementById('chartAsignacion'), {
+    data: {
+      labels: clavesAsig,
+      datasets: [
+        { type:'bar', label:'Driver recomendado (automático)', data: clavesAsig.map(k=>asig[k].auto), backgroundColor:'rgba(84,201,124,0.75)', stack:'s', yAxisID:'y', maxBarThickness:34 },
+        { type:'bar', label:'Manual · Back', data: clavesAsig.map(k=>asig[k].back), backgroundColor:'rgba(39,155,176,0.6)', stack:'s', yAxisID:'y', maxBarThickness:34 },
+        { type:'bar', label:'Manual · otros equipos', data: clavesAsig.map(k=>asig[k].otros), backgroundColor:'rgba(241,91,43,0.55)', stack:'s', yAxisID:'y', maxBarThickness:34 },
+        { type:'line', label:'% automático', data: pctAuto, borderColor:'#ffb000', backgroundColor:'rgba(255,176,0,0.15)', tension:0.25, spanGaps:true, pointRadius:3, pointBackgroundColor:'#ffb000', yAxisID:'y1' }
+      ]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      interaction: { mode:'index', intersect:false },
+      plugins: {
+        legend: { display: true, labels: { font:{size:10} } },
+        title: { display: true, text: 'Asignación de servicios: driver recomendado vs. manual (toda la operación)', font:{size:11, weight:700}, color:'#f5f7fa' },
+        tooltip: { callbacks: {
+          label: ctx => {
+            if(ctx.dataset.yAxisID === 'y1') return ` % automático: ${ctx.parsed.y}%`;
+            const campo = ['auto','back','otros'][ctx.datasetIndex];
+            return ` ${ctx.dataset.label}: ${ctx.parsed.y} (${pctDe(ctx.label, campo)}%)`;
+          },
+          footer: items => { const g = asig[items[0].label]; return g ? `Total: ${g.auto+g.back+g.otros}` : ''; }
+        } }
+      },
+      scales: {
+        x: { stacked:true, grid: { color: gridColor }, ticks: { font:{size:9.5} } },
+        y: { stacked:true, position:'left', grid: { color: gridColor }, beginAtZero: true, ticks: { font:{size:9.5}, precision:0 }, title:{display:true, text:'Servicios', font:{size:9.5}} },
+        y1: { position:'right', beginAtZero: true, grid: { display:false }, ticks: { font:{size:9.5}, callback:v=>v+'%' }, title:{display:true, text:'% automático', font:{size:9.5}} }
       }
     }
   });
