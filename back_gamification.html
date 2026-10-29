@@ -531,6 +531,7 @@ table.ranking-table tbody tr.agent-row{cursor:pointer;}
         <div class="chart-box"><canvas id="chartServiciosBack"></canvas></div>
         <div class="chart-box"><canvas id="chartPlanGam"></canvas></div>
         <div class="chart-box"><canvas id="chartAsignacion"></canvas></div>
+        <div class="chart-box"><canvas id="chartProductividad"></canvas></div>
         <div class="section-divider"></div>
         <div>
           <div class="section-note">No depende del agrupamiento día/semana/mes de arriba</div>
@@ -685,6 +686,7 @@ let historicoGroup = 'day';
 let chartServiciosBackInstance = null;
 let chartPlanGamInstance = null;
 let chartAsignacionInstance = null;
+let chartProductividadInstance = null;
 let ALL_ASIGNACION_POR_FECHA = {};
 
 const LEVELS = [
@@ -1429,6 +1431,54 @@ function renderHistorico(){
         x: { stacked:true, grid: { color: gridColor }, ticks: { font:{size:9.5} } },
         y: { stacked:true, position:'left', grid: { color: gridColor }, beginAtZero: true, ticks: { font:{size:9.5}, precision:0 }, title:{display:true, text:'Servicios', font:{size:9.5}} },
         y1: { position:'right', beginAtZero: true, grid: { display:false }, ticks: { font:{size:9.5}, callback:v=>v+'%' }, title:{display:true, text:'% automático', font:{size:9.5}} }
+      }
+    }
+  });
+  // ---- Productividad global: servicios manuales ÷ horas hombre de Back ----
+  // Servicios manuales = Finished de toda la operación sin driver recomendado
+  // (manual Back + manual otros). Horas hombre = suma de turnos del bloque BACK
+  // de Horarios 2026 (por la fecha de inicio del turno). Sin filtro de cuenta.
+  const prod = {};
+  const grupoProd = k => prod[k] || (prod[k] = { manual:0, back:0, otros:0, horas:0 });
+  Object.entries(ALL_ASIGNACION_POR_FECHA).forEach(([fecha, v])=>{
+    const g = grupoProd(getGroupKey(fecha, historicoGroup));
+    g.back += v.back || 0; g.otros += v.otros || 0; g.manual += (v.back || 0) + (v.otros || 0);
+  });
+  (TEAMS.back.turnos || []).forEach(t=>{
+    if(!ALL_ASIGNACION_POR_FECHA[t.fecha]) return; // solo días con datos de servicios
+    grupoProd(getGroupKey(t.fecha, historicoGroup)).horas += t.horas;
+  });
+  const clavesProd = Object.keys(prod).filter(k => prod[k].horas > 0).sort();
+  const servHH = clavesProd.map(k => Math.round(100*prod[k].manual/prod[k].horas)/100);
+  if(chartProductividadInstance) chartProductividadInstance.destroy();
+  chartProductividadInstance = new Chart(document.getElementById('chartProductividad'), {
+    data: {
+      labels: clavesProd,
+      datasets: [
+        { type:'bar', label:'Servicios manuales (Back + otros)', data: clavesProd.map(k=>prod[k].manual), backgroundColor:'rgba(39,155,176,0.6)', borderRadius:3, maxBarThickness:28, yAxisID:'y' },
+        { type:'bar', label:'Horas hombre Back', data: clavesProd.map(k=>Math.round(10*prod[k].horas)/10), backgroundColor:'rgba(241,91,43,0.55)', borderRadius:3, maxBarThickness:28, yAxisID:'y' },
+        { type:'line', label:'Servicios por hora hombre', data: servHH, borderColor:'#ffb000', backgroundColor:'rgba(255,176,0,0.15)', tension:0.25, spanGaps:true, pointRadius:3, pointBackgroundColor:'#ffb000', yAxisID:'y1' }
+      ]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      interaction: { mode:'index', intersect:false },
+      plugins: {
+        legend: { display: true, labels: { font:{size:10} } },
+        title: { display: true, text: 'Productividad: servicios manuales por hora hombre de Back (sin driver recomendado)', font:{size:11, weight:700}, color:'#f5f7fa' },
+        tooltip: { callbacks: {
+          label: ctx => {
+            if(ctx.datasetIndex === 2) return ` Servicios por hora hombre: ${ctx.parsed.y.toFixed(2)}`;
+            if(ctx.datasetIndex === 1) return ` Horas hombre Back: ${ctx.parsed.y} h`;
+            const g = prod[ctx.label];
+            return ` Servicios manuales: ${g.manual} (Back ${g.back} · otros ${g.otros})`;
+          }
+        } }
+      },
+      scales: {
+        x: { grid: { color: gridColor }, ticks: { font:{size:9.5} } },
+        y: { position:'left', grid: { color: gridColor }, beginAtZero: true, ticks: { font:{size:9.5}, precision:0 }, title:{display:true, text:'Servicios / Horas', font:{size:9.5}} },
+        y1: { position:'right', beginAtZero: true, grid: { display:false }, ticks: { font:{size:9.5} }, title:{display:true, text:'Serv. por hora hombre', font:{size:9.5}} }
       }
     }
   });
