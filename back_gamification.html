@@ -374,6 +374,19 @@ table.ranking-table tbody tr.agent-row{cursor:pointer;}
   .chart-box{ position:relative; height:340px; }
   .chart-box canvas{ max-width:100%; }
 
+  .heat-controls{ display:flex; flex-wrap:wrap; gap:6px 18px; align-items:flex-start; }
+  .heat-controls nav.views{ margin-bottom:8px; }
+  .heat-range{ display:flex; align-items:center; gap:8px; margin-bottom:8px; font-size:11px; color:var(--text-dim); font-family:'JetBrains Mono', monospace; }
+  .heat-scroll{ overflow-x:auto; border:1px solid var(--border); border-radius:8px; }
+  table.heat-table{ border-collapse:separate; border-spacing:2px; font-family:'JetBrains Mono', monospace; font-size:10px; width:100%; }
+  table.heat-table th{ color:var(--text-dim); font-weight:600; padding:4px 2px; text-align:center; white-space:nowrap; }
+  table.heat-table th.rowh{ text-align:left; padding-right:8px; color:var(--text-mid); position:sticky; left:0; background:var(--panel); z-index:1; }
+  table.heat-table td{ min-width:30px; height:26px; text-align:center; border-radius:3px; color:var(--text); }
+  table.heat-table td.tot{ background:transparent; color:var(--yellow); font-weight:700; padding:0 6px; }
+  table.heat-table tr.foot th, table.heat-table tr.foot td{ border-top:1px dashed var(--border); }
+  .heat-legend{ display:flex; align-items:center; gap:8px; margin-top:10px; font-size:10px; color:var(--text-dim); font-family:'JetBrains Mono', monospace; }
+  .heat-legend .bar{ width:180px; height:8px; border-radius:4px; background:linear-gradient(90deg, rgba(39,155,176,0.10), #279bb0, #ffb000, #f15b2b); }
+
   .section-divider{
     border-top:1px dashed var(--border);
     margin:6px 0 4px;
@@ -535,6 +548,26 @@ table.ranking-table tbody tr.agent-row{cursor:pointer;}
         <div class="section-divider"></div>
         <div>
           <div class="section-note">No depende del agrupamiento día/semana/mes de arriba</div>
+          <div class="card-desc" style="margin-bottom:10px;">Mapa de calor · POs Finished de toda la operación por hora de creación (FechaHoraCreacion)</div>
+          <div class="heat-controls">
+            <nav class="views" id="heatVistaBtns">
+              <button class="view-tab active" data-v="semana">Promedio por día de semana</button>
+              <button class="view-tab" data-v="fecha">Por fecha</button>
+            </nav>
+            <nav class="views" id="heatSerieBtns">
+              <button class="view-tab active" data-s="manual">Coordinados (Back + otros)</button>
+              <button class="view-tab" data-s="back">Solo Back</button>
+              <button class="view-tab" data-s="otros">Solo otros equipos</button>
+              <button class="view-tab" data-s="auto">Driver recomendado</button>
+            </nav>
+            <div class="heat-range"><span>Desde</span><input type="date" id="heatFrom"><span>Hasta</span><input type="date" id="heatTo"></div>
+          </div>
+          <div class="heat-scroll"><table class="heat-table" id="heatTable"></table></div>
+          <div class="heat-legend"><span>Menos</span><span class="bar"></span><span>Más</span><span id="heatPico" style="margin-left:14px; color:var(--text-mid);"></span></div>
+        </div>
+        <div class="section-divider"></div>
+        <div>
+          <div class="section-note">No depende del agrupamiento día/semana/mes de arriba</div>
           <div class="card-desc" style="margin-bottom:10px;">Servicios de grúa en ciudades del plan (Bogotá/Cali/Medellín) — de todos los equipos, marcados si el proveedor es del plan gamificación</div>
           <div class="detail-scroll">
             <table class="detail-table" id="planGamDetailTable">
@@ -687,6 +720,8 @@ let chartServiciosBackInstance = null;
 let chartPlanGamInstance = null;
 let chartAsignacionInstance = null;
 let chartProductividadInstance = null;
+let ALL_ASIGNACION_POR_HORA = {};
+const heatState = { vista: 'semana', serie: 'manual' };
 let ALL_ASIGNACION_POR_FECHA = {};
 
 const LEVELS = [
@@ -776,6 +811,7 @@ async function loadData(){
     TEAMS.mv.porMes = (mv.roster_por_mes && typeof mv.roster_por_mes === 'object') ? mv.roster_por_mes : {};
     ALL_TOTALES_POR_FECHA = data.totales_por_fecha || {};
     ALL_ASIGNACION_POR_FECHA = data.asignacion_por_fecha || {};
+    ALL_ASIGNACION_POR_HORA = data.asignacion_por_hora || {};
     ALL_GRUAS_PLAN_TODOS = (data.gruas_plan_todos_equipos || []).map(r=>({
       po_number: r.po_number,
       fecha: r.fecha,
@@ -1482,7 +1518,99 @@ function renderHistorico(){
       }
     }
   });
+  renderHeatmap();
 }
+
+// ---- Mapa de calor hora x día ----
+const DIAS_SEMANA = ['Lunes','Martes','Miércoles','Jueves','Viernes','Sábado','Domingo'];
+const DIAS_CORTO = ['Lun','Mar','Mié','Jue','Vie','Sáb','Dom'];
+function diaSemana(fecha){ const [y,m,d] = fecha.split('-').map(Number); return (new Date(y, m-1, d).getDay()+6)%7; } // 0 = lunes
+function serieHora(v, serie){
+  if(serie === 'manual') return v.back.map((x,i)=> x + v.otros[i]);
+  return v[serie] || new Array(24).fill(0);
+}
+function colorCalor(t){
+  // 0 -> turquesa tenue, 0.5 -> turquesa, 0.8 -> amarillo, 1 -> naranja
+  const stops = [[0,[39,155,176,0.08]],[0.5,[39,155,176,0.85]],[0.8,[255,176,0,0.9]],[1,[241,91,43,0.95]]];
+  for(let i=1;i<stops.length;i++){
+    if(t <= stops[i][0]){
+      const [t0,c0] = stops[i-1], [t1,c1] = stops[i], f = (t - t0)/(t1 - t0);
+      const c = c0.map((v,k)=> v + (c1[k]-v)*f);
+      return `rgba(${Math.round(c[0])},${Math.round(c[1])},${Math.round(c[2])},${c[3].toFixed(2)})`;
+    }
+  }
+  return 'rgba(241,91,43,0.95)';
+}
+function initHeatRange(){
+  const fromEl = document.getElementById('heatFrom'), toEl = document.getElementById('heatTo');
+  if(fromEl.value && toEl.value) return;
+  // Por defecto: las últimas 4 semanas completas (lunes a domingo)
+  const hoy = new Date(); hoy.setHours(0,0,0,0);
+  const lunes = startOfWeek(hoy);
+  const hasta = new Date(lunes); hasta.setDate(hasta.getDate()-1);
+  const desde = new Date(lunes); desde.setDate(desde.getDate()-28);
+  fromEl.value = toISO(desde); toEl.value = toISO(hasta);
+}
+function renderHeatmap(){
+  initHeatRange();
+  const from = document.getElementById('heatFrom').value, to = document.getElementById('heatTo').value;
+  const fechas = Object.keys(ALL_ASIGNACION_POR_HORA).filter(f => (!from || f >= from) && (!to || f <= to)).sort();
+  const filas = []; // { etiqueta, valores[24], decimales }
+  const totalHora = new Array(24).fill(0);
+  fechas.forEach(f => serieHora(ALL_ASIGNACION_POR_HORA[f], heatState.serie).forEach((v,h)=>{ totalHora[h] += v; }));
+  const prom = heatState.vista === 'semana';
+  if(prom){
+    const suma = DIAS_SEMANA.map(()=> new Array(24).fill(0)), dias = new Array(7).fill(0);
+    fechas.forEach(f=>{
+      const d = diaSemana(f); dias[d]++;
+      serieHora(ALL_ASIGNACION_POR_HORA[f], heatState.serie).forEach((v,h)=>{ suma[d][h] += v; });
+    });
+    DIAS_SEMANA.forEach((nombre, d)=>{
+      if(!dias[d]) return;
+      filas.push({ etiqueta: `${nombre} <span class="muted">(${dias[d]})</span>`, valores: suma[d].map(v => v/dias[d]), corta: nombre });
+    });
+  } else {
+    fechas.forEach(f=>{
+      const [y,m,d] = f.split('-');
+      filas.push({ etiqueta: `${DIAS_CORTO[diaSemana(f)]} ${d}/${m}`, valores: serieHora(ALL_ASIGNACION_POR_HORA[f], heatState.serie), corta: `${DIAS_CORTO[diaSemana(f)]} ${d}/${m}` });
+    });
+  }
+  const fmt = v => prom ? (Math.round(v*10)/10).toLocaleString('es-CO') : String(v);
+  const max = Math.max(1, ...filas.flatMap(r => r.valores));
+  let pico = null;
+  filas.forEach(r => r.valores.forEach((v,h)=>{ if(!pico || v > pico.v) pico = { v, h, dia: r.corta }; }));
+
+  const head = '<tr><th class="rowh"></th>' + Array.from({length:24}, (_,h)=>`<th>${pad(h)}h</th>`).join('') + `<th>${prom ? 'Prom. día' : 'Total'}</th></tr>`;
+  const body = filas.map(r => {
+    const celdas = r.valores.map((v,h)=>{
+      const t = v / max;
+      const txt = v > 0 ? fmt(v) : '';
+      return `<td style="background:${colorCalor(t)}; color:${t > 0.6 ? '#0b0f17' : 'var(--text)'};" title="${r.corta} ${pad(h)}:00-${pad(h)}:59 · ${fmt(v)}">${txt}</td>`;
+    }).join('');
+    return `<tr><th class="rowh">${r.etiqueta}</th>${celdas}<td class="tot">${fmt(r.valores.reduce((s,v)=>s+v,0))}</td></tr>`;
+  }).join('');
+  const n = fechas.length;
+  const foot = n ? '<tr class="foot"><th class="rowh">Promedio diario</th>' + totalHora.map(v=>`<td class="tot" style="padding:0;">${(Math.round(10*v/n)/10).toLocaleString('es-CO')}</td>`).join('') + `<td class="tot">${(Math.round(10*totalHora.reduce((s,v)=>s+v,0)/n)/10).toLocaleString('es-CO')}</td></tr>` : '';
+  document.getElementById('heatTable').innerHTML = filas.length
+    ? head + body + foot
+    : '<tr><td style="padding:18px; color:var(--text-dim);">Sin datos en el rango seleccionado</td></tr>';
+  document.getElementById('heatPico').textContent = pico && pico.v > 0
+    ? `Pico: ${pico.dia} ${pad(pico.h)}:00 · ${fmt(pico.v)} ${prom ? 'POs en promedio' : 'POs'} · ${n} día${n===1?'':'s'} en el rango`
+    : '';
+}
+
+document.getElementById('heatVistaBtns').addEventListener('click', (e)=>{
+  const btn = e.target.closest('button'); if(!btn) return;
+  document.querySelectorAll('#heatVistaBtns button').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active'); heatState.vista = btn.dataset.v; renderHeatmap();
+});
+document.getElementById('heatSerieBtns').addEventListener('click', (e)=>{
+  const btn = e.target.closest('button'); if(!btn) return;
+  document.querySelectorAll('#heatSerieBtns button').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active'); heatState.serie = btn.dataset.s; renderHeatmap();
+});
+document.getElementById('heatFrom').addEventListener('change', renderHeatmap);
+document.getElementById('heatTo').addEventListener('change', renderHeatmap);
 
 document.getElementById('historicoGroupBtns').addEventListener('click', (e)=>{
   const btn = e.target.closest('button');
