@@ -503,8 +503,12 @@ table.ranking-table tbody tr.agent-row{cursor:pointer;}
           <tbody>
             <tr><td>% Meta local</td><td>De los servicios locales, % que llegó en ≤60 min.</td></tr>
             <tr><td>% Plan gam.</td><td>De los servicios de grúa elegibles, % con proveedor del plan (0).</td></tr>
+            <tr><td>Horas turno</td><td>Suma de las horas de turno del período según Horarios 2026. Los días con DESCANSO, VACACIONES u otra novedad no suman. El turno de hoy cuenta solo hasta la última sincronización.</td></tr>
+            <tr><td>Serv/hora</td><td>Servicios Finished del agente creados dentro de su turno ÷ horas de turno.</td></tr>
+            <tr><td>% del turno</td><td>Servicios Finished del agente creados dentro de su turno ÷ total de servicios Finished de toda la operación creados en esas mismas horas.</td></tr>
           </tbody>
         </table></div>
+        <div class="formula-note">Las columnas de productividad no cambian con el filtro de cuenta.</div>
       </div>
     </div>
 
@@ -563,10 +567,12 @@ let ROSTER_POR_MES = {};   // { 'YYYY-MM': [agentes del equipo activo en ese mes
 const TEAMS = {
   back: { titulo: 'Ranking Back', desc: 'Ranking de los agentes de Back',
           records: [], agentes: [], porMes: {},
-          metaLocal: 60,  metaForanea: null, mostrarArribo: true, mostrarCoord: false, mostrarProgramados: false, mostrarPlanGam: true, filtroCuenta: true },
+          metaLocal: 60,  metaForanea: null, mostrarArribo: true, mostrarCoord: false, mostrarProgramados: false, mostrarPlanGam: true, filtroCuenta: true,
+          mostrarProductividad: true, turnos: [] },
   mv:   { titulo: 'Ranking Mundial Vial', desc: 'Ranking de los agentes de Mundial Vial · solo cuenta Seguros Mundial Vial',
           records: [], agentes: [], porMes: {},
-          metaLocal: 90,  metaForanea: 180, mostrarArribo: false, mostrarCoord: true, mostrarProgramados: true, mostrarPlanGam: false, filtroCuenta: false }
+          metaLocal: 90,  metaForanea: 180, mostrarArribo: false, mostrarCoord: true, mostrarProgramados: true, mostrarPlanGam: false, filtroCuenta: false,
+          mostrarProductividad: false, turnos: [] }
 };
 const FORMULA_BACK_HTML = () => document.getElementById('formulaBox').dataset.back;
 // Reglas de puntos de Mundial Vial (se usan en el cálculo y en la tabla explicativa)
@@ -602,6 +608,7 @@ function renderHead(){
   cols.push(t.metaForanea ? `% Meta local<br><span class="muted">≤${t.metaLocal} min</span>` : '% Meta local');
   if(t.metaForanea) cols.push(`% Meta foránea<br><span class="muted">&lt;${t.metaForanea} min</span>`);
   if(t.mostrarPlanGam) cols.push('% Plan gam.');
+  if(t.mostrarProductividad) cols.push('Horas turno', 'Serv/hora', '% del turno');
   cols.push('Puntos', 'Insignias');
   document.getElementById('rankingHead').innerHTML = '<tr>' + cols.map(c=>`<th>${c}</th>`).join('') + '</tr>';
   return cols.length;
@@ -748,6 +755,15 @@ async function loadData(){
     TEAMS.back.records = (data.records || []).map(mapRecord).filter(r => r.estatus === 'Finished');
     TEAMS.back.agentes = BACK_TEAM;
     TEAMS.back.porMes = ROSTER_POR_MES;
+    // Productividad: una fila por agente y día con turno (n8n cruza Horarios 2026
+    // con la hora de creación de los servicios Finished)
+    TEAMS.back.turnos = (data.turnos_back || []).map(t=>({
+      fecha: t.fecha,
+      agente: t.agente,
+      horas: Number(t.horas) || 0,
+      total_op: Number(t.total_op_en_turno) || 0,
+      propios: Number(t.propios_en_turno) || 0
+    }));
     const mv = data.mundial_vial || {};
     TEAMS.mv.records = (mv.records || []).map(mapRecord)
       .filter(r => r.estatus === 'Finished' && String(r.cuenta||'').trim().toLowerCase() === 'seguros mundial vial');
@@ -889,11 +905,11 @@ function computeData(){
   const byAgent = {};
   // Acumulador para el desempeño global (todos los agentes juntos), con la
   // misma forma que un agente individual, para reusar el mismo cálculo.
-  const globalAcc = {servicios:0, programados:0, arribos:[], locales:[], foraneos:[], coords:[], planGam:0, prioridad1:0, towElegibles:0, puntos:0};
+  const globalAcc = {servicios:0, programados:0, arribos:[], locales:[], foraneos:[], coords:[], planGam:0, prioridad1:0, towElegibles:0, puntos:0, horas:0, opTurno:0, propiosTurno:0};
   // Roster mensual: solo compiten los agentes que estaban en el bloque BACK
   // de los meses que cubre el periodo (más cualquiera con servicios, por seguridad).
   const agentesPeriodo = [...new Set([...rosterDelPeriodo(from, to), ...filtered.map(r=>r.agente)])];
-  agentesPeriodo.forEach(a=>{ byAgent[a] = {servicios:0, programados:0, arribos:[], locales:[], foraneos:[], coords:[], planGam:0, prioridad1:0, towElegibles:0, puntos:0, records:[]}; });
+  agentesPeriodo.forEach(a=>{ byAgent[a] = {servicios:0, programados:0, arribos:[], locales:[], foraneos:[], coords:[], planGam:0, prioridad1:0, towElegibles:0, puntos:0, horas:0, opTurno:0, propiosTurno:0, records:[]}; });
   const team = TEAMS[CURRENT_TEAM];
 
   filtered.forEach(r=>{
@@ -933,6 +949,20 @@ function computeData(){
     globalAcc.puntos += pts;
   });
 
+  // Productividad: horas de turno del período y servicios creados dentro de
+  // ellas. No depende del filtro de cuenta. En la fila global no se calcula
+  // "% del turno" (los turnos se solapan y el total se contaría varias veces).
+  if(team.mostrarProductividad){
+    (team.turnos || []).forEach(t=>{
+      if(from && t.fecha < from) return;
+      if(to && t.fecha > to) return;
+      const ag = byAgent[t.agente];
+      if(!ag) return;
+      ag.horas += t.horas; ag.opTurno += t.total_op; ag.propiosTurno += t.propios;
+      globalAcc.horas += t.horas; globalAcc.propiosTurno += t.propios;
+    });
+  }
+
   // Convierte un acumulador (de un agente o el global) en las métricas derivadas
   function derivarMetricas(d, nombre){
     const n_arribo = d.arribos.length;
@@ -954,6 +984,10 @@ function computeData(){
       avg_arribo: avg_arribo!==null ? Math.round(avg_arribo*10)/10 : null,
       n_arribo, puntos: d.puntos, pct_meta_local, n_local, n_meta_cumple,
       plan_gam: d.planGam, prioridad1: d.prioridad1, tow_elegibles: d.towElegibles, pct_plan_gam,
+      horas_turno: Math.round(10*d.horas)/10,
+      serv_hora: d.horas>0 ? Math.round(100*d.propiosTurno/d.horas)/100 : null,
+      propios_turno: d.propiosTurno, op_turno: d.opTurno,
+      pct_turno: d.opTurno>0 ? Math.round(100*d.propiosTurno/d.opTurno) : null,
       records: d.records || [],
       badges: []
     };
@@ -1008,6 +1042,10 @@ function metricCellsHtml(a, teamCfg){
     <td>${metaText}</td>
     ${teamCfg.metaForanea ? `<td>${forText}</td>` : ''}
     ${teamCfg.mostrarPlanGam ? `<td>${planGamText}</td>` : ''}
+    ${teamCfg.mostrarProductividad ? `
+    <td style="white-space:nowrap;">${a.horas_turno>0 ? `${a.horas_turno} h` : '<span class="muted">—</span>'}</td>
+    <td>${a.serv_hora!==null ? a.serv_hora.toFixed(2) : '<span class="muted">—</span>'}</td>
+    <td>${a.pct_turno!==null ? `${a.pct_turno}% <span class="muted">(${a.propios_turno}/${a.op_turno})</span>` : '<span class="muted">—</span>'}</td>` : ''}
   `;
 }
 
