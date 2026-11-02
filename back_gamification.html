@@ -564,6 +564,15 @@ table.ranking-table tbody tr.agent-row{cursor:pointer;}
           </div>
           <div class="heat-scroll"><table class="heat-table" id="heatTable"></table></div>
           <div class="heat-legend"><span>Menos</span><span class="bar"></span><span>Más</span><span id="heatPico" style="margin-left:14px; color:var(--text-mid);"></span></div>
+
+          <div class="card-desc" style="margin:26px 0 10px;">Mapa de calor · Agentes de Back en turno por hora (Horarios 2026)</div>
+          <div class="heat-scroll"><table class="heat-table" id="heatAgTable"></table></div>
+          <div class="heat-legend"><span>Menos</span><span class="bar"></span><span>Más</span><span id="heatAgPico" style="margin-left:14px; color:var(--text-mid);"></span></div>
+
+          <div class="card-desc" style="margin:26px 0 10px;">Mapa de calor · POs por agente de Back (POs del primer mapa ÷ agentes de Back en turno)</div>
+          <div class="heat-scroll"><table class="heat-table" id="heatRatioTable"></table></div>
+          <div class="heat-legend"><span>Menos</span><span class="bar"></span><span>Más</span><span id="heatRatioPico" style="margin-left:14px; color:var(--text-mid);"></span></div>
+          <div class="formula-note">Un agente que trabaja la hora completa cuenta 1; si entra o sale a mitad de hora, cuenta la fracción. "s/a" = hubo POs pero ningún agente de Back en turno. En el promedio por día de semana, POs por agente = total de POs ÷ total de horas hombre de esa celda.</div>
         </div>
         <div class="section-divider"></div>
         <div>
@@ -722,6 +731,7 @@ let chartAsignacionInstance = null;
 let chartProductividadInstance = null;
 let ALL_ASIGNACION_POR_HORA = {};
 const heatState = { vista: 'semana', serie: 'manual' };
+let HORAS_AGENTE_POR_FECHA = null;
 let ALL_ASIGNACION_POR_FECHA = {};
 
 const LEVELS = [
@@ -802,8 +812,10 @@ async function loadData(){
       agente: t.agente,
       horas: Number(t.horas) || 0,
       total_op: Number(t.total_op_en_turno) || 0,
-      propios: Number(t.propios_en_turno) || 0
+      propios: Number(t.propios_en_turno) || 0,
+      turno: t.turno
     }));
+    HORAS_AGENTE_POR_FECHA = null; // se recalcula con los turnos nuevos
     const mv = data.mundial_vial || {};
     TEAMS.mv.records = (mv.records || []).map(mapRecord)
       .filter(r => r.estatus === 'Finished' && String(r.cuenta||'').trim().toLowerCase() === 'seguros mundial vial');
@@ -1551,52 +1563,100 @@ function initHeatRange(){
   const desde = new Date(lunes); desde.setDate(desde.getDate()-28);
   fromEl.value = toISO(desde); toEl.value = toISO(hasta);
 }
+// Horas hombre de Back por fecha y hora (0-23), repartiendo cada turno por
+// hora de reloj. Un turno 23:00-06:00 reparte horas en dos fechas.
+function horasAgentePorFecha(){
+  if(HORAS_AGENTE_POR_FECHA) return HORAS_AGENTE_POR_FECHA;
+  const m = {}, H = 3600000;
+  (TEAMS.back.turnos || []).forEach(t=>{
+    const mm = String(t.turno || '').match(/^(\d{1,2}):(\d{2})\s*-\s*(\d{1,2}):(\d{2})$/);
+    if(!mm || !(t.horas > 0)) return;
+    const [y,mo,d] = t.fecha.split('-').map(Number);
+    let ini = Date.UTC(y, mo-1, d, +mm[1], +mm[2]);
+    const fin = ini + t.horas * H; // horas ya viene recortado si el turno está en curso
+    while(ini < fin){
+      const dt = new Date(ini), f = dt.toISOString().slice(0,10), h = dt.getUTCHours();
+      const finHora = Date.UTC(dt.getUTCFullYear(), dt.getUTCMonth(), dt.getUTCDate(), h + 1);
+      const tramo = Math.min(fin, finHora) - ini;
+      (m[f] || (m[f] = new Array(24).fill(0)))[h] += tramo / H;
+      ini += tramo;
+    }
+  });
+  return (HORAS_AGENTE_POR_FECHA = m);
+}
+
+// Pinta una tabla hora x fila. filas: [{etiqueta, corta, valores[24], total}]
+function pintarHeatTable(tableId, picoId, filas, o){
+  const vals = filas.flatMap(r => r.valores).filter(v => v !== null && isFinite(v) && v > 0).sort((a,b)=>a-b);
+  // El máximo del color es el percentil 95 para que un valor atípico no apague el resto
+  const max = vals.length ? (o.p95 ? vals[Math.floor(0.95*(vals.length-1))] : vals[vals.length-1]) : 1;
+  let pico = null;
+  filas.forEach(r => r.valores.forEach((v,h)=>{ if(v !== null && isFinite(v) && (!pico || v > pico.v)) pico = { v, h, dia: r.corta }; }));
+  const head = '<tr><th class="rowh"></th>' + Array.from({length:24}, (_,h)=>`<th>${pad(h)}h</th>`).join('') + `<th>${o.totalLabel}</th></tr>`;
+  const celda = (v, h, corta) => {
+    if(v === null || v === 0) return `<td style="background:${colorCalor(0)};" title="${corta} ${pad(h)}:00 · 0"></td>`;
+    if(!isFinite(v)) return `<td style="background:rgba(229,72,77,0.28); color:var(--text-mid);" title="${corta} ${pad(h)}:00 · POs sin agente de Back en turno">s/a</td>`;
+    const t = Math.min(1, v / max);
+    return `<td style="background:${colorCalor(t)}; color:${t > 0.6 ? '#0b0f17' : 'var(--text)'};" title="${corta} ${pad(h)}:00-${pad(h)}:59 · ${o.fmt(v)}">${o.fmt(v)}</td>`;
+  };
+  const body = filas.map(r => `<tr><th class="rowh">${r.etiqueta}</th>${r.valores.map((v,h)=>celda(v,h,r.corta)).join('')}<td class="tot">${r.total===null ? '—' : o.fmt(r.total)}</td></tr>`).join('');
+  const foot = o.pie ? '<tr class="foot"><th class="rowh">Promedio diario</th>' + o.pie.valores.map(v=>`<td class="tot" style="padding:0;">${v===null||!isFinite(v) ? '—' : o.fmt(v)}</td>`).join('') + `<td class="tot">${o.pie.total===null ? '—' : o.fmt(o.pie.total)}</td></tr>` : '';
+  document.getElementById(tableId).innerHTML = filas.length
+    ? head + body + foot
+    : '<tr><td style="padding:18px; color:var(--text-dim);">Sin datos en el rango seleccionado</td></tr>';
+  document.getElementById(picoId).textContent = pico && pico.v > 0 ? `Pico: ${pico.dia} ${pad(pico.h)}:00 · ${o.fmt(pico.v)} ${o.unidad}` : '';
+}
+
 function renderHeatmap(){
   initHeatRange();
   const from = document.getElementById('heatFrom').value, to = document.getElementById('heatTo').value;
   const fechas = Object.keys(ALL_ASIGNACION_POR_HORA).filter(f => (!from || f >= from) && (!to || f <= to)).sort();
-  const filas = []; // { etiqueta, valores[24], decimales }
-  const totalHora = new Array(24).fill(0);
-  fechas.forEach(f => serieHora(ALL_ASIGNACION_POR_HORA[f], heatState.serie).forEach((v,h)=>{ totalHora[h] += v; }));
+  const horasAg = horasAgentePorFecha();
+  const cero = () => new Array(24).fill(0);
   const prom = heatState.vista === 'semana';
+  const n = fechas.length;
+
+  // Grupos: un día de semana (promedio) o una fecha
+  const grupos = [];
   if(prom){
-    const suma = DIAS_SEMANA.map(()=> new Array(24).fill(0)), dias = new Array(7).fill(0);
+    const g = DIAS_SEMANA.map((nombre, d)=>({ etiqueta:'', corta:nombre, dias:0, pos:cero(), ag:cero() }));
     fechas.forEach(f=>{
-      const d = diaSemana(f); dias[d]++;
-      serieHora(ALL_ASIGNACION_POR_HORA[f], heatState.serie).forEach((v,h)=>{ suma[d][h] += v; });
+      const x = g[diaSemana(f)]; x.dias++;
+      serieHora(ALL_ASIGNACION_POR_HORA[f], heatState.serie).forEach((v,h)=>{ x.pos[h] += v; });
+      (horasAg[f] || cero()).forEach((v,h)=>{ x.ag[h] += v; });
     });
-    DIAS_SEMANA.forEach((nombre, d)=>{
-      if(!dias[d]) return;
-      filas.push({ etiqueta: `${nombre} <span class="muted">(${dias[d]})</span>`, valores: suma[d].map(v => v/dias[d]), corta: nombre });
-    });
+    g.forEach(x=>{ if(x.dias){ x.etiqueta = `${x.corta} <span class="muted">(${x.dias})</span>`; grupos.push(x); } });
   } else {
     fechas.forEach(f=>{
-      const [y,m,d] = f.split('-');
-      filas.push({ etiqueta: `${DIAS_CORTO[diaSemana(f)]} ${d}/${m}`, valores: serieHora(ALL_ASIGNACION_POR_HORA[f], heatState.serie), corta: `${DIAS_CORTO[diaSemana(f)]} ${d}/${m}` });
+      const [y,m,d] = f.split('-'); const corta = `${DIAS_CORTO[diaSemana(f)]} ${d}/${m}`;
+      grupos.push({ etiqueta: corta, corta, dias:1, pos: serieHora(ALL_ASIGNACION_POR_HORA[f], heatState.serie).slice(), ag: (horasAg[f] || cero()).slice() });
     });
   }
-  const fmt = v => prom ? (Math.round(v*10)/10).toLocaleString('es-CO') : String(v);
-  const max = Math.max(1, ...filas.flatMap(r => r.valores));
-  let pico = null;
-  filas.forEach(r => r.valores.forEach((v,h)=>{ if(!pico || v > pico.v) pico = { v, h, dia: r.corta }; }));
+  const suma = a => a.reduce((s,v)=>s+v,0);
+  const div = (a, b) => b > 0 ? a / b : (a > 0 ? Infinity : null);
+  const totPos = cero(), totAg = cero();
+  grupos.forEach(x=>{ x.pos.forEach((v,h)=>{ totPos[h] += v; }); x.ag.forEach((v,h)=>{ totAg[h] += v; }); });
+  const r1 = v => (Math.round(v*10)/10).toLocaleString('es-CO');
+  const fmtPos = v => prom ? r1(v) : String(v);
 
-  const head = '<tr><th class="rowh"></th>' + Array.from({length:24}, (_,h)=>`<th>${pad(h)}h</th>`).join('') + `<th>${prom ? 'Prom. día' : 'Total'}</th></tr>`;
-  const body = filas.map(r => {
-    const celdas = r.valores.map((v,h)=>{
-      const t = v / max;
-      const txt = v > 0 ? fmt(v) : '';
-      return `<td style="background:${colorCalor(t)}; color:${t > 0.6 ? '#0b0f17' : 'var(--text)'};" title="${r.corta} ${pad(h)}:00-${pad(h)}:59 · ${fmt(v)}">${txt}</td>`;
-    }).join('');
-    return `<tr><th class="rowh">${r.etiqueta}</th>${celdas}<td class="tot">${fmt(r.valores.reduce((s,v)=>s+v,0))}</td></tr>`;
-  }).join('');
-  const n = fechas.length;
-  const foot = n ? '<tr class="foot"><th class="rowh">Promedio diario</th>' + totalHora.map(v=>`<td class="tot" style="padding:0;">${(Math.round(10*v/n)/10).toLocaleString('es-CO')}</td>`).join('') + `<td class="tot">${(Math.round(10*totalHora.reduce((s,v)=>s+v,0)/n)/10).toLocaleString('es-CO')}</td></tr>` : '';
-  document.getElementById('heatTable').innerHTML = filas.length
-    ? head + body + foot
-    : '<tr><td style="padding:18px; color:var(--text-dim);">Sin datos en el rango seleccionado</td></tr>';
-  document.getElementById('heatPico').textContent = pico && pico.v > 0
-    ? `Pico: ${pico.dia} ${pad(pico.h)}:00 · ${fmt(pico.v)} ${prom ? 'POs en promedio' : 'POs'} · ${n} día${n===1?'':'s'} en el rango`
-    : '';
+  // 1) POs coordinados
+  pintarHeatTable('heatTable', 'heatPico',
+    grupos.map(x=>({ etiqueta:x.etiqueta, corta:x.corta, valores:x.pos.map(v=>v/x.dias), total:suma(x.pos)/x.dias })),
+    { fmt: fmtPos, totalLabel: prom ? 'Prom. día' : 'Total', unidad: prom ? 'POs en promedio' : 'POs',
+      pie: n ? { valores: totPos.map(v=>v/n), total: suma(totPos)/n } : null });
+  // 2) Agentes de Back en turno (horas hombre en esa hora)
+  pintarHeatTable('heatAgTable', 'heatAgPico',
+    grupos.map(x=>({ etiqueta:x.etiqueta, corta:x.corta, valores:x.ag.map(v=>v/x.dias), total:suma(x.ag)/x.dias })),
+    { fmt: r1, totalLabel: 'Horas h. día', unidad: prom ? 'agentes en promedio' : 'agentes',
+      pie: n ? { valores: totAg.map(v=>v/n), total: suma(totAg)/n } : null });
+  // 3) POs por agente de Back
+  pintarHeatTable('heatRatioTable', 'heatRatioPico',
+    grupos.map(x=>({ etiqueta:x.etiqueta, corta:x.corta, valores:x.pos.map((v,h)=>div(v, x.ag[h])), total: div(suma(x.pos), suma(x.ag)) })),
+    { fmt: r1, totalLabel: 'POs / h.h.', unidad: 'POs por agente', p95: true,
+      pie: n ? { valores: totPos.map((v,h)=>div(v, totAg[h])), total: div(suma(totPos), suma(totAg)) } : null });
+
+  const pc = document.getElementById('heatPico');
+  if(pc.textContent) pc.textContent += ` · ${n} día${n===1?'':'s'} en el rango`;
 }
 
 document.getElementById('heatVistaBtns').addEventListener('click', (e)=>{
