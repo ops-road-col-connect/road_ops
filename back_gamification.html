@@ -384,6 +384,31 @@ table.ranking-table tbody tr.agent-row{cursor:pointer;}
   table.heat-table td{ min-width:30px; height:26px; text-align:center; border-radius:3px; color:var(--text); }
   table.heat-table td.tot{ background:transparent; color:var(--yellow); font-weight:700; padding:0 6px; }
   table.heat-table tr.foot th, table.heat-table tr.foot td{ border-top:1px dashed var(--border); }
+  table.heat-table td.meta-cell{ font-size:13px; padding:0 8px; border:2px solid var(--yellow); border-radius:5px; background:rgba(255,176,0,0.12); }
+  .prod-filtros{ border:1px solid var(--border); border-radius:10px; padding:12px 14px; background:rgba(255,255,255,0.015); }
+  .prod-filtros .pf-row{ display:flex; flex-wrap:wrap; align-items:flex-start; gap:10px 26px; }
+  .prod-filtros .pf-lbl{ font-family:'JetBrains Mono', monospace; font-size:10px; letter-spacing:1.2px; text-transform:uppercase; color:var(--text-dim); margin-bottom:6px; }
+  .prod-filtros nav.views{ margin-bottom:0; }
+  .cuentas-box{ position:relative; }
+  .cuentas-box summary{ list-style:none; cursor:pointer; font-family:'JetBrains Mono', monospace; font-size:11px; font-weight:600; letter-spacing:1px; padding:9px 14px; border:1px solid var(--border-soft); border-radius:7px; color:var(--text); }
+  .cuentas-box summary::-webkit-details-marker{ display:none; }
+  .cuentas-box[open] summary{ border-color:rgba(241,91,43,0.35); color:var(--orange); }
+  .cuentas-panel{ position:absolute; z-index:20; margin-top:6px; width:340px; max-height:360px; overflow:auto; background:var(--panel); border:1px solid var(--border); border-radius:9px; padding:10px; box-shadow:0 10px 30px rgba(0,0,0,0.5); }
+  .cuentas-panel .cp-acc{ display:flex; gap:8px; margin-bottom:8px; }
+  .cuentas-panel .cp-acc button{ font-family:'JetBrains Mono', monospace; font-size:10px; padding:5px 10px; border-radius:6px; border:1px solid var(--border-soft); background:transparent; color:var(--text-mid); cursor:pointer; }
+  .cuentas-panel .cp-acc button:hover{ color:var(--text); }
+  .cuentas-panel label{ display:flex; align-items:center; gap:8px; padding:4px 2px; font-size:12px; color:var(--text); cursor:pointer; }
+  .cuentas-panel label .n{ margin-left:auto; font-family:'JetBrains Mono', monospace; font-size:10px; color:var(--text-dim); }
+  .cuentas-panel input[type=checkbox], .pf-equipos input[type=checkbox]{ accent-color: var(--orange); }
+  .pf-equipos{ display:flex; gap:14px; padding-top:6px; }
+  .pf-equipos label{ display:flex; align-items:center; gap:7px; font-size:12px; color:var(--text); cursor:pointer; }
+  .pf-resumen{ margin-top:10px; font-family:'JetBrains Mono', monospace; font-size:10.5px; color:var(--text-mid); }
+  .meta-box{ display:flex; flex-wrap:wrap; align-items:center; gap:10px 22px; padding:12px 16px; margin-bottom:12px; border:1px solid rgba(255,176,0,0.35); border-radius:9px; background:rgba(255,176,0,0.06); font-family:'JetBrains Mono', monospace; }
+  .meta-box .meta-val{ font-size:26px; font-weight:800; color:var(--yellow); line-height:1; }
+  .meta-box .meta-lbl{ font-size:10px; letter-spacing:1.2px; text-transform:uppercase; color:var(--text-dim); margin-top:4px; }
+  .meta-box .meta-track{ flex:1; min-width:180px; height:10px; border-radius:5px; background:rgba(255,255,255,0.06); overflow:hidden; }
+  .meta-box .meta-fill{ height:100%; border-radius:5px; background:linear-gradient(90deg, var(--turquoise), var(--yellow)); }
+  .meta-box .meta-pct{ font-size:12px; color:var(--text-mid); }
   .heat-legend{ display:flex; align-items:center; gap:8px; margin-top:10px; font-size:10px; color:var(--text-dim); font-family:'JetBrains Mono', monospace; }
   .heat-legend .bar{ width:180px; height:8px; border-radius:4px; background:linear-gradient(90deg, rgba(39,155,176,0.10), #279bb0, #ffb000, #f15b2b); }
 
@@ -544,20 +569,44 @@ table.ranking-table tbody tr.agent-row{cursor:pointer;}
         <div class="chart-box"><canvas id="chartServiciosBack"></canvas></div>
         <div class="chart-box"><canvas id="chartPlanGam"></canvas></div>
         <div class="chart-box"><canvas id="chartAsignacion"></canvas></div>
-        <div class="chart-box"><canvas id="chartProductividad"></canvas></div>
         <div class="section-divider"></div>
+        <div class="prod-filtros">
+          <div class="pf-lbl" style="color:var(--yellow);">Filtros de productividad · aplican al gráfico de productividad y a los mapas de calor</div>
+          <div class="pf-row">
+            <div>
+              <div class="pf-lbl">Horas hombre de</div>
+              <div class="pf-equipos" id="pfEquipos">
+                <label><input type="checkbox" value="back" checked> Back</label>
+                <label><input type="checkbox" value="mv"> Mundial Vial</label>
+              </div>
+            </div>
+            <div>
+              <div class="pf-lbl">Servicios de las cuentas</div>
+              <details class="cuentas-box" id="pfCuentasBox">
+                <summary id="pfCuentasResumen">Cuentas</summary>
+                <div class="cuentas-panel">
+                  <div class="cp-acc">
+                    <button type="button" data-acc="todas">Todas</button>
+                    <button type="button" data-acc="ninguna">Ninguna</button>
+                    <button type="button" data-acc="defecto">Por defecto</button>
+                  </div>
+                  <div id="pfCuentasLista"></div>
+                </div>
+              </details>
+            </div>
+          </div>
+          <div class="pf-resumen" id="pfResumen"></div>
+        </div>
+        <div class="chart-box"><canvas id="chartProductividad"></canvas></div>
         <div>
-          <div class="section-note">No depende del agrupamiento día/semana/mes de arriba</div>
-          <div class="card-desc" style="margin-bottom:10px;">Mapa de calor · POs Finished de toda la operación por hora de creación (FechaHoraCreacion)</div>
+          <div class="card-desc" style="margin-bottom:10px;">Mapa de calor · POs Finished de las cuentas seleccionadas por hora de creación (FechaHoraCreacion)</div>
           <div class="heat-controls">
             <nav class="views" id="heatVistaBtns">
               <button class="view-tab active" data-v="semana">Promedio por día de semana</button>
               <button class="view-tab" data-v="fecha">Por fecha</button>
             </nav>
             <nav class="views" id="heatSerieBtns">
-              <button class="view-tab active" data-s="manual">Coordinados (Back + otros)</button>
-              <button class="view-tab" data-s="back">Solo Back</button>
-              <button class="view-tab" data-s="otros">Solo otros equipos</button>
+              <button class="view-tab active" data-s="manual">Coordinados</button>
               <button class="view-tab" data-s="auto">Driver recomendado</button>
             </nav>
             <div class="heat-range"><span>Desde</span><input type="date" id="heatFrom"><span>Hasta</span><input type="date" id="heatTo"></div>
@@ -565,14 +614,20 @@ table.ranking-table tbody tr.agent-row{cursor:pointer;}
           <div class="heat-scroll"><table class="heat-table" id="heatTable"></table></div>
           <div class="heat-legend"><span>Menos</span><span class="bar"></span><span>Más</span><span id="heatPico" style="margin-left:14px; color:var(--text-mid);"></span></div>
 
-          <div class="card-desc" style="margin:26px 0 10px;">Mapa de calor · Agentes de Back en turno por hora (Horarios 2026)</div>
+          <div class="card-desc" style="margin:26px 0 10px;">Mapa de calor · Agentes en turno por hora (Horarios 2026) · <span id="heatEquiposLbl">Back</span></div>
           <div class="heat-scroll"><table class="heat-table" id="heatAgTable"></table></div>
           <div class="heat-legend"><span>Menos</span><span class="bar"></span><span>Más</span><span id="heatAgPico" style="margin-left:14px; color:var(--text-mid);"></span></div>
 
-          <div class="card-desc" style="margin:26px 0 10px;">Mapa de calor · POs por agente de Back (POs del primer mapa ÷ agentes de Back en turno)</div>
+          <div class="card-desc" style="margin:26px 0 10px;">Mapa de calor · POs por agente (POs del primer mapa ÷ agentes en turno del segundo)</div>
+          <div class="meta-box" id="heatMetaBox">
+            <div><div class="meta-val" id="heatMetaVal">—</div><div class="meta-lbl">POs por hora hombre · rango</div></div>
+            <div><div class="meta-val" style="color:var(--text);">6</div><div class="meta-lbl">Meta</div></div>
+            <div class="meta-track"><div class="meta-fill" id="heatMetaFill" style="width:0%;"></div></div>
+            <div class="meta-pct" id="heatMetaPct"></div>
+          </div>
           <div class="heat-scroll"><table class="heat-table" id="heatRatioTable"></table></div>
           <div class="heat-legend"><span>Menos</span><span class="bar"></span><span>Más</span><span id="heatRatioPico" style="margin-left:14px; color:var(--text-mid);"></span></div>
-          <div class="formula-note">Un agente que trabaja la hora completa cuenta 1; si entra o sale a mitad de hora, cuenta la fracción. "s/a" = hubo POs pero ningún agente de Back en turno. En el promedio por día de semana, POs por agente = total de POs ÷ total de horas hombre de esa celda.</div>
+          <div class="formula-note">Un agente que trabaja la hora completa cuenta 1; si entra o sale a mitad de hora, cuenta la fracción. "s/a" = hubo POs pero ningún agente de los equipos seleccionados en turno. En el promedio por día de semana, POs por agente = total de POs ÷ total de horas hombre de esa celda.</div>
         </div>
         <div class="section-divider"></div>
         <div>
@@ -729,9 +784,12 @@ let chartServiciosBackInstance = null;
 let chartPlanGamInstance = null;
 let chartAsignacionInstance = null;
 let chartProductividadInstance = null;
-let ALL_ASIGNACION_POR_HORA = {};
 const heatState = { vista: 'semana', serie: 'manual' };
-let HORAS_AGENTE_POR_FECHA = null;
+let HORAS_AGENTE_POR_FECHA = {}; // cache por equipo: { back: {fecha:[24]}, mv: {...} }
+let ALL_ASIG_HORA_CUENTA = {};  // { fecha: { cuenta: { H: [auto, back, otros] } } }
+const CUENTAS_EXCLUIDAS_DEFECTO = ['Seguros Mundial'];
+const prodFiltro = { equipos: new Set(['back']), excluidas: new Set(CUENTAS_EXCLUIDAS_DEFECTO) };
+const META_POS_POR_HH = 6; // meta de productividad de coordinación (POs por hora hombre de Back)
 let ALL_ASIGNACION_POR_FECHA = {};
 
 const LEVELS = [
@@ -815,7 +873,11 @@ async function loadData(){
       propios: Number(t.propios_en_turno) || 0,
       turno: t.turno
     }));
-    HORAS_AGENTE_POR_FECHA = null; // se recalcula con los turnos nuevos
+    TEAMS.mv.turnos = (data.turnos_mv || []).map(t=>({
+      fecha: t.fecha, agente: t.agente, horas: Number(t.horas) || 0,
+      total_op: Number(t.total_op_en_turno) || 0, propios: Number(t.propios_en_turno) || 0, turno: t.turno
+    }));
+    HORAS_AGENTE_POR_FECHA = {}; // se recalcula con los turnos nuevos
     const mv = data.mundial_vial || {};
     TEAMS.mv.records = (mv.records || []).map(mapRecord)
       .filter(r => r.estatus === 'Finished' && String(r.cuenta||'').trim().toLowerCase() === 'seguros mundial vial');
@@ -823,7 +885,7 @@ async function loadData(){
     TEAMS.mv.porMes = (mv.roster_por_mes && typeof mv.roster_por_mes === 'object') ? mv.roster_por_mes : {};
     ALL_TOTALES_POR_FECHA = data.totales_por_fecha || {};
     ALL_ASIGNACION_POR_FECHA = data.asignacion_por_fecha || {};
-    ALL_ASIGNACION_POR_HORA = data.asignacion_por_hora || {};
+    ALL_ASIG_HORA_CUENTA = data.asignacion_por_hora_cuenta || {};
     ALL_GRUAS_PLAN_TODOS = (data.gruas_plan_todos_equipos || []).map(r=>({
       po_number: r.po_number,
       fecha: r.fecha,
@@ -1482,19 +1544,21 @@ function renderHistorico(){
       }
     }
   });
-  // ---- Productividad global: servicios manuales ÷ horas hombre de Back ----
-  // Servicios manuales = Finished de toda la operación sin driver recomendado
-  // (manual Back + manual otros). Horas hombre = suma de turnos del bloque BACK
-  // de Horarios 2026 (por la fecha de inicio del turno). Sin filtro de cuenta.
+  // ---- Productividad: servicios coordinados ÷ horas hombre ----
+  // Coordinados = Finished sin driver recomendado de las cuentas seleccionadas.
+  // Horas hombre = turnos de Horarios 2026 de los equipos seleccionados (por la
+  // fecha de inicio del turno). Usa los filtros de productividad.
+  renderFiltrosProductividad();
   const prod = {};
-  const grupoProd = k => prod[k] || (prod[k] = { manual:0, back:0, otros:0, horas:0 });
-  Object.entries(ALL_ASIGNACION_POR_FECHA).forEach(([fecha, v])=>{
-    const g = grupoProd(getGroupKey(fecha, historicoGroup));
-    g.back += v.back || 0; g.otros += v.otros || 0; g.manual += (v.back || 0) + (v.otros || 0);
+  const grupoProd = k => prod[k] || (prod[k] = { manual:0, horas:0 });
+  Object.keys(ALL_ASIG_HORA_CUENTA).forEach(fecha=>{
+    grupoProd(getGroupKey(fecha, historicoGroup)).manual += posHoraFecha(fecha, 'manual').reduce((a,b)=>a+b, 0);
   });
-  (TEAMS.back.turnos || []).forEach(t=>{
-    if(!ALL_ASIGNACION_POR_FECHA[t.fecha]) return; // solo días con datos de servicios
-    grupoProd(getGroupKey(t.fecha, historicoGroup)).horas += t.horas;
+  prodFiltro.equipos.forEach(eq=>{
+    (TEAMS[eq].turnos || []).forEach(t=>{
+      if(!ALL_ASIG_HORA_CUENTA[t.fecha]) return; // solo días con datos de servicios
+      grupoProd(getGroupKey(t.fecha, historicoGroup)).horas += t.horas;
+    });
   });
   const clavesProd = Object.keys(prod).filter(k => prod[k].horas > 0).sort();
   const servHH = clavesProd.map(k => Math.round(100*prod[k].manual/prod[k].horas)/100);
@@ -1503,8 +1567,8 @@ function renderHistorico(){
     data: {
       labels: clavesProd,
       datasets: [
-        { type:'bar', label:'Servicios manuales (Back + otros)', data: clavesProd.map(k=>prod[k].manual), backgroundColor:'rgba(39,155,176,0.6)', borderRadius:3, maxBarThickness:28, yAxisID:'y' },
-        { type:'bar', label:'Horas hombre Back', data: clavesProd.map(k=>Math.round(10*prod[k].horas)/10), backgroundColor:'rgba(241,91,43,0.55)', borderRadius:3, maxBarThickness:28, yAxisID:'y' },
+        { type:'bar', label:'Servicios coordinados', data: clavesProd.map(k=>prod[k].manual), backgroundColor:'rgba(39,155,176,0.6)', borderRadius:3, maxBarThickness:28, yAxisID:'y' },
+        { type:'bar', label:'Horas hombre', data: clavesProd.map(k=>Math.round(10*prod[k].horas)/10), backgroundColor:'rgba(241,91,43,0.55)', borderRadius:3, maxBarThickness:28, yAxisID:'y' },
         { type:'line', label:'Servicios por hora hombre', data: servHH, borderColor:'#ffb000', backgroundColor:'rgba(255,176,0,0.15)', tension:0.25, spanGaps:true, pointRadius:3, pointBackgroundColor:'#ffb000', yAxisID:'y1' }
       ]
     },
@@ -1513,13 +1577,12 @@ function renderHistorico(){
       interaction: { mode:'index', intersect:false },
       plugins: {
         legend: { display: true, labels: { font:{size:10} } },
-        title: { display: true, text: 'Productividad: servicios manuales por hora hombre de Back (sin driver recomendado)', font:{size:11, weight:700}, color:'#f5f7fa' },
+        title: { display: true, text: `Productividad: servicios coordinados por hora hombre (${etiquetaEquipos()} · sin driver recomendado)`, font:{size:11, weight:700}, color:'#f5f7fa' },
         tooltip: { callbacks: {
           label: ctx => {
             if(ctx.datasetIndex === 2) return ` Servicios por hora hombre: ${ctx.parsed.y.toFixed(2)}`;
-            if(ctx.datasetIndex === 1) return ` Horas hombre Back: ${ctx.parsed.y} h`;
-            const g = prod[ctx.label];
-            return ` Servicios manuales: ${g.manual} (Back ${g.back} · otros ${g.otros})`;
+            if(ctx.datasetIndex === 1) return ` Horas hombre: ${ctx.parsed.y} h`;
+            return ` Servicios coordinados: ${prod[ctx.label].manual}`;
           }
         } }
       },
@@ -1537,9 +1600,80 @@ function renderHistorico(){
 const DIAS_SEMANA = ['Lunes','Martes','Miércoles','Jueves','Viernes','Sábado','Domingo'];
 const DIAS_CORTO = ['Lun','Mar','Mié','Jue','Vie','Sáb','Dom'];
 function diaSemana(fecha){ const [y,m,d] = fecha.split('-').map(Number); return (new Date(y, m-1, d).getDay()+6)%7; } // 0 = lunes
-function serieHora(v, serie){
-  if(serie === 'manual') return v.back.map((x,i)=> x + v.otros[i]);
-  return v[serie] || new Array(24).fill(0);
+function escapeHtml(t){ return String(t).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+// POs de una fecha por hora, solo de las cuentas seleccionadas.
+// serie 'manual' = coordinados (sin driver recomendado); 'auto' = driver recomendado
+function posHoraFecha(fecha, serie){
+  const out = new Array(24).fill(0);
+  const pf = ALL_ASIG_HORA_CUENTA[fecha];
+  if(!pf) return out;
+  for(const cuenta in pf){
+    if(prodFiltro.excluidas.has(cuenta)) continue;
+    const horas = pf[cuenta];
+    for(const h in horas){ const v = horas[h]; out[+h] += serie === 'auto' ? v[0] : v[1] + v[2]; }
+  }
+  return out;
+}
+function etiquetaEquipos(){
+  const n = [...prodFiltro.equipos].map(e => e === 'back' ? 'Back' : 'Mundial Vial');
+  return n.length ? n.join(' + ') : 'sin equipo';
+}
+// Lista de cuentas con su volumen de coordinados (todo el histórico)
+function renderFiltrosProductividad(){
+  const tot = {};
+  for(const f in ALL_ASIG_HORA_CUENTA){
+    const pf = ALL_ASIG_HORA_CUENTA[f];
+    for(const c in pf){ for(const h in pf[c]){ const v = pf[c][h]; tot[c] = (tot[c] || 0) + v[1] + v[2]; } }
+  }
+  const cuentas = Object.keys(tot).sort((a,b)=> tot[b]-tot[a] || a.localeCompare(b,'es'));
+  document.getElementById('pfCuentasLista').innerHTML = cuentas.map(c =>
+    `<label><input type="checkbox" data-cuenta="${escapeHtml(c)}" ${prodFiltro.excluidas.has(c) ? '' : 'checked'}> ${escapeHtml(c)}<span class="n">${tot[c].toLocaleString('es-CO')}</span></label>`
+  ).join('') || '<div class="muted" style="font-size:11px;">Sin datos de cuentas</div>';
+  const incl = cuentas.filter(c => !prodFiltro.excluidas.has(c));
+  const excl = cuentas.filter(c => prodFiltro.excluidas.has(c));
+  document.getElementById('pfCuentasResumen').textContent =
+    excl.length === 0 ? `Todas las cuentas (${cuentas.length}) ▾`
+    : incl.length === 0 ? 'Ninguna cuenta ▾'
+    : excl.length <= 2 ? `Todas menos ${excl.join(', ')} ▾`
+    : `${incl.length} de ${cuentas.length} cuentas ▾`;
+  document.querySelectorAll('#pfEquipos input').forEach(i => { i.checked = prodFiltro.equipos.has(i.value); });
+  const lbl = document.getElementById('heatEquiposLbl'); if(lbl) lbl.textContent = etiquetaEquipos();
+  const smvIncl = cuentas.includes('Seguros Mundial Vial') && !prodFiltro.excluidas.has('Seguros Mundial Vial');
+  let aviso = '';
+  if(prodFiltro.equipos.size === 0) aviso = ' · Selecciona al menos un equipo';
+  else if(smvIncl && !prodFiltro.equipos.has('mv')) aviso = ' · Ojo: incluye servicios de Seguros Mundial Vial pero no las horas del equipo Mundial Vial';
+  else if(!smvIncl && prodFiltro.equipos.has('mv')) aviso = ' · Ojo: incluye las horas de Mundial Vial pero no sus servicios';
+  document.getElementById('pfResumen').textContent =
+    `Productividad = POs coordinados de ${incl.length} cuenta${incl.length===1?'':'s'} ÷ horas hombre de ${etiquetaEquipos()}${aviso}`;
+}
+// Horas hombre por fecha y hora (0-23), repartiendo cada turno por hora de
+// reloj. Un turno 23:00-06:00 reparte horas en dos fechas. Cache por equipo.
+function horasEquipoPorFecha(eq){
+  if(HORAS_AGENTE_POR_FECHA[eq]) return HORAS_AGENTE_POR_FECHA[eq];
+  const m = {}, H = 3600000;
+  (TEAMS[eq].turnos || []).forEach(t=>{
+    const mm = String(t.turno || '').match(/^(\d{1,2}):(\d{2})\s*-\s*(\d{1,2}):(\d{2})$/);
+    if(!mm || !(t.horas > 0)) return;
+    const [y,mo,d] = t.fecha.split('-').map(Number);
+    let ini = Date.UTC(y, mo-1, d, +mm[1], +mm[2]);
+    const fin = ini + t.horas * H; // horas ya viene recortado si el turno está en curso
+    while(ini < fin){
+      const dt = new Date(ini), f = dt.toISOString().slice(0,10), h = dt.getUTCHours();
+      const finHora = Date.UTC(dt.getUTCFullYear(), dt.getUTCMonth(), dt.getUTCDate(), h + 1);
+      const tramo = Math.min(fin, finHora) - ini;
+      (m[f] || (m[f] = new Array(24).fill(0)))[h] += tramo / H;
+      ini += tramo;
+    }
+  });
+  return (HORAS_AGENTE_POR_FECHA[eq] = m);
+}
+function horasAgentePorFecha(){
+  const m = {};
+  prodFiltro.equipos.forEach(eq=>{
+    const he = horasEquipoPorFecha(eq);
+    for(const f in he){ const a = m[f] || (m[f] = new Array(24).fill(0)); he[f].forEach((v,h)=>{ a[h] += v; }); }
+  });
+  return m;
 }
 function colorCalor(t){
   // 0 -> turquesa tenue, 0.5 -> turquesa, 0.8 -> amarillo, 1 -> naranja
@@ -1563,28 +1697,6 @@ function initHeatRange(){
   const desde = new Date(lunes); desde.setDate(desde.getDate()-28);
   fromEl.value = toISO(desde); toEl.value = toISO(hasta);
 }
-// Horas hombre de Back por fecha y hora (0-23), repartiendo cada turno por
-// hora de reloj. Un turno 23:00-06:00 reparte horas en dos fechas.
-function horasAgentePorFecha(){
-  if(HORAS_AGENTE_POR_FECHA) return HORAS_AGENTE_POR_FECHA;
-  const m = {}, H = 3600000;
-  (TEAMS.back.turnos || []).forEach(t=>{
-    const mm = String(t.turno || '').match(/^(\d{1,2}):(\d{2})\s*-\s*(\d{1,2}):(\d{2})$/);
-    if(!mm || !(t.horas > 0)) return;
-    const [y,mo,d] = t.fecha.split('-').map(Number);
-    let ini = Date.UTC(y, mo-1, d, +mm[1], +mm[2]);
-    const fin = ini + t.horas * H; // horas ya viene recortado si el turno está en curso
-    while(ini < fin){
-      const dt = new Date(ini), f = dt.toISOString().slice(0,10), h = dt.getUTCHours();
-      const finHora = Date.UTC(dt.getUTCFullYear(), dt.getUTCMonth(), dt.getUTCDate(), h + 1);
-      const tramo = Math.min(fin, finHora) - ini;
-      (m[f] || (m[f] = new Array(24).fill(0)))[h] += tramo / H;
-      ini += tramo;
-    }
-  });
-  return (HORAS_AGENTE_POR_FECHA = m);
-}
-
 // Pinta una tabla hora x fila. filas: [{etiqueta, corta, valores[24], total}]
 function pintarHeatTable(tableId, picoId, filas, o){
   const vals = filas.flatMap(r => r.valores).filter(v => v !== null && isFinite(v) && v > 0).sort((a,b)=>a-b);
@@ -1600,7 +1712,7 @@ function pintarHeatTable(tableId, picoId, filas, o){
     return `<td style="background:${colorCalor(t)}; color:${t > 0.6 ? '#0b0f17' : 'var(--text)'};" title="${corta} ${pad(h)}:00-${pad(h)}:59 · ${o.fmt(v)}">${o.fmt(v)}</td>`;
   };
   const body = filas.map(r => `<tr><th class="rowh">${r.etiqueta}</th>${r.valores.map((v,h)=>celda(v,h,r.corta)).join('')}<td class="tot">${r.total===null ? '—' : o.fmt(r.total)}</td></tr>`).join('');
-  const foot = o.pie ? '<tr class="foot"><th class="rowh">Promedio diario</th>' + o.pie.valores.map(v=>`<td class="tot" style="padding:0;">${v===null||!isFinite(v) ? '—' : o.fmt(v)}</td>`).join('') + `<td class="tot">${o.pie.total===null ? '—' : o.fmt(o.pie.total)}</td></tr>` : '';
+  const foot = o.pie ? '<tr class="foot"><th class="rowh">Promedio diario</th>' + o.pie.valores.map(v=>`<td class="tot" style="padding:0;">${v===null||!isFinite(v) ? '—' : o.fmt(v)}</td>`).join('') + `<td class="tot${o.resaltarTotal ? ' meta-cell' : ''}" ${o.resaltarTotal ? `title="Productividad del rango · meta ${META_POS_POR_HH}"` : ''}>${o.pie.total===null || !isFinite(o.pie.total) ? '—' : o.fmt(o.pie.total)}</td></tr>` : '';
   document.getElementById(tableId).innerHTML = filas.length
     ? head + body + foot
     : '<tr><td style="padding:18px; color:var(--text-dim);">Sin datos en el rango seleccionado</td></tr>';
@@ -1610,7 +1722,7 @@ function pintarHeatTable(tableId, picoId, filas, o){
 function renderHeatmap(){
   initHeatRange();
   const from = document.getElementById('heatFrom').value, to = document.getElementById('heatTo').value;
-  const fechas = Object.keys(ALL_ASIGNACION_POR_HORA).filter(f => (!from || f >= from) && (!to || f <= to)).sort();
+  const fechas = Object.keys(ALL_ASIG_HORA_CUENTA).filter(f => (!from || f >= from) && (!to || f <= to)).sort();
   const horasAg = horasAgentePorFecha();
   const cero = () => new Array(24).fill(0);
   const prom = heatState.vista === 'semana';
@@ -1622,14 +1734,14 @@ function renderHeatmap(){
     const g = DIAS_SEMANA.map((nombre, d)=>({ etiqueta:'', corta:nombre, dias:0, pos:cero(), ag:cero() }));
     fechas.forEach(f=>{
       const x = g[diaSemana(f)]; x.dias++;
-      serieHora(ALL_ASIGNACION_POR_HORA[f], heatState.serie).forEach((v,h)=>{ x.pos[h] += v; });
+      posHoraFecha(f, heatState.serie).forEach((v,h)=>{ x.pos[h] += v; });
       (horasAg[f] || cero()).forEach((v,h)=>{ x.ag[h] += v; });
     });
     g.forEach(x=>{ if(x.dias){ x.etiqueta = `${x.corta} <span class="muted">(${x.dias})</span>`; grupos.push(x); } });
   } else {
     fechas.forEach(f=>{
       const [y,m,d] = f.split('-'); const corta = `${DIAS_CORTO[diaSemana(f)]} ${d}/${m}`;
-      grupos.push({ etiqueta: corta, corta, dias:1, pos: serieHora(ALL_ASIGNACION_POR_HORA[f], heatState.serie).slice(), ag: (horasAg[f] || cero()).slice() });
+      grupos.push({ etiqueta: corta, corta, dias:1, pos: posHoraFecha(f, heatState.serie), ag: (horasAg[f] || cero()).slice() });
     });
   }
   const suma = a => a.reduce((s,v)=>s+v,0);
@@ -1652,8 +1764,18 @@ function renderHeatmap(){
   // 3) POs por agente de Back
   pintarHeatTable('heatRatioTable', 'heatRatioPico',
     grupos.map(x=>({ etiqueta:x.etiqueta, corta:x.corta, valores:x.pos.map((v,h)=>div(v, x.ag[h])), total: div(suma(x.pos), suma(x.ag)) })),
-    { fmt: r1, totalLabel: 'POs / h.h.', unidad: 'POs por agente', p95: true,
+    { fmt: r1, totalLabel: 'POs / h.h.', unidad: 'POs por agente', p95: true, resaltarTotal: true,
       pie: n ? { valores: totPos.map((v,h)=>div(v, totAg[h])), total: div(suma(totPos), suma(totAg)) } : null });
+
+  // Productividad del rango vs. meta
+  const prodRango = div(suma(totPos), suma(totAg));
+  const okProd = prodRango !== null && isFinite(prodRango);
+  const pctMeta = okProd ? Math.round(100 * prodRango / META_POS_POR_HH) : 0;
+  document.getElementById('heatMetaVal').textContent = okProd ? r1(prodRango) : '—';
+  document.getElementById('heatMetaFill').style.width = Math.min(100, pctMeta) + '%';
+  document.getElementById('heatMetaPct').textContent = okProd
+    ? `${pctMeta}% de la meta · faltan ${r1(Math.max(0, META_POS_POR_HH - prodRango))} POs por hora hombre${heatState.serie !== 'manual' ? ' · ojo: el filtro no es "Coordinados"' : ''}`
+    : '';
 
   const pc = document.getElementById('heatPico');
   if(pc.textContent) pc.textContent += ` · ${n} día${n===1?'':'s'} en el rango`;
@@ -1670,6 +1792,28 @@ document.getElementById('heatSerieBtns').addEventListener('click', (e)=>{
   btn.classList.add('active'); heatState.serie = btn.dataset.s; renderHeatmap();
 });
 document.getElementById('heatFrom').addEventListener('change', renderHeatmap);
+// Filtros de productividad: equipos (horas hombre) y cuentas (servicios)
+document.getElementById('pfEquipos').addEventListener('change', (e)=>{
+  const i = e.target.closest('input'); if(!i) return;
+  if(i.checked) prodFiltro.equipos.add(i.value); else prodFiltro.equipos.delete(i.value);
+  renderHistorico();
+});
+document.getElementById('pfCuentasLista').addEventListener('change', (e)=>{
+  const i = e.target.closest('input[data-cuenta]'); if(!i) return;
+  if(i.checked) prodFiltro.excluidas.delete(i.dataset.cuenta); else prodFiltro.excluidas.add(i.dataset.cuenta);
+  renderHistorico();
+});
+document.querySelector('#pfCuentasBox .cp-acc').addEventListener('click', (e)=>{
+  const b = e.target.closest('button'); if(!b) return;
+  if(b.dataset.acc === 'todas') prodFiltro.excluidas.clear();
+  else if(b.dataset.acc === 'ninguna') document.querySelectorAll('#pfCuentasLista input[data-cuenta]').forEach(i => prodFiltro.excluidas.add(i.dataset.cuenta));
+  else prodFiltro.excluidas = new Set(CUENTAS_EXCLUIDAS_DEFECTO);
+  renderHistorico();
+});
+document.addEventListener('click', (e)=>{
+  const box = document.getElementById('pfCuentasBox');
+  if(box.open && !box.contains(e.target)) box.open = false;
+});
 document.getElementById('heatTo').addEventListener('change', renderHeatmap);
 
 document.getElementById('historicoGroupBtns').addEventListener('click', (e)=>{
