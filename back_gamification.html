@@ -559,12 +559,17 @@ table.ranking-table tbody tr.agent-row{cursor:pointer;}
   <div id="viewAnalitica" style="display:none;">
     <div class="card">
       <div class="card-title"><span class="dot"></span>Histórico del equipo Back</div>
-      <div class="card-desc">Todo el historial disponible, agrupado por el período que elijas. Respeta el filtro de cuenta.</div>
+      <div class="card-desc">Agrupado por el período que elijas. Sin fechas en el rango se muestra todo el historial. Respeta el filtro de cuenta.</div>
       <nav class="views" id="historicoGroupBtns">
         <button class="view-tab active" data-group="day">Por día</button>
         <button class="view-tab" data-group="week">Por semana</button>
         <button class="view-tab" data-group="month">Por mes</button>
       </nav>
+      <div class="heat-range" id="histRange" style="margin-bottom:16px;">
+        <span>Desde</span><input type="date" id="histFrom">
+        <span>Hasta</span><input type="date" id="histTo">
+        <button type="button" class="view-tab" id="histLimpiar" style="padding:7px 12px;">Todo el historial</button>
+      </div>
       <div class="chart-grid">
         <div class="chart-box"><canvas id="chartServiciosBack"></canvas></div>
         <div class="chart-box"><canvas id="chartPlanGam"></canvas></div>
@@ -1382,14 +1387,19 @@ function renderPlanGamDetail(items){
   }).join('');
 }
 
+// Rango opcional de la Analítica (gráficos y tabla de grúas). Vacío = todo.
+function enRangoHist(fecha){
+  const from = document.getElementById('histFrom').value, to = document.getElementById('histTo').value;
+  return !!fecha && (!from || fecha >= from) && (!to || fecha <= to);
+}
 function renderHistorico(){
   const cuentaFiltro = document.getElementById('cuentaFilter').value;
-  const records = ALL_RECORDS.filter(r => cuentaFiltro === '__ALL__' || r.cuenta === cuentaFiltro);
+  const records = ALL_RECORDS.filter(r => (cuentaFiltro === '__ALL__' || r.cuenta === cuentaFiltro) && enRangoHist(r.fecha));
   const cuentaActiva = cuentaFiltro === '__ALL__';
 
   // La tabla de grúas del plan ya NO se limita a agentes de Back: usa
   // la colección de todos los equipos, respetando igual el filtro de cuenta.
-  const gruasPlanTodosFiltrado = ALL_GRUAS_PLAN_TODOS.filter(r => cuentaFiltro === '__ALL__' || r.cuenta === cuentaFiltro);
+  const gruasPlanTodosFiltrado = ALL_GRUAS_PLAN_TODOS.filter(r => (cuentaFiltro === '__ALL__' || r.cuenta === cuentaFiltro) && enRangoHist(r.fecha));
   renderPlanGamDetail(gruasPlanTodosFiltrado);
 
   const byGroup = {};
@@ -1405,6 +1415,7 @@ function renderHistorico(){
 
   if(cuentaActiva){
     Object.entries(ALL_TOTALES_POR_FECHA).forEach(([fecha, total])=>{
+      if(!enRangoHist(fecha)) return;
       const key = getGroupKey(fecha, historicoGroup);
       if(!byGroup[key]) byGroup[key] = { servicios: 0, towElegibles: 0, planGam: 0, backServicios: 0 };
       byGroup[key].totalGeneral = (byGroup[key].totalGeneral || 0) + total;
@@ -1501,6 +1512,7 @@ function renderHistorico(){
   // Toda la operación, sin filtro de cuenta (el desglose viene por fecha).
   const asig = {};
   Object.entries(ALL_ASIGNACION_POR_FECHA).forEach(([fecha, v])=>{
+    if(!enRangoHist(fecha)) return;
     const key = getGroupKey(fecha, historicoGroup);
     const g = asig[key] || (asig[key] = { auto:0, back:0, otros:0 });
     g.auto += v.auto || 0; g.back += v.back || 0; g.otros += v.otros || 0;
@@ -1552,11 +1564,12 @@ function renderHistorico(){
   const prod = {};
   const grupoProd = k => prod[k] || (prod[k] = { manual:0, horas:0 });
   Object.keys(ALL_ASIG_HORA_CUENTA).forEach(fecha=>{
+    if(!enRangoHist(fecha)) return;
     grupoProd(getGroupKey(fecha, historicoGroup)).manual += posHoraFecha(fecha, 'manual').reduce((a,b)=>a+b, 0);
   });
   prodFiltro.equipos.forEach(eq=>{
     (TEAMS[eq].turnos || []).forEach(t=>{
-      if(!ALL_ASIG_HORA_CUENTA[t.fecha]) return; // solo días con datos de servicios
+      if(!ALL_ASIG_HORA_CUENTA[t.fecha] || !enRangoHist(t.fecha)) return; // solo días con datos de servicios
       grupoProd(getGroupKey(t.fecha, historicoGroup)).horas += t.horas;
     });
   });
@@ -1792,6 +1805,12 @@ document.getElementById('heatSerieBtns').addEventListener('click', (e)=>{
   btn.classList.add('active'); heatState.serie = btn.dataset.s; renderHeatmap();
 });
 document.getElementById('heatFrom').addEventListener('change', renderHeatmap);
+document.getElementById('histFrom').addEventListener('change', renderHistorico);
+document.getElementById('histTo').addEventListener('change', renderHistorico);
+document.getElementById('histLimpiar').addEventListener('click', ()=>{
+  document.getElementById('histFrom').value = ''; document.getElementById('histTo').value = '';
+  renderHistorico();
+});
 // Filtros de productividad: equipos (horas hombre) y cuentas (servicios)
 document.getElementById('pfEquipos').addEventListener('change', (e)=>{
   const i = e.target.closest('input'); if(!i) return;
