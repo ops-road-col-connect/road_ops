@@ -681,6 +681,10 @@ const TEAMS = {
 const FORMULA_BACK_HTML = () => document.getElementById('formulaBox').dataset.back;
 // Reglas de puntos de Mundial Vial (se usan en el cálculo y en la tabla explicativa)
 const MV_PUNTOS = { base: 2, foraneo: 40, local: 20, coord: 5, coordMaxMin: 20 };
+// Desde esta fecha (inclusive): sin bono de coordinación rápida, y los
+// programados suman la mitad del bono local/foráneo sin importar la llegada.
+const MV_REGLA_CUTOFF = '2026-11-09';
+const MV_PROGRAMADO_PTS = { foraneo: MV_PUNTOS.foraneo / 2, local: MV_PUNTOS.local / 2 };
 const FORMULA_MV_HTML = `
         <div class="formula-title">Puntos por servicio Finished · cuenta Seguros Mundial Vial</div>
         <div class="formula-scroll"><table class="formula-table">
@@ -689,10 +693,11 @@ const FORMULA_MV_HTML = `
             <tr><td>Base</td><td>Cada servicio, incluidos los programados.</td><td class="pts">+2</td></tr>
             <tr><td>Cumplimiento foráneo</td><td>Servicio foráneo con llegada del proveedor en menos de 180 min.</td><td class="pts">+${MV_PUNTOS.foraneo}</td></tr>
             <tr><td>Cumplimiento local</td><td>Servicio local con llegada del proveedor en ≤90 min.</td><td class="pts">+${MV_PUNTOS.local}</td></tr>
-            <tr><td>Coordinación rápida</td><td>Grúa (towHeavyWeight, tow_heavy_weight_collision, towBreakdown, towCollision o towExtraction) aceptada por el proveedor en menos de ${MV_PUNTOS.coordMaxMin} min.</td><td class="pts">+${MV_PUNTOS.coord}</td></tr>
+            <tr><td>Programado foráneo</td><td>Servicio foráneo programado, sin importar el tiempo de llegada.</td><td class="pts">+${MV_PROGRAMADO_PTS.foraneo}</td></tr>
+            <tr><td>Programado local</td><td>Servicio local programado, sin importar el tiempo de llegada.</td><td class="pts">+${MV_PROGRAMADO_PTS.local}</td></tr>
           </tbody>
         </table></div>
-        <div class="formula-note">Los servicios programados solo suman los 2 pts base.</div>
+        <div class="formula-note">Los cumplimientos foráneo y local aplican solo a servicios no programados. Las reglas de programados aplican desde el 9 de noviembre de 2026; antes de esa fecha, los programados solo sumaban los 2 pts base y existía un bono de +${MV_PUNTOS.coord} por coordinación rápida de grúas.</div>
         <div class="formula-title">Indicadores</div>
         <div class="formula-scroll"><table class="formula-table">
           <thead><tr><th>Indicador</th><th>Cómo se calcula</th></tr></thead>
@@ -969,13 +974,21 @@ function getDateBounds(){
 const MV_GRUAS = new Set(["towBreakdown", "towHeavyWeight", "tow_heavy_weight_collision", "towCollision", "towExtraction"]);
 function calcularPuntosMv(r){
   let pts = MV_PUNTOS.base;
-  if(r.programado === 'Si') return pts; // programados: solo puntos base
+  const reglaNueva = !!r.fecha && r.fecha >= MV_REGLA_CUTOFF;
+  if(r.programado === 'Si'){
+    if(!reglaNueva) return pts; // regla anterior: programados solo puntos base
+    // Regla nueva: mitad del bono, sin condición de tiempo de llegada
+    if(r.tipo_localidad === 'foreign') pts += MV_PROGRAMADO_PTS.foraneo;
+    else if(r.tipo_localidad === 'local') pts += MV_PROGRAMADO_PTS.local;
+    return pts;
+  }
   const t = TEAMS.mv;
   if(r.arribo_real_min !== null && r.arribo_real_min !== undefined){
     if(r.tipo_localidad === 'foreign' && r.arribo_real_min < t.metaForanea) pts += MV_PUNTOS.foraneo;
     if(r.tipo_localidad === 'local'   && r.arribo_real_min <= t.metaLocal)  pts += MV_PUNTOS.local;
   }
-  if(MV_GRUAS.has(r.tipo_servicio) && r.coord_min !== null && r.coord_min !== undefined && r.coord_min < MV_PUNTOS.coordMaxMin){
+  // Coordinación rápida: solo para servicios anteriores a la regla nueva
+  if(!reglaNueva && MV_GRUAS.has(r.tipo_servicio) && r.coord_min !== null && r.coord_min !== undefined && r.coord_min < MV_PUNTOS.coordMaxMin){
     pts += MV_PUNTOS.coord;
   }
   return pts;
