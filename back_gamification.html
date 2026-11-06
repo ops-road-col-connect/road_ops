@@ -544,6 +544,7 @@ table.ranking-table tbody tr.agent-row{cursor:pointer;}
           <tbody>
             <tr><td>% Meta local</td><td>De los servicios locales, % que llegó en ≤60 min.</td></tr>
             <tr><td>% Plan gam.</td><td>De los servicios de grúa elegibles, % con proveedor del plan (0).</td></tr>
+            <tr><td>% Uso App</td><td>De los servicios con CiudadInicio Bogotá, Cali o Medellín, % donde el mismo conductor aceptó y marcó la llegada desde la App (Conductor = DriverAceptado = DriverLlegada, sin distinguir tildes ni mayúsculas).</td></tr>
             <tr><td>Horas turno</td><td>Suma de las horas de turno del período según Horarios 2026. Los días con DESCANSO, VACACIONES u otra novedad no suman. El turno de hoy cuenta solo hasta la última sincronización.</td></tr>
             <tr><td>Serv/hora</td><td>Servicios Finished del agente creados dentro de su turno ÷ horas de turno.</td></tr>
             <tr><td>% del turno</td><td>Servicios Finished del agente creados dentro de su turno ÷ total de servicios Finished de toda la operación creados en esas mismas horas.</td></tr>
@@ -674,12 +675,12 @@ let ROSTER_POR_MES = {};   // { 'YYYY-MM': [agentes del equipo activo en ese mes
 const TEAMS = {
   back: { titulo: 'Ranking Back', desc: 'Ranking de los agentes de Back',
           records: [], agentes: [], porMes: {},
-          metaLocal: 60,  metaForanea: null, mostrarArribo: true, mostrarCoord: false, mostrarProgramados: false, mostrarPlanGam: true, filtroCuenta: true,
+          metaLocal: 60,  metaForanea: null, mostrarArribo: true, mostrarCoord: false, mostrarProgramados: false, mostrarUsoApp: true, mostrarPlanGam: true, filtroCuenta: true,
           mostrarProductividad: true, turnos: [] },
   mv:   { titulo: 'Ranking Mundial Vial', desc: 'Ranking de los agentes de Mundial Vial · solo cuenta Seguros Mundial Vial',
           records: [], agentes: [], porMes: {},
           podio: { coordMax: 35, metaMinPct: 60 }, // requisitos para acceder al podio
-          metaLocal: 90,  metaForanea: 180, mostrarArribo: false, mostrarCoord: true, mostrarProgramados: true, mostrarPlanGam: false, filtroCuenta: false,
+          metaLocal: 90,  metaForanea: 180, mostrarArribo: false, mostrarCoord: true, mostrarProgramados: true, mostrarUsoApp: true, mostrarPlanGam: false, filtroCuenta: false,
           mostrarProductividad: false, turnos: [] }
 };
 const FORMULA_BACK_HTML = () => document.getElementById('formulaBox').dataset.back;
@@ -720,6 +721,7 @@ const FORMULA_MV_HTML = `
             <tr><td>Tprom Coord</td><td>Promedio de minutos entre la creación del servicio y la aceptación del proveedor (FechaViajeAceptado − FechaHoraCreacion).</td></tr>
             <tr><td>% Meta local</td><td>De los servicios locales no programados, % con llegada en ≤90 min desde la creación.</td></tr>
             <tr><td>% Meta foránea</td><td>De los servicios foráneos no programados, % con llegada en menos de 180 min desde la creación.</td></tr>
+            <tr><td>% Uso App</td><td>De los servicios con CiudadInicio Bogotá, Cali o Medellín, % donde el mismo conductor aceptó y marcó la llegada desde la App (Conductor = DriverAceptado = DriverLlegada, sin distinguir tildes ni mayúsculas).</td></tr>
           </tbody>
         </table></div>`;
 function renderHead(){
@@ -731,6 +733,7 @@ function renderHead(){
   cols.push(t.metaForanea ? `% Meta local<br><span class="muted">≤${t.metaLocal} min</span>` : '% Meta local');
   if(t.metaForanea) cols.push(`% Meta foránea<br><span class="muted">&lt;${t.metaForanea} min</span>`);
   if(t.mostrarPlanGam) cols.push('% Plan gam.');
+  if(t.mostrarUsoApp) cols.push('% Uso App<br><span class="muted">BOG·CAL·MED</span>');
   if(t.mostrarProductividad) cols.push('Horas turno', 'Serv/hora', '% del turno');
   cols.push('Puntos', 'Insignias');
   document.getElementById('rankingHead').innerHTML = '<tr>' + cols.map(c=>`<th>${c}</th>`).join('') + '</tr>';
@@ -879,6 +882,7 @@ async function loadData(){
         arribo_min: (r.arribo_min === null || r.arribo_min === undefined || r.arribo_min === "") ? null : Number(r.arribo_min),
         plan_gamification: !!r.plan_gamification,
         prioridad1: !!r.prioridad1,
+        uso_app: (r.uso_app === null || r.uso_app === undefined || r.uso_app === "") ? null : !!r.uso_app,
         coord_min: (r.coord_min === null || r.coord_min === undefined) ? null : Number(r.coord_min),
         arribo_real_min: (r.arribo_real_min === null || r.arribo_real_min === undefined) ? null : Number(r.arribo_real_min)
       };
@@ -1008,6 +1012,14 @@ function calcularPuntosMv(r){
   return pts;
 }
 
+// Ciudades principales para % Uso App, comparadas contra CiudadInicio sin
+// tildes ni mayúsculas (coincidencia exacta: "CALIMA" no cuenta como Cali).
+const CIUDADES_PRINCIPALES = new Set(['bogota, d.c.', 'medellin', 'cali']);
+function esCiudadPrincipal(ciudad){
+  const c = String(ciudad || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/\s+/g, ' ').trim();
+  return CIUDADES_PRINCIPALES.has(c);
+}
+
 function calcularPuntosServicio(r){
   if(CURRENT_TEAM === 'mv') return calcularPuntosMv(r);
   let pts = 2; // base por coordinar el servicio
@@ -1053,11 +1065,11 @@ function computeData(){
   const byAgent = {};
   // Acumulador para el desempeño global (todos los agentes juntos), con la
   // misma forma que un agente individual, para reusar el mismo cálculo.
-  const globalAcc = {servicios:0, programados:0, arribos:[], locales:[], foraneos:[], coords:[], planGam:0, prioridad1:0, towElegibles:0, puntos:0, horas:0, opTurno:0, propiosTurno:0};
+  const globalAcc = {servicios:0, programados:0, arribos:[], locales:[], foraneos:[], coords:[], planGam:0, prioridad1:0, towElegibles:0, appElegibles:0, appUso:0, puntos:0, horas:0, opTurno:0, propiosTurno:0};
   // Roster mensual: solo compiten los agentes que estaban en el bloque BACK
   // de los meses que cubre el periodo (más cualquiera con servicios, por seguridad).
   const agentesPeriodo = [...new Set([...rosterDelPeriodo(from, to), ...filtered.map(r=>r.agente)])];
-  agentesPeriodo.forEach(a=>{ byAgent[a] = {servicios:0, programados:0, arribos:[], locales:[], foraneos:[], coords:[], planGam:0, prioridad1:0, towElegibles:0, puntos:0, horas:0, opTurno:0, propiosTurno:0, records:[]}; });
+  agentesPeriodo.forEach(a=>{ byAgent[a] = {servicios:0, programados:0, arribos:[], locales:[], foraneos:[], coords:[], planGam:0, prioridad1:0, towElegibles:0, appElegibles:0, appUso:0, puntos:0, horas:0, opTurno:0, propiosTurno:0, records:[]}; });
   const team = TEAMS[CURRENT_TEAM];
 
   filtered.forEach(r=>{
@@ -1087,6 +1099,11 @@ function computeData(){
       }
     }
 
+    // % Uso App: solo servicios en Bogotá, Cali o Medellín (por CiudadInicio)
+    if(esCiudadPrincipal(r.ciudad) && r.uso_app !== null && r.uso_app !== undefined){
+      ag.appElegibles++; globalAcc.appElegibles++;
+      if(r.uso_app){ ag.appUso++; globalAcc.appUso++; }
+    }
     if(TOW_TYPES.has(r.tipo_servicio)){
       ag.towElegibles++; globalAcc.towElegibles++;
       if(r.plan_gamification){ ag.planGam++; globalAcc.planGam++; }
@@ -1125,7 +1142,9 @@ function computeData(){
     const n_coord = d.coords.length;
     const avg_coord = n_coord>0 ? Math.round(10*d.coords.reduce((s,v)=>s+v,0)/n_coord)/10 : null;
     const pct_programados = d.servicios>0 ? Math.round(100*d.programados/d.servicios) : null;
+    const pct_uso_app = d.appElegibles>0 ? Math.round(100*d.appUso/d.appElegibles) : null;
     return {
+      app_elegibles: d.appElegibles, app_uso: d.appUso, pct_uso_app,
       programados: d.programados, pct_programados,
       n_foraneo, n_foraneo_cumple, pct_meta_foranea, n_coord, avg_coord,
       nombre, servicios: d.servicios,
@@ -1202,6 +1221,7 @@ function metricCellsHtml(a, teamCfg){
     <td>${metaText}</td>
     ${teamCfg.metaForanea ? `<td>${forText}</td>` : ''}
     ${teamCfg.mostrarPlanGam ? `<td>${planGamText}</td>` : ''}
+    ${teamCfg.mostrarUsoApp ? `<td>${a.app_elegibles>0 ? `${a.pct_uso_app}% <span class="muted">(${a.app_uso}/${a.app_elegibles})</span>` : '<span class="muted">—</span>'}</td>` : ''}
     ${teamCfg.mostrarProductividad ? `
     <td style="white-space:nowrap;">${a.horas_turno>0 ? `${a.horas_turno} h` : '<span class="muted">—</span>'}</td>
     <td>${a.serv_hora!==null ? a.serv_hora.toFixed(2) : '<span class="muted">—</span>'}</td>
