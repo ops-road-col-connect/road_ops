@@ -263,6 +263,9 @@
     font-size:9.5px; color:var(--text-dim); font-weight:500; display:block; margin-top:2px;
     text-transform:uppercase; letter-spacing:1px;
   }
+  .pcard-empty{ opacity:0.35; border-style:dashed; }
+  .podio-out{ font-size:10px; color:var(--text-dim); margin-top:3px; white-space:normal; }
+  .podio-out b{ color:var(--orange); font-weight:600; }
   .empty-podium{
     grid-column:1 / -1; text-align:center; color:var(--text-dim); font-size:12.5px; padding:30px 0;
   }
@@ -496,7 +499,7 @@ table.ranking-table tbody tr.agent-row{cursor:pointer;}
 
     <div class="card">
       <div class="card-title"><span class="dot"></span>Podio del período</div>
-      <div class="card-desc">Top 3 por puntos acumulados en el período seleccionado</div>
+      <div class="card-desc" id="podiumDesc">Top 3 por puntos acumulados en el período seleccionado</div>
       <div class="podium" id="podium"></div>
     </div>
 
@@ -675,6 +678,7 @@ const TEAMS = {
           mostrarProductividad: true, turnos: [] },
   mv:   { titulo: 'Ranking Mundial Vial', desc: 'Ranking de los agentes de Mundial Vial · solo cuenta Seguros Mundial Vial',
           records: [], agentes: [], porMes: {},
+          podio: { coordMax: 35, metaMinPct: 60 }, // requisitos para acceder al podio
           metaLocal: 90,  metaForanea: 180, mostrarArribo: false, mostrarCoord: true, mostrarProgramados: true, mostrarPlanGam: false, filtroCuenta: false,
           mostrarProductividad: false, turnos: [] }
 };
@@ -698,6 +702,16 @@ const FORMULA_MV_HTML = `
           </tbody>
         </table></div>
         <div class="formula-note">Los cumplimientos foráneo y local aplican solo a servicios no programados. Las reglas de programados aplican desde el 9 de noviembre de 2026; antes de esa fecha, los programados solo sumaban los 2 pts base y existía un bono de +${MV_PUNTOS.coord} por coordinación rápida de grúas.</div>
+        <div class="formula-title">Requisitos para el podio</div>
+        <div class="formula-scroll"><table class="formula-table">
+          <thead><tr><th>Indicador</th><th>Requisito</th></tr></thead>
+          <tbody>
+            <tr><td>Tprom Coord</td><td>Menor o igual a ${TEAMS.mv.podio.coordMax} min.</td></tr>
+            <tr><td>% Meta local (≤90 min)</td><td>Por encima de ${TEAMS.mv.podio.metaMinPct}%.</td></tr>
+            <tr><td>% Meta foránea (&lt;180 min)</td><td>Por encima de ${TEAMS.mv.podio.metaMinPct}%.</td></tr>
+          </tbody>
+        </table></div>
+        <div class="formula-note">Si el agente no tiene servicios locales o foráneos medibles en el período, ese requisito se da por cumplido. Quien no cumple sigue en la tabla y suma puntos, pero no aparece en el podio.</div>
         <div class="formula-title">Indicadores</div>
         <div class="formula-scroll"><table class="formula-table">
           <thead><tr><th>Indicador</th><th>Cómo se calcula</th></tr></thead>
@@ -1152,6 +1166,18 @@ function computeData(){
   }
   data.forEach(a=>{ if(a.n_local>=1 && a.pct_meta_local===100) a.badges.push('meta_local'); });
 
+  // Requisitos de acceso al podio. Si el agente no tiene servicios
+  // medibles en una métrica (locales, foráneos o coordinación), ese
+  // requisito se da por cumplido.
+  const reqPodio = TEAMS[CURRENT_TEAM].podio;
+  data.forEach(a=>{
+    a.podio_motivos = [];
+    if(!reqPodio) return;
+    if(a.n_coord>0 && a.avg_coord > reqPodio.coordMax) a.podio_motivos.push(`Tprom Coord ${a.avg_coord} min`);
+    if(a.n_local>0 && !(a.pct_meta_local > reqPodio.metaMinPct)) a.podio_motivos.push(`Meta local ${a.pct_meta_local}%`);
+    if(a.n_foraneo>0 && !(a.pct_meta_foranea > reqPodio.metaMinPct)) a.podio_motivos.push(`Meta foránea ${a.pct_meta_foranea}%`);
+  });
+
   data.sort((a,b)=>b.puntos - a.puntos);
   return { data, global };
 }
@@ -1217,13 +1243,27 @@ function render(){
 
   const podiumEl = document.getElementById('podium');
   podiumEl.innerHTML = "";
-  const top3 = data.filter(a=>a.puntos>0).slice(0,3);
+  const reqPodio = teamCfg.podio;
+  document.getElementById('podiumDesc').textContent = reqPodio
+    ? `Top 3 por puntos entre quienes cumplen: Tprom Coord ≤${reqPodio.coordMax} min, % Meta local y % Meta foránea por encima de ${reqPodio.metaMinPct}%`
+    : 'Top 3 por puntos acumulados en el período seleccionado';
+  const conPuntos = data.filter(a=>a.puntos>0);
+  const top3 = conPuntos.filter(a=>a.podio_motivos.length===0).slice(0,3);
   if(top3.length === 0){
-    podiumEl.innerHTML = '<div class="empty-podium">Sin servicios en este período</div>';
+    podiumEl.innerHTML = conPuntos.length
+      ? '<div class="empty-podium">Ningún agente cumple las metas para el podio en este período</div>'
+      : '<div class="empty-podium">Sin servicios en este período</div>';
   }else{
     [0,1,2].forEach(i=>{
       const a = top3[i];
-      if(!a) return;
+      if(!a){
+        // Puesto sin agente que cumpla: se muestra vacío para mantener la forma del podio
+        const vac = document.createElement('div');
+        vac.className = 'pcard p' + (i+1) + ' pcard-empty';
+        vac.innerHTML = `<div class="medal">${i+1}</div><div class="pname">Puesto disponible</div>`;
+        podiumEl.appendChild(vac);
+        return;
+      }
       const lvl = getLevel(a.puntos);
       const div = document.createElement('div');
       div.className = 'pcard p' + (i+1);
@@ -1278,6 +1318,7 @@ function render(){
       <td class="name">
         <span class="chevron">▸</span>${a.nombre}
         <div class="level-tag">${lvl.icon} ${lvl.name}</div>
+        ${(a.podio_motivos && a.podio_motivos.length && a.puntos>0) ? `<div class="podio-out"><b>Sin podio:</b> ${a.podio_motivos.join(' · ')}</div>` : ''}
       </td>
       ${metricCellsHtml(a, teamCfg)}
       <td class="bar-cell">
