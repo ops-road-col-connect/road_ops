@@ -143,6 +143,11 @@ body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset
 .tab:focus-visible{outline:2px solid var(--turq);outline-offset:2px}
 .period{display:flex;align-items:center;gap:8px;font-size:14px;color:var(--muted)}
 .period select{font:inherit;font-size:15px;color:var(--ink);background:var(--surface);border:1px solid var(--line);border-radius:4px;padding:6px 10px;min-height:36px}
+.period input[type=date]{font:inherit;font-size:15px;color:var(--ink);background:var(--surface);border:1px solid var(--line);border-radius:4px;padding:5px 8px;min-height:36px}
+.period select:focus-visible,.period input:focus-visible{outline:2px solid var(--turq);outline-offset:2px}
+.period .dash{color:var(--muted)}
+.period-err{color:var(--o-ink);font-size:13px;width:100%;text-align:right;margin:0}
+@media (max-width:640px){.period{flex-wrap:wrap}.period-err{text-align:left}}
 .state{padding:60px 0;text-align:center;color:var(--muted)}
 .state.err{color:var(--o-ink)}
 [hidden]{display:none!important}
@@ -199,7 +204,11 @@ body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset
       <button class="tab" role="tab" id="t-ana" aria-controls="p-ana" aria-selected="true" data-tab="analisis">Análisis general</button>
       <button class="tab" role="tab" id="t-prov" aria-controls="p-prov" aria-selected="false" data-tab="proveedores" tabindex="-1">Proveedores</button>
     </div>
-    <label class="period">Periodo <select id="f-mes"></select></label>
+    <div class="period" role="group" aria-label="Periodo del reporte">
+      <label for="f-mes">Periodo</label> <select id="f-mes"></select>
+      <span id="f-rango" hidden><input type="date" id="f-desde" aria-label="Desde"> <span class="dash">a</span> <input type="date" id="f-hasta" aria-label="Hasta"></span>
+    </div>
+    <p class="period-err" id="f-err" role="alert" hidden></p>
   </div>
 </div>
 
@@ -212,7 +221,7 @@ body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset
       <div id="k-gauge"></div>
     </div>
     <div class="kcard">
-      <p class="ktitle">NPS por mes</p>
+      <p class="ktitle">NPS por mes (mes completo)</p>
       <div id="k-months"></div>
     </div>
     <div class="kcard">
@@ -327,7 +336,7 @@ body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset
   var CORE = ['towBreakdown', 'towCollision', 'towExtraction', 'towTire', 'jumpStart', 'flatTire', 'locksmith'];
 
   // ---------- estado ----------
-  var D, ALL = [], ROWS = [], MESES = [], MVIS = [], TOT, mesLabel = {};
+  var D, ALL = [], ROWS = [], MESES = [], MVIS = [], TOT, mesLabel = {}, CON_DIA = false, RANGO = null;
   var sortK = 'n', asc = false;
 
   // ---------- utilidades ----------
@@ -339,6 +348,16 @@ body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset
   function st(a) { var n = a.length, p = 0, d = 0; for (var i = 0; i < n; i++) { if (a[i].q1 >= 9) p++; else if (a[i].q1 <= 6) d++; } return { n: n, p: p, d: d, prom: n ? p / n * 100 : 0, det: n ? d / n * 100 : 0, nps: n ? (p - d) / n * 100 : 0 }; }
   function svcName(c) { return SVC[c] || c.replace(/_/g, ' ').replace(/^./, function (x) { return x.toUpperCase(); }); }
   function fecha(iso) { if (!iso) return ''; var p = iso.slice(0, 10).split('-'); return (+p[2]) + ' de ' + MES_N[+p[1] - 1] + ' de ' + p[0]; }
+  function pad2(n) { return (n < 10 ? '0' : '') + n; }
+  function finMes(m) { var y = +m.slice(0, 4), mo = +m.slice(5, 7); return m + '-' + pad2(new Date(Date.UTC(y, mo, 0)).getUTCDate()); }
+  function sumaDias(iso, n) { var t = new Date(iso + 'T00:00:00Z'); t.setUTCDate(t.getUTCDate() + n); return t.toISOString().slice(0, 10); }
+  function rangoTxt(a, b) {
+    if (a === b) return 'el ' + fecha(a);
+    var pa = a.split('-'), pb = b.split('-');
+    if (pa[0] === pb[0] && pa[1] === pb[1]) return 'del ' + (+pa[2]) + ' al ' + (+pb[2]) + ' de ' + MES_N[+pa[1] - 1] + ' de ' + pa[0];
+    if (pa[0] === pb[0]) return 'del ' + (+pa[2]) + ' de ' + MES_N[+pa[1] - 1] + ' al ' + (+pb[2]) + ' de ' + MES_N[+pb[1] - 1] + ' de ' + pa[0];
+    return 'del ' + fecha(a) + ' al ' + fecha(b);
+  }
   function groupBy(a, fn) { var g = {}; a.forEach(function (r) { var k = fn(r); (g[k] = g[k] || []).push(r); }); return g; }
   function bar(v, ref) { var w = Math.max(0, Math.min(100, v)), r = Math.max(0, Math.min(100, ref)); return '<div class="bar" aria-hidden="true"><b class="' + cls(v) + '" style="width:' + w.toFixed(1) + '%"></b><i class="ref" style="left:' + r.toFixed(1) + '%"></i></div>'; }
   function cell(a) { if (!a.length) return '<td class="na">–</td>'; var s = st(a); return '<td class="hc ' + cls(s.nps) + (s.n < 10 ? ' small' : '') + '"><b>' + f1(s.nps, 0) + '</b><span>' + s.n + '</span></td>'; }
@@ -367,6 +386,7 @@ body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset
     ALL = d.rows.map(function (r) {
       var o = {}; for (var i = 0; i < C.length; i++) o[C[i]] = r[i];
       o.prov = d.dic.prov[o.prov]; o.svc = d.dic.svc[o.svc]; o.city = d.dic.city[o.city]; o.mes = d.meses[o.mes];
+      o.f = (o.dia !== undefined && o.dia !== null) ? o.mes + '-' + pad2(o.dia) : null;
       return o;
     });
     MESES = d.meses.slice().sort();
@@ -380,9 +400,21 @@ body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset
       }
       mesLabel[m] = { l: l, c: c, full: MES_N[mo - 1] + ' ' + y };
     });
+    CON_DIA = C.indexOf('dia') >= 0 && ALL.some(function (r) { return r.f; });
     var fm = $('f-mes');
-    fm.innerHTML = '<option value="">Todos los meses</option>' + MESES.slice().reverse().map(function (m) { return '<option value="' + m + '">' + mesLabel[m].full.replace(/^./, function (x) { return x.toUpperCase(); }) + (mesLabel[m].c.slice(-1) === '*' ? ' (parcial)' : '') + '</option>'; }).join('');
-    fm.addEventListener('change', applyPeriod);
+    var mesOpts = MESES.slice().reverse().map(function (m) { return '<option value="m:' + m + '">' + mesLabel[m].full.replace(/^./, function (x) { return x.toUpperCase(); }) + (mesLabel[m].c.slice(-1) === '*' ? ' (parcial)' : '') + '</option>'; }).join('');
+    fm.innerHTML = '<option value="">Todo el periodo</option>' +
+      (CON_DIA ? '<option value="u7">Últimos 7 días</option><option value="u30">Últimos 30 días</option>' : '') +
+      mesOpts + (CON_DIA ? '<option value="custom">Rango personalizado</option>' : '');
+    fm.addEventListener('change', function () { if (fm.value !== 'custom') presetARango(); applyPeriod(); });
+    if (CON_DIA) {
+      $('f-rango').hidden = false;
+      ['f-desde', 'f-hasta'].forEach(function (i) {
+        $(i).min = D.primerServicio; $(i).max = D.ultimoServicio;
+        $(i).addEventListener('change', function () { fm.value = 'custom'; applyPeriod(); });
+      });
+    }
+    presetARango();
     setupProvFilters();
     $('state').hidden = true;
     $('meta').textContent = 'Datos generados el ' + fecha(d.generado) + '. Encuestas cruzadas: ' + miles(ALL.length) + '.';
@@ -390,13 +422,42 @@ body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset
     route();
   }
 
+  // Convierte la opción elegida en un rango de fechas y lo pone en los campos Desde / Hasta
+  function presetARango() {
+    var v = $('f-mes').value, a = D.primerServicio, b = D.ultimoServicio;
+    if (v === 'u7') a = sumaDias(b, -6);
+    else if (v === 'u30') a = sumaDias(b, -29);
+    else if (v.indexOf('m:') === 0) { var m = v.slice(2); a = m + '-01'; b = finMes(m); if (b > D.ultimoServicio) b = D.ultimoServicio; }
+    if (a < D.primerServicio) a = D.primerServicio;
+    $('f-desde').value = a; $('f-hasta').value = b;
+  }
+
+  function leerRango() {
+    var a = $('f-desde').value || D.primerServicio, b = $('f-hasta').value || D.ultimoServicio;
+    return { a: a, b: b };
+  }
+
+  // Una encuesta sin día (archivos antiguos) solo entra si su mes completo cae dentro del rango
+  function enRango(r, a, b) {
+    if (r.f) return r.f >= a && r.f <= b;
+    var ini = r.mes + '-01', fin = finMes(r.mes);
+    if (fin > D.ultimoServicio) fin = D.ultimoServicio;
+    if (ini < D.primerServicio) ini = D.primerServicio;
+    return ini >= a && fin <= b;
+  }
+
   function applyPeriod() {
-    var m = $('f-mes').value;
-    ROWS = m ? ALL.filter(function (r) { return r.mes === m; }) : ALL;
-    var ms = m ? [m] : MESES;
+    var v = $('f-mes').value, err = $('f-err');
+    var mSel = v.indexOf('m:') === 0 ? v.slice(2) : '';
+    var R = CON_DIA ? leerRango() : { a: mSel ? mSel + '-01' : D.primerServicio, b: mSel ? finMes(mSel) : D.ultimoServicio };
+    if (R.a > R.b) { err.textContent = 'La fecha Desde es posterior a Hasta. Corrige el rango.'; err.hidden = false; return; }
+    err.hidden = true;
+    RANGO = R;
+    ROWS = (!CON_DIA && !mSel) ? ALL : ALL.filter(function (r) { return CON_DIA ? enRango(r, R.a, R.b) : r.mes === mSel; });
+    var ms = MESES.filter(function (m) { return m >= R.a.slice(0, 7) && m <= R.b.slice(0, 7); });
     MVIS = ms.slice(-4);
     TOT = st(ROWS);
-    renderHeader(m);
+    renderHeader(mSel);
     fillHeads();
     renderProv();
     renderTel();
@@ -405,9 +466,9 @@ body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset
 
   // ---------- encabezado y resultado del periodo ----------
   function renderHeader(m) {
-    var desde = m ? m + '-01' : D.primerServicio, hasta = D.ultimoServicio;
-    if (m && hasta && hasta.slice(0, 7) !== m) { var y = +m.slice(0, 4), mo = +m.slice(5, 7); hasta = m + '-' + new Date(Date.UTC(y, mo, 0)).getUTCDate(); }
-    $('lede').textContent = miles(TOT.n) + ' encuestas de Qualtrics cruzadas por número de PO con los servicios de Connect creados entre el ' + fecha(desde) + ' y el ' + fecha(hasta) + '. Actualizado el ' + fecha(D.generado) + '.';
+    var desde = RANGO.a < D.primerServicio ? D.primerServicio : RANGO.a, hasta = RANGO.b;
+    if (D.ultimoServicio && hasta > D.ultimoServicio) hasta = D.ultimoServicio;
+    $('lede').textContent = miles(TOT.n) + ' encuestas de Qualtrics cruzadas por número de PO con los servicios de Connect creados ' + rangoTxt(desde, hasta) + '. Actualizado el ' + fecha(D.generado) + '.';
     renderKPIs(m);
   }
 
@@ -417,7 +478,8 @@ body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset
     return 'M' + s[0].toFixed(2) + ' ' + s[1].toFixed(2) + ' A' + r + ' ' + r + ' 0 ' + (a0 - a1 > Math.PI ? 1 : 0) + ' 1 ' + e[0].toFixed(2) + ' ' + e[1].toFixed(2);
   }
   function renderKPIs(m) {
-    $('k-title').textContent = 'NPS ' + (m ? 'de ' + mesLabel[m].full : 'del periodo');
+    var todo = RANGO.a <= D.primerServicio && RANGO.b >= D.ultimoServicio;
+    $('k-title').textContent = 'NPS ' + (m ? 'de ' + mesLabel[m].full : (todo ? 'del periodo' : rangoTxt(RANGO.a, RANGO.b).replace(/^el /, 'del ')));
     // medidor de -100 a 100
     var v = Math.max(-100, Math.min(100, TOT.nps)), frac = (v + 100) / 200, a1 = Math.PI * (1 - frac);
     $('k-gauge').innerHTML = '<svg viewBox="0 0 220 132" class="gauge" role="img" aria-label="NPS ' + f1(TOT.nps) + ' en una escala de menos 100 a 100">' +
@@ -434,7 +496,7 @@ body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset
     svg += '<line x1="10" y1="' + base + '" x2="' + (W - 10) + '" y2="' + base + '" class="m-axis"/>';
     ms.forEach(function (x, i) {
       var s = st(g[x] || []), h = Math.max(0, Math.min(100, s.nps)) / 100 * (base - top), cx = 10 + step * i + step / 2;
-      var dim = m && m !== x ? ' dim' : '';
+      var dim = MVIS.length && (x < RANGO.a.slice(0, 7) || x > RANGO.b.slice(0, 7)) ? ' dim' : '';
       svg += '<g class="m-bar' + dim + '"><rect x="' + (cx - bw / 2).toFixed(1) + '" y="' + (base - h).toFixed(1) + '" width="' + bw.toFixed(1) + '" height="' + h.toFixed(1) + '" rx="3" style="fill:' + COLV[cls(s.nps)] + '"/>' +
         '<text x="' + cx.toFixed(1) + '" y="' + (base - h - 6).toFixed(1) + '" class="m-val">' + f1(s.nps) + '</text>' +
         '<text x="' + cx.toFixed(1) + '" y="' + (base + 17) + '" class="m-lab">' + mesLabel[x].c + '</text>' +
