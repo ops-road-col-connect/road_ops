@@ -418,6 +418,17 @@
   }
   .card-note .card-note-value { color: var(--yellow); }
   tr.load-row td { color: var(--text-mid); }
+  .coverage-chart { margin-top: 22px; }
+  .coverage-chart:empty { display: none; }
+  .coverage-chart svg { width: 100%; height: auto; display: block; }
+  .chart-legend { display: flex; flex-wrap: wrap; gap: 18px; font-size: 11px; color: var(--text-mid); margin-bottom: 8px; }
+  .chart-legend span { display: inline-flex; align-items: center; gap: 6px; }
+  .chart-legend i { display: inline-block; width: 12px; height: 12px; border-radius: 2px; }
+  .chart-legend i.lg-req { height: 0; border-top: 2px dashed var(--yellow); border-radius: 0; }
+  .coverage-chart .bar-hit { fill: transparent; }
+  .coverage-chart .bar-hit:hover { fill: rgba(255,255,255,0.04); }
+  .chart-legend i.lg-line { height: 0; border-top: 2px solid var(--yellow); border-radius: 0; width: 16px; }
+  .chart-legend i.lg-gap { background: repeating-linear-gradient(45deg, rgba(255,176,0,0.55) 0 2px, transparent 2px 5px); border: 1px solid rgba(255,176,0,0.6); }
   tr.load-row td.row-label { color: var(--text-mid); }
 
   .view { display: none; }
@@ -690,7 +701,17 @@
       </div>
       <div class="card-desc">Requeridos vs. programados, equipo seleccionado</div>
       <div class="coverage-scroll"><div id="coverage-content"><div class="state-msg">Cargando datos&hellip;</div></div></div>
+      <div class="coverage-chart" id="coverage-chart"></div>
       <div class="forecast-note" id="coverage-notes" style="margin:16px 0 0;display:none;"></div>
+    </div>
+    <div class="card">
+      <div class="card-title-row">
+        <div class="card-title"><span class="dot"></span>Potencia operativa por hora</div>
+        <span class="card-note" id="potencia-note"></span>
+      </div>
+      <div class="card-desc">Agentes en turno vs. agentes estimados para mover la carga de cada hora</div>
+      <div class="coverage-chart" id="potencia-chart"></div>
+      <div class="forecast-note" id="potencia-notes" style="margin:16px 0 0;display:none;"></div>
     </div>
   </div>
 
@@ -1523,6 +1544,15 @@
   function renderCoverage() {
     if (!rawData) return;
     const minutosNote = document.getElementById('coverage-minutos-note');
+    { const ch = document.getElementById('coverage-chart'); if (ch) ch.innerHTML = ''; }
+    {
+      const pc = document.getElementById('potencia-chart');
+      const pn = document.getElementById('potencia-note');
+      const pnotes = document.getElementById('potencia-notes');
+      if (pc) pc.innerHTML = '<div class="empty-note">Selecciona Back o Torre de Control para ver la potencia operativa.</div>';
+      if (pn) pn.innerHTML = '';
+      if (pnotes) pnotes.style.display = 'none';
+    }
     if (currentTeam === '__all__') {
       coverageContent.innerHTML = '<div class="empty-note">Selecciona un equipo específico (Torre de Control o Back) para ver la cobertura.</div>';
       if (minutosNote) minutosNote.innerHTML = '';
@@ -1624,6 +1654,181 @@
           <tr><td class="row-label">Estado</td>${statusRow}</tr>
         </tbody>
       </table>`;
+
+    renderCoverageChart(loadByHour, programadosByHour, requiredByHour);
+    const minutosServicio = rawData.capacidad && rawData.capacidad.minutosPorServicio
+      ? rawData.capacidad.minutosPorServicio[currentTeam]
+      : null;
+    renderPotenciaChart(loadByHour, programadosByHour, minutosServicio);
+  }
+
+  // Escala "bonita" para ejes: devuelve paso y máximo redondeados.
+  function chartNiceScale(maxVal, ticks, integer) {
+    if (!(maxVal > 0)) maxVal = 1;
+    const raw = maxVal / ticks;
+    const mag = Math.pow(10, Math.floor(Math.log10(raw)));
+    let step = [1, 2, 2.5, 5, 10].map(m => m * mag).find(st => st >= raw) || 10 * mag;
+    if (integer) step = Math.max(1, Math.ceil(step));
+    return { step, max: Math.ceil(maxVal / step) * step };
+  }
+
+  // Símil de potencia: trabajo (servicios × minutos por servicio) ÷ tiempo (60 min)
+  // = agentes que se necesitan trabajando a la vez en esa hora.
+  function renderPotenciaChart(loadByHour, programadosByHour, minutos) {
+    const el = document.getElementById('potencia-chart');
+    const noteEl = document.getElementById('potencia-note');
+    const notesEl = document.getElementById('potencia-notes');
+    if (!el) return;
+    if (!(minutos > 0)) {
+      el.innerHTML = '<div class="empty-note">El flujo de n8n no envió los minutos por servicio de este equipo.</div>';
+      if (noteEl) noteEl.innerHTML = '';
+      if (notesEl) notesEl.style.display = 'none';
+      return;
+    }
+    const fmt = v => (Math.round(v * 10) / 10).toLocaleString('es-CO');
+    const hours = Array.from({length: 24}, (_, h) => h);
+    const load = hours.map(h => loadByHour[h] ?? 0);
+    const prog = hours.map(h => programadosByHour[h] ?? 0);
+    const est  = load.map(l => (l * minutos) / 60);
+
+    const s = chartNiceScale(Math.max(...prog, ...est) * 1.1, 4, true);
+    const W = 1000, H = 300, mL = 52, mR = 24, mT = 16, mB = 34;
+    const pw = W - mL - mR, ph = H - mT - mB;
+    const slot = pw / 24, bw = Math.min(24, slot * 0.6);
+    const y = v => mT + ph - (v / s.max) * ph;
+    const cxOf = h => mL + slot * h + slot / 2;
+
+    let grid = '', axis = '';
+    for (let i = 0; i <= Math.round(s.max / s.step); i++) {
+      const v = i * s.step;
+      grid += `<line x1="${mL}" x2="${W - mR}" y1="${y(v)}" y2="${y(v)}" stroke="rgba(255,255,255,0.06)"/>`;
+      axis += `<text x="${mL - 8}" y="${y(v) + 4}" text-anchor="end" fill="var(--text-mid)" font-size="11">${v}</text>`;
+    }
+
+    let bars = '', gaps = '', dots = '', xLabels = '';
+    let horasDeficit = 0, picoH = 0;
+    hours.forEach(h => {
+      const cx = cxOf(h), x = cx - bw / 2;
+      const deficit = est[h] - prog[h];
+      if (est[h] > est[picoH]) picoH = h;
+      const tip = `${String(h).padStart(2,'0')}:00\nServicios esperados: ${fmt(load[h])}\nTrabajo: ${fmt(load[h] * minutos)} min (${fmt(load[h])} × ${minutos} min)\nAgentes estimados: ${fmt(est[h])}\nAgentes en turno: ${prog[h]}\n${deficit > 0 ? `Faltan: ${fmt(deficit)}` : `Holgura: ${fmt(-deficit)}`}`;
+      bars += `<g><title>${tip}</title>
+        <rect class="bar-hit" x="${mL + slot * h}" y="${mT}" width="${slot}" height="${ph}"/>
+        <rect x="${x}" y="${y(prog[h])}" width="${bw}" height="${mT + ph - y(prog[h])}" rx="2" fill="var(--orange)"/>
+      </g>`;
+      if (deficit > 0) {
+        horasDeficit++;
+        gaps += `<rect x="${x}" y="${y(est[h])}" width="${bw}" height="${y(prog[h]) - y(est[h])}" fill="url(#pot-hatch)" stroke="rgba(255,176,0,0.6)" stroke-width="1" pointer-events="none"/>`;
+      }
+      dots += `<circle cx="${cx}" cy="${y(est[h])}" r="3.5" fill="var(--yellow)" pointer-events="none"/>`;
+      if (h % 2 === 0) {
+        xLabels += `<text x="${cx}" y="${H - mB + 18}" text-anchor="middle" fill="var(--text-dim)" font-size="11">${String(h).padStart(2,'0')}</text>`;
+      }
+    });
+    const linePath = hours.map((h, i) => `${i ? 'L' : 'M'}${cxOf(h)},${y(est[h])}`).join(' ');
+
+    el.innerHTML = `
+      <div class="chart-legend">
+        <span><i style="background:var(--orange)"></i>Agentes en turno</span>
+        <span><i class="lg-line"></i>Agentes estimados (servicios × ${minutos} min ÷ 60)</span>
+        <span><i class="lg-gap"></i>Potencia faltante</span>
+      </div>
+      <svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Agentes en turno y agentes estimados por hora" font-family="JetBrains Mono, monospace">
+        <defs>
+          <pattern id="pot-hatch" width="6" height="6" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
+            <rect width="6" height="6" fill="rgba(255,176,0,0.08)"/>
+            <line x1="0" y1="0" x2="0" y2="6" stroke="rgba(255,176,0,0.55)" stroke-width="2"/>
+          </pattern>
+        </defs>
+        ${grid}
+        <line x1="${mL}" x2="${W - mR}" y1="${mT + ph}" y2="${mT + ph}" stroke="rgba(255,255,255,0.18)"/>
+        ${bars}
+        ${gaps}
+        <path d="${linePath}" fill="none" stroke="var(--yellow)" stroke-width="2" stroke-linejoin="round" pointer-events="none"/>
+        ${dots}
+        ${axis}${xLabels}
+        <text x="14" y="${mT + ph / 2}" text-anchor="middle" fill="var(--text-dim)" font-size="10" transform="rotate(-90 14 ${mT + ph / 2})">Agentes</text>
+        <text x="${mL + pw / 2}" y="${H - 2}" text-anchor="middle" fill="var(--text-dim)" font-size="10">Hora del día</text>
+      </svg>`;
+
+    if (noteEl) {
+      noteEl.innerHTML = `Pico: <span class="card-note-value">${String(picoH).padStart(2,'0')}:00</span> · ${fmt(est[picoH])} agentes · Horas con déficit: <span class="card-note-value">${horasDeficit}</span>`;
+    }
+    if (notesEl) {
+      const ej = 16;
+      notesEl.innerHTML = `Símil con la potencia en física (P = trabajo ÷ tiempo): cada servicio es una unidad de trabajo que le toma <b>${minutos} min</b> a un agente, y cada hora tiene 60 min. Agentes estimados = servicios esperados × ${minutos} min ÷ 60 min. Ejemplo: ${ej} servicios × ${minutos} min = ${ej * minutos} min de trabajo ÷ 60 = <b>${fmt(ej * minutos / 60)} agentes</b>.<br>Es la carga pura: no incluye pausas, ausentismo ni el mínimo 24/7, por eso puede quedar por debajo de la fila <i>Requeridos</i> de la tabla de cobertura.`;
+      notesEl.style.display = '';
+    }
+  }
+
+  // Gráfico de barras por hora con dos ejes Y:
+  // izquierdo = servicios esperados, derecho = agentes en turno (programados).
+  // Requeridos se marca como línea punteada sobre el eje derecho (misma unidad: agentes).
+  function renderCoverageChart(loadByHour, programadosByHour, requiredByHour) {
+    const el = document.getElementById('coverage-chart');
+    if (!el) return;
+    const hours = Array.from({length: 24}, (_, h) => h);
+    const load = hours.map(h => Math.round((loadByHour[h] ?? 0) * 10) / 10);
+    const prog = hours.map(h => programadosByHour[h] ?? 0);
+    const req  = hours.map(h => requiredByHour[h] ?? 0);
+
+    const niceScale = chartNiceScale;
+    const TICKS = 4;
+    const sL = niceScale(Math.max(...load), TICKS, false);
+    const sR = niceScale(Math.max(...prog, ...req), TICKS, true);
+
+    const W = 1000, H = 300, mL = 52, mR = 52, mT = 16, mB = 34;
+    const pw = W - mL - mR, ph = H - mT - mB;
+    const slot = pw / 24, bw = Math.min(14, slot * 0.36), gap = 2;
+    const yL = v => mT + ph - (v / sL.max) * ph;
+    const yR = v => mT + ph - (v / sR.max) * ph;
+    const fmt = v => (Math.round(v * 10) / 10).toLocaleString('es-CO');
+
+    let grid = '', axisL = '', axisR = '';
+    const nL = Math.round(sL.max / sL.step), nR = Math.round(sR.max / sR.step);
+    for (let i = 0; i <= nL; i++) {
+      const v = i * sL.step, y = yL(v);
+      grid += `<line x1="${mL}" x2="${W - mR}" y1="${y}" y2="${y}" stroke="rgba(255,255,255,0.06)"/>`;
+      axisL += `<text x="${mL - 8}" y="${y + 4}" text-anchor="end" fill="var(--turquoise)" font-size="11">${fmt(v)}</text>`;
+    }
+    for (let i = 0; i <= nR; i++) {
+      const v = i * sR.step, y = yR(v);
+      axisR += `<text x="${W - mR + 8}" y="${y + 4}" text-anchor="start" fill="var(--orange)" font-size="11">${v}</text>`;
+    }
+
+    let bars = '', xLabels = '', reqLine = '';
+    hours.forEach(h => {
+      const cx = mL + slot * h + slot / 2;
+      const x1 = cx - bw - gap / 2, x2 = cx + gap / 2;
+      const hL = (load[h] / sL.max) * ph, hR = (prog[h] / sR.max) * ph;
+      const short = prog[h] < req[h];
+      const tip = `${String(h).padStart(2,'0')}:00\nServicios esperados: ${fmt(load[h])}\nAgentes en turno: ${prog[h]}\nRequeridos: ${req[h]}`;
+      bars += `<g><title>${tip}</title>
+        <rect class="bar-hit" x="${mL + slot * h}" y="${mT}" width="${slot}" height="${ph}"/>
+        <rect x="${x1}" y="${mT + ph - hL}" width="${bw}" height="${hL}" rx="2" fill="var(--turquoise)"/>
+        <rect x="${x2}" y="${mT + ph - hR}" width="${bw}" height="${hR}" rx="2" fill="var(--orange)" ${short ? 'opacity="0.55"' : ''}/>
+      </g>`;
+      reqLine += `<line x1="${x2 - 3}" x2="${x2 + bw + 3}" y1="${yR(req[h])}" y2="${yR(req[h])}" stroke="var(--yellow)" stroke-width="2" stroke-dasharray="3 2" pointer-events="none"/>`;
+      if (h % 2 === 0 || slot > 40) {
+        xLabels += `<text x="${cx}" y="${H - mB + 18}" text-anchor="middle" fill="var(--text-dim)" font-size="11">${String(h).padStart(2,'0')}</text>`;
+      }
+    });
+
+    el.innerHTML = `
+      <div class="chart-legend">
+        <span><i style="background:var(--turquoise)"></i>Servicios esperados (eje izq.)</span>
+        <span><i style="background:var(--orange)"></i>Agentes en turno (eje der.)</span>
+        <span><i class="lg-req"></i>Requeridos (eje der.)</span>
+        <span><i style="background:var(--orange);opacity:.55"></i>Agentes por debajo de requeridos</span>
+      </div>
+      <svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Servicios esperados y agentes en turno por hora" font-family="JetBrains Mono, monospace">
+        ${grid}
+        <line x1="${mL}" x2="${W - mR}" y1="${mT + ph}" y2="${mT + ph}" stroke="rgba(255,255,255,0.18)"/>
+        ${bars}
+        ${reqLine}
+        ${axisL}${axisR}${xLabels}
+        <text x="${W / 2}" y="${H - 2}" text-anchor="middle" fill="var(--text-dim)" font-size="10">Hora del día</text>
+      </svg>`;
   }
 
   function populateTipoServicioOptions() {
