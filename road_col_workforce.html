@@ -424,7 +424,6 @@
   .chart-legend { display: flex; flex-wrap: wrap; gap: 18px; font-size: 11px; color: var(--text-mid); margin-bottom: 8px; }
   .chart-legend span { display: inline-flex; align-items: center; gap: 6px; }
   .chart-legend i { display: inline-block; width: 12px; height: 12px; border-radius: 2px; }
-  .chart-legend i.lg-req { height: 0; border-top: 2px dashed var(--yellow); border-radius: 0; }
   .coverage-chart .bar-hit { fill: transparent; }
   .coverage-chart .bar-hit:hover { fill: rgba(255,255,255,0.04); }
   .chart-legend i.lg-line { height: 0; border-top: 2px solid var(--yellow); border-radius: 0; width: 16px; }
@@ -1655,7 +1654,7 @@
         </tbody>
       </table>`;
 
-    renderCoverageChart(loadByHour, programadosByHour, requiredByHour);
+    renderCoverageChart(loadByHour, programadosByHour);
     const minutosServicio = rawData.capacidad && rawData.capacidad.minutosPorServicio
       ? rawData.capacidad.minutosPorServicio[currentTeam]
       : null;
@@ -1761,27 +1760,25 @@
     }
   }
 
-  // Gráfico de barras por hora con dos ejes Y:
-  // izquierdo = servicios esperados, derecho = agentes en turno (programados).
-  // Requeridos se marca como línea punteada sobre el eje derecho (misma unidad: agentes).
-  function renderCoverageChart(loadByHour, programadosByHour, requiredByHour) {
+  // Gráfico por hora con dos ejes Y:
+  // izquierdo = servicios esperados (área), derecho = agentes en turno (columnas).
+  function renderCoverageChart(loadByHour, programadosByHour) {
     const el = document.getElementById('coverage-chart');
     if (!el) return;
     const hours = Array.from({length: 24}, (_, h) => h);
     const load = hours.map(h => Math.round((loadByHour[h] ?? 0) * 10) / 10);
     const prog = hours.map(h => programadosByHour[h] ?? 0);
-    const req  = hours.map(h => requiredByHour[h] ?? 0);
 
-    const niceScale = chartNiceScale;
     const TICKS = 4;
-    const sL = niceScale(Math.max(...load), TICKS, false);
-    const sR = niceScale(Math.max(...prog, ...req), TICKS, true);
+    const sL = chartNiceScale(Math.max(...load), TICKS, false);
+    const sR = chartNiceScale(Math.max(...prog), TICKS, true);
 
     const W = 1000, H = 300, mL = 52, mR = 52, mT = 16, mB = 34;
     const pw = W - mL - mR, ph = H - mT - mB;
-    const slot = pw / 24, bw = Math.min(14, slot * 0.36), gap = 2;
+    const slot = pw / 24, bw = Math.min(20, slot * 0.5);
     const yL = v => mT + ph - (v / sL.max) * ph;
     const yR = v => mT + ph - (v / sR.max) * ph;
+    const cxOf = h => mL + slot * h + slot / 2;
     const fmt = v => (Math.round(v * 10) / 10).toLocaleString('es-CO');
 
     let grid = '', axisL = '', axisR = '';
@@ -1796,19 +1793,20 @@
       axisR += `<text x="${W - mR + 8}" y="${y + 4}" text-anchor="start" fill="var(--orange)" font-size="11">${v}</text>`;
     }
 
-    let bars = '', xLabels = '', reqLine = '';
+    // Área de servicios: de borde a borde del gráfico, pasando por el centro de cada hora.
+    const pts = hours.map(h => [cxOf(h), yL(load[h])]);
+    const linePath = `M${mL},${pts[0][1]} ` + pts.map(p => `L${p[0]},${p[1]}`).join(' ') + ` L${W - mR},${pts[23][1]}`;
+    const areaPath = `${linePath} L${W - mR},${mT + ph} L${mL},${mT + ph} Z`;
+
+    let bars = '', dots = '', xLabels = '';
     hours.forEach(h => {
-      const cx = mL + slot * h + slot / 2;
-      const x1 = cx - bw - gap / 2, x2 = cx + gap / 2;
-      const hL = (load[h] / sL.max) * ph, hR = (prog[h] / sR.max) * ph;
-      const short = prog[h] < req[h];
-      const tip = `${String(h).padStart(2,'0')}:00\nServicios esperados: ${fmt(load[h])}\nAgentes en turno: ${prog[h]}\nRequeridos: ${req[h]}`;
+      const cx = cxOf(h), hR = (prog[h] / sR.max) * ph;
+      const tip = `${String(h).padStart(2,'0')}:00\nServicios esperados: ${fmt(load[h])}\nAgentes en turno: ${prog[h]}`;
       bars += `<g><title>${tip}</title>
         <rect class="bar-hit" x="${mL + slot * h}" y="${mT}" width="${slot}" height="${ph}"/>
-        <rect x="${x1}" y="${mT + ph - hL}" width="${bw}" height="${hL}" rx="2" fill="var(--turquoise)"/>
-        <rect x="${x2}" y="${mT + ph - hR}" width="${bw}" height="${hR}" rx="2" fill="var(--orange)" ${short ? 'opacity="0.55"' : ''}/>
+        <rect x="${cx - bw / 2}" y="${mT + ph - hR}" width="${bw}" height="${hR}" rx="2" fill="var(--orange)" fill-opacity="0.9"/>
       </g>`;
-      reqLine += `<line x1="${x2 - 3}" x2="${x2 + bw + 3}" y1="${yR(req[h])}" y2="${yR(req[h])}" stroke="var(--yellow)" stroke-width="2" stroke-dasharray="3 2" pointer-events="none"/>`;
+      dots += `<circle cx="${cx}" cy="${yL(load[h])}" r="2.5" fill="var(--turquoise)" pointer-events="none"/>`;
       if (h % 2 === 0 || slot > 40) {
         xLabels += `<text x="${cx}" y="${H - mB + 18}" text-anchor="middle" fill="var(--text-dim)" font-size="11">${String(h).padStart(2,'0')}</text>`;
       }
@@ -1816,16 +1814,22 @@
 
     el.innerHTML = `
       <div class="chart-legend">
-        <span><i style="background:var(--turquoise)"></i>Servicios esperados (eje izq.)</span>
+        <span><i style="background:var(--turquoise);opacity:.45"></i>Servicios esperados (eje izq.)</span>
         <span><i style="background:var(--orange)"></i>Agentes en turno (eje der.)</span>
-        <span><i class="lg-req"></i>Requeridos (eje der.)</span>
-        <span><i style="background:var(--orange);opacity:.55"></i>Agentes por debajo de requeridos</span>
       </div>
       <svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Servicios esperados y agentes en turno por hora" font-family="JetBrains Mono, monospace">
+        <defs>
+          <linearGradient id="cov-area-grad" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0" stop-color="var(--turquoise)" stop-opacity="0.45"/>
+            <stop offset="1" stop-color="var(--turquoise)" stop-opacity="0.08"/>
+          </linearGradient>
+        </defs>
         ${grid}
+        <path d="${areaPath}" fill="url(#cov-area-grad)" pointer-events="none"/>
         <line x1="${mL}" x2="${W - mR}" y1="${mT + ph}" y2="${mT + ph}" stroke="rgba(255,255,255,0.18)"/>
         ${bars}
-        ${reqLine}
+        <path d="${linePath}" fill="none" stroke="var(--turquoise)" stroke-width="2" stroke-linejoin="round" pointer-events="none"/>
+        ${dots}
         ${axisL}${axisR}${xLabels}
         <text x="${W / 2}" y="${H - 2}" text-anchor="middle" fill="var(--text-dim)" font-size="10">Hora del día</text>
       </svg>`;
